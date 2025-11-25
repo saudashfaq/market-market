@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispute Raised - {{site_name}}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f0f4f8;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0f4f8; padding: 20px 0;">
+        <tr>
+            <td align="center" style="padding: 0 15px;">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);">
+                    <tr>
+                        <td style="padding: 50px 40px 40px; text-align: center; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                            <div style="font-size: 64px; margin-bottom: 16px;">⚠️</div>
+                            <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700;">Dispute Alert!</h1>
+                            <p style="margin: 12px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px;">Immediate attention required</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 50px 40px;">
+                            <p style="margin: 0 0 24px; color: #4a5568; font-size: 16px; line-height: 1.7;">
+                                A dispute has been raised and requires your immediate attention.
+                            </p>
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 24px 0; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                <tr>
+                                    <td style="padding: 20px; background-color: #f7fafc;">
+                                        <p style="margin: 0 0 8px; color: #4a5568; font-size: 14px;"><strong>Order #:</strong> {{order_id}}</p>
+                                        <p style="margin: 0 0 8px; color: #4a5568; font-size: 14px;"><strong>Raised By:</strong> {{raised_by}}</p>
+                                        <p style="margin: 0 0 8px; color: #4a5568; font-size: 14px;"><strong>Against:</strong> {{against_user}}</p>
+                                        <p style="margin: 0 0 16px; color: #4a5568; font-size: 14px;"><strong>Date:</strong> {{dispute_date}}</p>
+                                        <div style="padding: 12px; background-color: #fee2e2; border-radius: 6px;">
+                                            <p style="margin: 0 0 8px; color: #991b1b; font-weight: 600; font-size: 13px;">Reason:</p>
+                                            <p style="margin: 0; color: #7f1d1d; font-size: 14px;">{{dispute_reason}}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{dispute_url}}" target="_blank" style="display: inline-block; padding: 18px 48px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                                            🔍 Review Dispute
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 0 40px 40px;">
+                            <p style="margin: 0; color: #718096; font-size: 13px; text-align: center;">© 2024 {{site_name}}. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

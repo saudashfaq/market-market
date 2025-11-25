@@ -1,0 +1,3 @@
+# Webhook Log File
+# This file logs webhook events from payment providers
+# Format: YYYY-MM-DD HH:MM:SS - EVENT: event_type | DATA: json_data

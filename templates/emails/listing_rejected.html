@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Listing Update Required - {{site_name}}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f0f4f8;">
+    <!-- Preheader -->
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0;">
+        Your listing "{{listing_title}}" needs some updates before it can go live.
+    </div>
+    
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f0f4f8; padding: 20px 0;">
+        <tr>
+            <td align="center" style="padding: 0 15px;">
+                
+                <!-- Logo/Brand -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; margin-bottom: 20px;">
+                    <tr>
+                        <td align="center" style="padding: 20px 0;">
+                            <h2 style="margin: 0; color: #1a202c; font-size: 24px; font-weight: 700;">{{site_name}}</h2>
+                        </td>
+                    </tr>
+                </table>
+                
+                <!-- Main Container -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08); overflow: hidden;">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 0;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td style="padding: 50px 40px 40px; text-align: center; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                                        <!-- Warning Icon -->
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 24px;">
+                                            <tr>
+                                                <td style="width: 90px; height: 90px; background-color: rgba(255, 255, 255, 0.25); border-radius: 50%; text-align: center; vertical-align: middle;">
+                                                    <div style="font-size: 48px; line-height: 90px;">⚠️</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2;">Action Required</h1>
+                                        <p style="margin: 12px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 16px; line-height: 1.5;">Your listing needs some updates</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 50px 40px;">
+                            <!-- Greeting -->
+                            <p style="margin: 0 0 8px; color: #1a202c; font-size: 18px; line-height: 1.6; font-weight: 600;">
+                                Hello {{seller_name}},
+                            </p>
+                            
+                            <p style="margin: 0 0 32px; color: #4a5568; font-size: 16px; line-height: 1.7;">
+                                Thank you for submitting your listing to <strong style="color: #2d3748;">{{site_name}}</strong>. After reviewing your listing, we've identified some areas that need attention before it can go live.
+                            </p>
+                            
+                            <!-- Listing Card -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                                <tr>
+                                    <td style="padding: 20px; background-color: #f7fafc;">
+                                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                            <tr>
+                                                <td style="padding-bottom: 12px;">
+                                                    <h3 style="margin: 0; color: #1a202c; font-size: 18px; font-weight: 600;">{{listing_title}}</h3>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <p style="margin: 0; color: #718096; font-size: 13px;">
+                                                        <strong>Listing ID:</strong> #{{listing_id}}
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Rejection Reason -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+                                <tr>
+                                    <td style="padding: 20px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 6px;">
+                                        <p style="margin: 0 0 12px; color: #92400e; font-weight: 600; font-size: 14px;">
+                                            📋 Reason for Review
+                                        </p>
+                                        <p style="margin: 0; color: #78350f; font-size: 14px; line-height: 1.7;">
+                                            {{rejection_reason}}
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Edit Listing Button -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+                                <tr>
+                                    <td align="center" style="padding: 0;">
+                                        <a href="{{edit_listing_url}}" target="_blank" style="display: inline-block; padding: 18px 48px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
+                                            ✏️ Edit Your Listing
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Guidelines -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+                                <tr>
+                                    <td style="padding: 20px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px;">
+                                        <p style="margin: 0 0 12px; color: #1e40af; font-weight: 600; font-size: 14px;">
+                                            📝 Listing Guidelines
+                                        </p>
+                                        <ul style="margin: 0; padding-left: 20px; color: #1e3a8a; font-size: 14px; line-height: 1.8;">
+                                            <li>Provide clear and accurate descriptions</li>
+                                            <li>Use high-quality, relevant images</li>
+                                            <li>Set fair and competitive pricing</li>
+                                            <li>Follow our community guidelines</li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Help Text -->
+                            <p style="margin: 32px 0 0; color: #718096; font-size: 14px; line-height: 1.6; text-align: center;">
+                                Need help? Our support team is here to assist you with any questions.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Divider -->
+                    <tr>
+                        <td style="padding: 0 40px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                <tr>
+                                    <td style="padding: 32px 0; border-top: 1px solid #e2e8f0;"></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 0 40px 40px;">
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin: 0 auto 24px;">
+                                <tr>
+                                    <td style="padding: 0 8px;">
+                                        <a href="{{site_url}}" target="_blank" style="color: #f59e0b; text-decoration: none; font-size: 14px; font-weight: 500;">
+                                            Visit Website
+                                        </a>
+                                    </td>
+                                    <td style="padding: 0 8px; color: #cbd5e0;">|</td>
+                                    <td style="padding: 0 8px;">
+                                        <a href="mailto:support@{{site_name}}" style="color: #f59e0b; text-decoration: none; font-size: 14px; font-weight: 500;">
+                                            Contact Support
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <p style="margin: 0 0 8px; color: #718096; font-size: 13px; text-align: center; line-height: 1.6;">
+                                © 2024 <strong style="color: #4a5568;">{{site_name}}</strong>. All rights reserved.
+                            </p>
+                            <p style="margin: 0; color: #a0aec0; font-size: 12px; text-align: center; line-height: 1.5;">
+                                You're receiving this email because you submitted a listing on our platform.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+                
+                <!-- Spacer -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 600px;">
+                    <tr>
+                        <td style="padding: 20px 0;">
+                            <p style="margin: 0; color: #a0aec0; font-size: 11px; text-align: center; line-height: 1.5;">
+                                This is an automated message, please do not reply to this email.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
