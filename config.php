@@ -24,6 +24,9 @@ if (!defined('MAIL_FROM_NAME')) define('MAIL_FROM_NAME', 'Marketplace');
 
 // Pandascrow defaults
 if (!defined('PANDASCROW_MODE')) define('PANDASCROW_MODE', 'sandbox');
+if (!defined('PANDASCROW_DEFAULT_EMAIL')) define('PANDASCROW_DEFAULT_EMAIL', '');
+if (!defined('PANDASCROW_DEFAULT_PASSWORD')) define('PANDASCROW_DEFAULT_PASSWORD', '');
+if (!defined('PANDASCROW_DEFAULT_USER_PASSWORD')) define('PANDASCROW_DEFAULT_USER_PASSWORD', '');
 if (!defined('PANDASCROW_UUID')) define('PANDASCROW_UUID', '');
 if (!defined('PANDASCROW_PUBLIC_KEY')) define('PANDASCROW_PUBLIC_KEY', '');
 if (!defined('PANDASCROW_SECRET_KEY')) define('PANDASCROW_SECRET_KEY', '');
