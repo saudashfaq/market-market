@@ -47,16 +47,16 @@ if (!defined('PANDASCROW_BASE_URL')) {
 }
 // if (!defined('STRIPE_WEBHOOK_SECRET')) define('STRIPE_WEBHOOK_SECRET', '');
 if (!defined('BASE')) {
-    // Detect protocol (HTTP or HTTPS)
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || 
-                (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443))
-        ? "https://" : "http://";
+    // Detect protocol
+    $protocol = ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+                (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443))
+                ? "https://" : "http://";
 
-    // Detect current host (localhost, ngrok, live domain, etc.)
+    // Detect host
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 
-    // Define base URL dynamically
-    define('BASE', $protocol . $host . '/marketplace/public/');
+    // LIVE server base URL
+    define('BASE', $protocol . $host . '/');
 }
 
 function db() {
