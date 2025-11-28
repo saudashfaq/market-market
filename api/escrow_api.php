@@ -322,7 +322,7 @@ function create_pandascrow_escrow($amount, $title, $description, $buyerDetails =
             "email" => "dummyseller@gmail.com",
             "phone" => "+9234733849",
         ],
-        "callback_url" => url('/webhook.php')
+        "callback_url" => url('public/webhook.php')
     ];
     
     // ✅ Add seller payout configuration if provided (for automatic settlement)
