@@ -5,7 +5,15 @@ require_once __DIR__ . '/../config.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Debug function removed - no longer needed
+function debug_log($msg, $data = null)
+{
+    $timestamp = date('Y-m-d H:i:s');
+    $log = "[$timestamp] $msg";
+    if ($data !== null) $log .= " | " . print_r($data, true);
+    $log .= "\n";
+    file_put_contents(__DIR__ . '/debug_pandascrow.log', $log, FILE_APPEND);
+    echo $log;
+}
 
 // === Helper: Pandascrow API Request ===
 // function pandascrow_api_request($method, $endpoint, $data = [], $auth = false)
@@ -288,8 +296,6 @@ ini_set('display_errors', 1);
 
 function create_pandascrow_escrow($amount, $title, $description, $buyerDetails = [], $sellerDetails = [], $sellerPayoutConfig = null)
 {
-    require_once __DIR__ . '/../includes/transaction_logger.php';
-    
     $payload = [
         "uuid" => PANDASCROW_UUID,
         "escrow_type" => "onetime",
@@ -307,13 +313,13 @@ function create_pandascrow_escrow($amount, $title, $description, $buyerDetails =
         "amount" => $amount,
         "dispute_window" => "7",
         "buyer_details" => [
-            "name" => "saad",
-            "email" => "saadbahu7@gmail.com",
-            "phone" => "08021325996",
-        ],
-        "seller_details" => [
             "name" => "saud",
             "email" => "saudz0413@gmail.com",
+            "phone" => "08021325996",
+        ],
+        "seller_details" => !empty($sellerDetails) ? $sellerDetails : [
+            "name" => "Dummy Seller",
+            "email" => "dummyseller@gmail.com",
             "phone" => "+9234733849",
         ],
         "callback_url" => url('/webhook.php')
@@ -342,23 +348,12 @@ function create_pandascrow_escrow($amount, $title, $description, $buyerDetails =
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
     curl_close($ch);
 
     file_put_contents(__DIR__ . '/debug_pandascrow.log', 
         "[" . date('Y-m-d H:i:s') . "] /escrow/initialize ($httpCode): " . $response . PHP_EOL, FILE_APPEND);
 
     $data = json_decode($response, true);
-    
-    // Log API call
-    log_api_call('/escrow/initialize', 'POST', $payload, $data, $httpCode);
-    
-    if ($curlError) {
-        log_transaction_event('curl_error', [
-            'endpoint' => '/escrow/initialize',
-            'error' => $curlError
-        ], 'error');
-    }
 
     if ($httpCode === 200 && isset($data['status']) && $data['status'] === true) {
         return [
@@ -383,20 +378,10 @@ function create_pandascrow_escrow($amount, $title, $description, $buyerDetails =
 /**
  * Complete escrow transaction with OTP
  * This releases funds to seller after buyer confirms receipt
- * 
- * @param string $escrowId Escrow ID
- * @param string $otp One-time password
- * @param string $buyerUuid Buyer's PandaScrow UUID (optional, defaults to platform UUID)
  */
-function complete_pandascrow_escrow($escrowId, $otp, $buyerUuid = null)
+function complete_pandascrow_escrow($escrowId, $otp)
 {
-    require_once __DIR__ . '/../includes/transaction_logger.php';
-    
-    // Use buyer UUID if provided, otherwise use platform UUID
-    $uuid = $buyerUuid ?? PANDASCROW_UUID;
-    
     $payload = [
-        "uuid" => $uuid,  // ✅ User confirming the escrow
         "escrow_id" => $escrowId,
         "otp" => $otp
     ];
@@ -419,28 +404,12 @@ function complete_pandascrow_escrow($escrowId, $otp, $buyerUuid = null)
 
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($ch);
     curl_close($ch);
 
     file_put_contents(__DIR__ . '/debug_pandascrow.log', 
         "[" . date('Y-m-d H:i:s') . "] /escrow/complete ($httpCode): " . $response . PHP_EOL, FILE_APPEND);
 
     $data = json_decode($response, true);
-    
-    // Log API call (mask OTP in logs)
-    if (function_exists('log_api_call')) {
-        $safePayload = $payload;
-        $safePayload['otp'] = str_repeat('*', strlen($otp));
-        log_api_call('/escrow/complete', 'POST', $safePayload, $data, $httpCode);
-        
-        if ($curlError) {
-            log_transaction_event('curl_error', [
-                'endpoint' => '/escrow/complete',
-                'escrow_id' => $escrowId,
-                'error' => $curlError
-            ], 'error');
-        }
-    }
 
     if ($httpCode === 200 && isset($data['status']) && $data['status'] === true) {
         return [

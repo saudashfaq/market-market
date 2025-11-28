@@ -88,7 +88,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       } elseif ($page == 'addAdminSuperAdmin') {
         include "addAdminSuperAdmin.php";
       } elseif ($page == 'biddingDashboard') {
-        include "biddingDashboard.php";
+        // Only allow superadmin to access bidding dashboard
+        if ($role === 'superadmin') {
+          include "biddingDashboard.php";
+        } else {
+          echo "<div class='bg-red-50 border border-red-200 rounded-lg p-6 text-center'>";
+          echo "<i class='fas fa-lock text-red-500 text-4xl mb-4'></i>";
+          echo "<h2 class='text-xl font-semibold text-red-700 mb-2'>Access Denied</h2>";
+          echo "<p class='text-red-600'>You don't have permission to access the Bidding System.</p>";
+          echo "<p class='text-sm text-red-500 mt-2'>This feature is only available for Super Administrators.</p>";
+          echo "</div>";
+        }
       } elseif ($page == 'adminPayments') {
         include "adminPayments.php";
       } elseif ($page == 'transferWorkflow') {

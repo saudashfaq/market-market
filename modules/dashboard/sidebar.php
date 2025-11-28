@@ -99,7 +99,6 @@ try {
           ['page' => 'listingverification', 'label' => 'Listing Verification', 'icon' => 'fa-check-double', 'color' => 'green'],
           ['page' => 'transferWorkflow', 'label' => 'Transfer Workflow', 'icon' => 'fa-random', 'color' => 'teal'],
           ['page' => 'adminPayments', 'label' => 'Payments', 'icon' => 'fa-money-bill', 'color' => 'emerald'],
-          ['page' => 'biddingDashboard', 'label' => 'Bidding System', 'icon' => 'fa-gavel', 'color' => 'orange'],
           ['page' => 'adminreports', 'label' => 'Reports & Logs', 'icon' => 'fa-file-alt', 'color' => 'indigo'],
           ['divider' => true],
           ['page' => 'profile', 'label' => 'Profile', 'icon' => 'fa-id-card', 'color' => 'gray'],
@@ -120,7 +119,7 @@ try {
           ['page' => 'superAdminQuestion', 'label' => 'Questions', 'icon' => 'fa-circle-question', 'color' => 'yellow'],
           ['page' => 'categories', 'label' => 'Categories', 'icon' => 'fa-layer-group', 'color' => 'pink'],
           ['page' => 'superAdminReports', 'label' => 'Reports', 'icon' => 'fa-file-lines', 'color' => 'red'],
-          ['page' => 'biddingDashboard', 'label' => 'Bidding Settings', 'icon' => 'fa-sliders-h', 'color' => 'violet'],
+          ['page' => 'biddingDashboard', 'label' => 'Bidding System', 'icon' => 'fa-gavel', 'color' => 'orange'],
           ['divider' => true],
           ['page' => 'admin_tickets', 'label' => 'Support Tickets', 'icon' => 'fa-headset', 'color' => 'purple'],
           ['divider' => true],
@@ -171,6 +170,25 @@ try {
         <?php endif;
       endforeach;
     ?>
+    
+    <!-- AI Assistant Widget -->
+    <div class="mx-3 my-4">
+      <div class="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-4 text-white shadow-lg">
+        <div class="flex items-start gap-3 mb-3">
+          <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+            <i class="fas fa-robot text-white text-lg"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-semibold text-white text-sm mb-1">AI Assistant</h3>
+            <p class="text-white/80 text-xs leading-relaxed">Always here to help</p>
+          </div>
+        </div>
+        <button onclick="startAIChat()" class="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-all duration-200 border border-white/20 hover:border-white/30">
+          Start Chat
+        </button>
+      </div>
+    </div>
+    
     <hr class="my-4 border-gray-200">
     <a href="#" onclick="confirmLogout(event)" class="group flex items-center px-3 py-2.5 mx-1 rounded-lg text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition" title="Logout">
       <div class="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 text-red-500 group-hover:bg-red-100 group-hover:text-red-600 mr-3 transition">
@@ -181,6 +199,27 @@ try {
   </nav>
 </aside>
 <script>
+
+function startAIChat() {
+    console.log('AI Assistant chat started');
+    
+    // You can customize this function to:
+    // 1. Open a chat modal
+    // 2. Redirect to a chat page
+    // 3. Open an external chat service
+    // 4. Show a popup with AI assistant
+    
+    // For now, show a simple popup
+    if (typeof showSuccess !== 'undefined') {
+        showSuccess('AI Assistant feature coming soon! This will open a chat interface to help you with your marketplace needs.', {
+            title: 'AI Assistant',
+            autoClose: true,
+            autoCloseTime: 4000
+        });
+    } else {
+        alert('AI Assistant feature coming soon!');
+    }
+}
 
 function confirmLogout(event) {
     if (event && event.preventDefault) {

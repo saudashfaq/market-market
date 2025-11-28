@@ -15,13 +15,7 @@ require_once __DIR__ . "/popup_helper.php";
     rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <?php if (is_logged_in()): ?>
-  <script>
-    // Make current user id available to client-side polling scripts
-    window.currentUserId = <?= json_encode(current_user()['id'] ?? null) ?>;
-  </script>
-  <script src="<?= BASE ?>js/notifications_clean.js?v=<?= time() ?>" defer></script>
-  <script src="<?= BASE ?>js/polling.js?v=<?= time() ?>" defer></script>
-  <script src="<?= BASE ?>js/polling-init.js?v=<?= time() ?>" defer></script>
+  <script src="<?= BASE ?>/js/notifications.js" defer></script>
   <?php endif; ?>
   <script src="<?= BASE ?>/js/popup.js" defer></script>
   <script src="<?= BASE ?>/js/logout-confirmation.js" defer></script>
@@ -84,7 +78,6 @@ require_once __DIR__ . "/popup_helper.php";
     /* Ensure proper spacing and prevent overflow */
     .navbar-container {
       max-width: 100%;
-      overflow-x: hidden;
     }
 
     .navbar-nav {
@@ -97,6 +90,32 @@ require_once __DIR__ . "/popup_helper.php";
     .navbar-nav::-webkit-scrollbar {
       display: none;
     }
+
+    /* Custom scrollbar for notifications */
+    .scrollbar-thin {
+      scrollbar-width: thin;
+      scrollbar-color: #d1d5db #f3f4f6;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f3f4f6;
+      border-radius: 3px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 3px;
+    }
+
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    /* Simple notification dropdown - no complex styling needed */
   </style>
 </head>
 
@@ -144,7 +163,7 @@ require_once __DIR__ . "/popup_helper.php";
             </button>
 
             <!-- Mobile Notification Dropdown -->
-            <div id="mobileNotificationDropdown" class="hidden absolute right-0 mt-3 w-72 sm:w-80 bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden z-50 animate-slideUpFade">
+            <div id="mobileNotificationDropdown" class="hidden absolute right-0 mt-3 w-80 bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden z-50 animate-slideUpFade">
               <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-white font-semibold text-sm flex justify-between items-center">
                 <span>Notifications</span>
                 <button class="mark-all-read-btn text-xs text-white/80 hover:text-white transition">Mark all as read</button>
@@ -409,7 +428,17 @@ require_once __DIR__ . "/popup_helper.php";
       
       list.innerHTML = notifications.map(notif => {
         const unreadClass = notif.is_read == 0 ? 'bg-blue-50' : '';
-        return `<li class="flex items-start gap-3 p-4 hover:bg-gray-50 transition ${unreadClass}"><div class="w-10 h-10 bg-blue-100 text-blue-600 flex items-center justify-center rounded-full flex-shrink-0"><i class="fa-solid fa-bell"></i></div><div class="flex-1 min-w-0"><p class="text-sm text-gray-800 font-medium">${notif.title}</p><p class="text-xs text-gray-600 mt-0.5">${notif.message}</p></div></li>`;
+        return `
+          <li class="flex items-start gap-3 p-4 hover:bg-gray-50 transition ${unreadClass}">
+            <div class="w-10 h-10 bg-blue-100 text-blue-600 flex items-center justify-center rounded-full flex-shrink-0">
+              <i class="fa-solid fa-bell"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-800 font-medium">${notif.title}</p>
+              <p class="text-xs text-gray-600 mt-0.5">${notif.message}</p>
+            </div>
+          </li>
+        `;
       }).join('');
     }
     

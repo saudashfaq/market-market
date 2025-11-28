@@ -7,6 +7,11 @@ require_once __DIR__ . "/../includes/flash_helper.php";
 // Redirect if already logged in
 redirect_if_authenticated();
 
+// Prevent browser caching for security
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // Get token from URL
 $token = $_GET['token'] ?? '';
 
@@ -76,12 +81,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $tokenValid) {
         exit;
     }
     
-    // Update password
+    // Update password and reset requires_password_change flag
     $pdo = db();
     $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
     
-    $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
-    $stmt->execute([$hashedPassword, $userId]);
+    // Check if requires_password_change column exists and reset it
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'requires_password_change'");
+        if ($stmt->rowCount() > 0) {
+            // Column exists, update both password and flag
+            $stmt = $pdo->prepare("UPDATE users SET password = ?, requires_password_change = 0 WHERE id = ?");
+            $stmt->execute([$hashedPassword, $userId]);
+        } else {
+            // Column doesn't exist, just update password
+            $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $stmt->execute([$hashedPassword, $userId]);
+        }
+    } catch (Exception $e) {
+        // Fallback to just updating password
+        $stmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->execute([$hashedPassword, $userId]);
+    }
     
     // Get user details for email
     $stmt = $pdo->prepare("SELECT name, email FROM users WHERE id = ?");

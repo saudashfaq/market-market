@@ -164,7 +164,22 @@ if (!empty($_FILES['profile_pic']['name'])) {
   if (!$isOAuthUser && $current_password && $new_password && $new_password === $confirm_password) {
     if (password_verify($current_password, $user['password'])) {
       $newHash = password_hash($new_password, PASSWORD_DEFAULT);
-      $pdo->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$newHash, $user_id]);
+      
+      // Update password and reset requires_password_change flag
+      try {
+        // Check if requires_password_change column exists
+        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'requires_password_change'");
+        if ($stmt->rowCount() > 0) {
+          // Column exists, update both password and flag
+          $pdo->prepare("UPDATE users SET password = ?, requires_password_change = 0 WHERE id = ?")->execute([$newHash, $user_id]);
+        } else {
+          // Column doesn't exist, just update password
+          $pdo->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$newHash, $user_id]);
+        }
+      } catch (Exception $e) {
+        // Fallback to just updating password
+        $pdo->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$newHash, $user_id]);
+      }
       
       // Send email notification about password change
       // TODO: Implement email notification

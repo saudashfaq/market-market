@@ -187,7 +187,7 @@ function sendListingApprovedEmail($sellerEmail, $sellerName, $listingData) {
             'listing_category' => $listingData['category'] ?? 'N/A',
             'listing_price' => number_format($listingData['price'] ?? 0, 2),
             'listing_url' => $listingData['listing_url'] ?? url('index.php?p=listingDetail&id=' . ($listingData['id'] ?? '')),
-            'dashboard_url' => url('index.php?p=my_listing'),
+            'dashboard_url' => url('index.php?p=dashboard&page=my_listing'),
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
@@ -223,7 +223,7 @@ function sendListingApprovedEmail($sellerEmail, $sellerName, $listingData) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($sellerEmail, $sellerName);
         $mail->isHTML(true);
-        $mail->Subject = 'Your Listing Has Been Approved - ' . MAIL_FROM_NAME;
+        $mail->Subject = '✅ Your Listing Has Been Approved - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -259,13 +259,18 @@ function sendListingRejectedEmail($sellerEmail, $sellerName, $listingData, $reas
             return false;
         }
 
+        // Determine correct edit URL based on listing type
+        $listingType = $listingData['type'] ?? 'website';
+        $editPage = ($listingType === 'youtube') ? 'updateYtListing' : 'updateWebListing';
+        $editUrl = url('index.php?p=' . $editPage . '&id=' . ($listingData['id'] ?? ''));
+
         // Prepare template data
         $templateData = [
             'seller_name' => $sellerName,
             'listing_id' => $listingData['id'] ?? '',
             'listing_title' => $listingData['title'] ?? 'Your Listing',
             'rejection_reason' => $reason ?: 'Your listing does not meet our community guidelines. Please review and update your listing accordingly.',
-            'edit_listing_url' => url('index.php?p=updateListing&id=' . ($listingData['id'] ?? '')),
+            'edit_listing_url' => $editUrl,
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
@@ -301,7 +306,7 @@ function sendListingRejectedEmail($sellerEmail, $sellerName, $listingData, $reas
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($sellerEmail, $sellerName);
         $mail->isHTML(true);
-        $mail->Subject = 'Action Required: Update Your Listing - ' . MAIL_FROM_NAME;
+        $mail->Subject = '⚠️ Action Required: Update Your Listing - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -337,7 +342,7 @@ function sendWelcomeEmail($userEmail, $userName) {
 
         $templateData = [
             'user_name' => $userName,
-            'dashboard_url' => url('index.php?p=dashboard'),
+            'dashboard_url' => url('index.php?p=dashboard&page=userDashboard'),
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
@@ -357,7 +362,7 @@ function sendWelcomeEmail($userEmail, $userName) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = 'Welcome to ' . MAIL_FROM_NAME . '!';
+        $mail->Subject = '🎉 Welcome to ' . MAIL_FROM_NAME . '!';
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -387,8 +392,8 @@ function sendOfferReceivedEmail($sellerEmail, $sellerName, $offerData, $listingD
             'listing_price' => number_format($listingData['price'] ?? 0, 2),
             'offer_amount' => number_format($offerData['amount'] ?? 0, 2),
             'offer_message' => $offerData['message'] ?? 'No message provided',
-            'offer_url' => url('index.php?p=offers'),
-            'dashboard_url' => url('index.php?p=dashboard'),
+            'offer_url' => url('index.php?p=dashboard&page=offers'),
+            'dashboard_url' => url('index.php?p=dashboard&page=userDashboard'),
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
@@ -408,7 +413,7 @@ function sendOfferReceivedEmail($sellerEmail, $sellerName, $offerData, $listingD
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($sellerEmail, $sellerName);
         $mail->isHTML(true);
-        $mail->Subject = 'New Offer on Your Listing - ' . MAIL_FROM_NAME;
+        $mail->Subject = '💰 New Offer on Your Listing - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -430,18 +435,18 @@ function sendOfferAcceptedEmail($buyerEmail, $buyerName, $offerData, $listingDat
             'buyer_name' => $buyerName,
             'listing_title' => $listingData['title'] ?? 'Listing',
             'offer_amount' => number_format($offerData['amount'] ?? 0, 2),
-            'payment_url' => url('index.php?p=payment&offer_id=' . ($offerData['id'] ?? '')),
+            'order_url' => url('index.php?p=dashboard&page=my_order'),
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
 
         $htmlBody = "
         <html><body style='font-family: Arial; padding: 20px;'>
-            <h2 style='color: #10b981;'>Offer Accepted!</h2>
+            <h2 style='color: #10b981;'>✅ Offer Accepted!</h2>
             <p>Hi {$buyerName},</p>
             <p>Great news! Your offer of <strong>\${$templateData['offer_amount']}</strong> for <strong>{$templateData['listing_title']}</strong> has been accepted!</p>
-            <p style='margin: 30px 0;'><a href='{$templateData['payment_url']}' style='background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>Complete Payment</a></p>
-            <p>Complete your payment to finalize the purchase.</p>
+            <p style='margin: 30px 0;'><a href='{$templateData['order_url']}' style='background: #10b981; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;'>View Order</a></p>
+            <p>You can view your order details in your dashboard.</p>
             <hr style='margin: 30px 0;'>
             <p style='color: #666; font-size: 12px;'>© 2024 {$templateData['site_name']}</p>
         </body></html>";
@@ -459,7 +464,7 @@ function sendOfferAcceptedEmail($buyerEmail, $buyerName, $offerData, $listingDat
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($buyerEmail, $buyerName);
         $mail->isHTML(true);
-        $mail->Subject = 'Your Offer Was Accepted! - ' . MAIL_FROM_NAME;
+        $mail->Subject = '✅ Your Offer Was Accepted! - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -489,7 +494,7 @@ function sendOfferRejectedEmail($buyerEmail, $buyerName, $offerData, $listingDat
 
         $htmlBody = "
         <html><body style='font-family: Arial; padding: 20px;'>
-            <h2 style='color: #f59e0b;'>Offer Update</h2>
+            <h2 style='color: #f59e0b;'>⚠️ Offer Update</h2>
             <p>Hi {$buyerName},</p>
             <p>Your offer of <strong>\${$templateData['offer_amount']}</strong> for <strong>{$templateData['listing_title']}</strong> was not accepted.</p>
             <p style='background: #fef3c7; padding: 15px; border-left: 4px solid #f59e0b;'>{$reasonText}</p>
@@ -535,7 +540,7 @@ function sendPaymentConfirmationEmail($userEmail, $userName, $paymentData, $list
             'listing_title' => $listingData['title'] ?? 'Listing',
             'amount' => number_format($paymentData['amount'] ?? 0, 2),
             'transaction_id' => $paymentData['transaction_id'] ?? 'N/A',
-            'order_url' => url('index.php?p=my_order'),
+            'order_url' => url('index.php?p=dashboard&page=my_order'),
             'site_name' => MAIL_FROM_NAME
         ];
 
@@ -545,7 +550,7 @@ function sendPaymentConfirmationEmail($userEmail, $userName, $paymentData, $list
 
         $htmlBody = "
         <html><body style='font-family: Arial; padding: 20px;'>
-            <h2 style='color: #10b981;'>Payment Confirmed</h2>
+            <h2 style='color: #10b981;'>✅ Payment Confirmed</h2>
             <p>Hi {$userName},</p>
             <p>{$message}</p>
             <div style='background: #f7fafc; padding: 20px; border-radius: 8px; margin: 20px 0;'>
@@ -571,7 +576,7 @@ function sendPaymentConfirmationEmail($userEmail, $userName, $paymentData, $list
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = 'Payment Confirmed - ' . MAIL_FROM_NAME;
+        $mail->Subject = '✅ Payment Confirmed - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -666,7 +671,7 @@ function sendEmailVerificationEmail($userEmail, $userName, $verificationToken) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = 'Verify Your Email - ' . MAIL_FROM_NAME;
+        $mail->Subject = '📧 Verify Your Email - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -731,7 +736,7 @@ function sendListingSoldEmail($sellerEmail, $sellerName, $listingData, $buyerNam
             'sold_price' => number_format($soldPrice, 2),
             'buyer_name' => $buyerName,
             'sale_date' => date('F j, Y'),
-            'order_url' => url('index.php?p=my_order'),
+            'order_url' => url('index.php?p=dashboard&page=my_order'),
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
@@ -751,7 +756,7 @@ function sendListingSoldEmail($sellerEmail, $sellerName, $listingData, $buyerNam
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($sellerEmail, $sellerName);
         $mail->isHTML(true);
-        $mail->Subject = 'Your Listing Sold! - ' . MAIL_FROM_NAME;
+        $mail->Subject = '🎉 Your Listing Sold! - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -769,13 +774,18 @@ function sendListingExpiringEmail($sellerEmail, $sellerName, $listingData, $days
     try {
         if (!filter_var($sellerEmail, FILTER_VALIDATE_EMAIL)) return false;
 
+        // Determine correct edit URL based on listing type
+        $listingType = $listingData['type'] ?? 'website';
+        $editPage = ($listingType === 'youtube') ? 'updateYtListing' : 'updateWebListing';
+        $renewUrl = url('index.php?p=' . $editPage . '&id=' . ($listingData['id'] ?? ''));
+
         $expiryDate = date('F j, Y', strtotime("+{$daysRemaining} days"));
         $templateData = [
             'seller_name' => $sellerName,
             'listing_title' => $listingData['title'] ?? 'Your listing',
             'days_remaining' => $daysRemaining,
             'expiry_date' => $expiryDate,
-            'renew_url' => url('index.php?p=updateListing&id=' . ($listingData['id'] ?? '')),
+            'renew_url' => $renewUrl,
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
@@ -864,7 +874,7 @@ function sendPaymentFailedEmail($userEmail, $userName, $paymentData, $listingDat
             'amount' => number_format($paymentData['amount'] ?? 0, 2),
             'transaction_id' => $paymentData['transaction_id'] ?? 'N/A',
             'failure_reason' => $paymentData['failure_reason'] ?? 'Payment could not be processed. Please check your payment method and try again.',
-            'retry_payment_url' => url('index.php?p=payment&retry=1&offer_id=' . ($paymentData['offer_id'] ?? '')),
+            'retry_payment_url' => url('index.php?p=payment&retry=1&id=' . ($listingData['id'] ?? '')),
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
@@ -884,7 +894,7 @@ function sendPaymentFailedEmail($userEmail, $userName, $paymentData, $listingDat
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = 'Payment Failed - ' . MAIL_FROM_NAME;
+        $mail->Subject = '❌ Payment Failed - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -902,6 +912,22 @@ function sendOrderConfirmationEmail($userEmail, $userName, $orderData, $listingD
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) return false;
 
+        // Only show order button for seller, not for buyer
+        $orderButton = '';
+        if ($userType === 'seller') {
+            $orderUrl = url('index.php?p=dashboard&page=my_order');
+            $orderButton = '
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin: 32px 0;">
+                <tr>
+                    <td align="center">
+                        <a href="' . $orderUrl . '" target="_blank" style="display: inline-block; padding: 18px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                            📦 View Order Details
+                        </a>
+                    </td>
+                </tr>
+            </table>';
+        }
+
         $templateData = [
             'user_name' => $userName,
             'order_id' => $orderData['id'] ?? 'N/A',
@@ -910,7 +936,7 @@ function sendOrderConfirmationEmail($userEmail, $userName, $orderData, $listingD
             'order_date' => date('F j, Y'),
             'user_type' => $userType === 'buyer' ? 'Seller' : 'Buyer',
             'other_party_name' => $orderData['other_party_name'] ?? 'N/A',
-            'order_url' => url('index.php?p=my_order'),
+            'order_button' => $orderButton,
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
@@ -930,7 +956,7 @@ function sendOrderConfirmationEmail($userEmail, $userName, $orderData, $listingD
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = 'Order Confirmed - ' . MAIL_FROM_NAME;
+        $mail->Subject = '✅ Order Confirmed - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -955,7 +981,7 @@ function sendOrderShippedEmail($buyerEmail, $buyerName, $orderData, $listingData
             'tracking_number' => $orderData['tracking_number'] ?? 'N/A',
             'shipping_carrier' => $orderData['shipping_carrier'] ?? 'N/A',
             'estimated_delivery' => $orderData['estimated_delivery'] ?? 'TBD',
-            'tracking_url' => $orderData['tracking_url'] ?? url('index.php?p=my_order'),
+            'tracking_url' => $orderData['tracking_url'] ?? url('index.php?p=dashboard&page=my_order'),
             'site_name' => MAIL_FROM_NAME,
             'site_url' => rtrim(url(), '/')
         ];
@@ -1018,7 +1044,7 @@ function sendOrderDeliveredEmail($buyerEmail, $buyerName, $orderData, $listingDa
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($buyerEmail, $buyerName);
         $mail->isHTML(true);
-        $mail->Subject = 'Order Delivered - ' . MAIL_FROM_NAME;
+        $mail->Subject = '🎉 Order Delivered - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -1067,7 +1093,7 @@ function sendOrderCancelledEmail($userEmail, $userName, $orderData, $listingData
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = 'Order Cancelled - ' . MAIL_FROM_NAME;
+        $mail->Subject = '⚠️ Order Cancelled - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -1111,7 +1137,7 @@ function sendAdminNewListingEmail($adminEmail, $listingData, $sellerName) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($adminEmail);
         $mail->isHTML(true);
-        $mail->Subject = 'New Listing Submitted - ' . MAIL_FROM_NAME;
+        $mail->Subject = '📝 New Listing Submitted - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -1197,7 +1223,7 @@ function sendAdminDisputeEmail($adminEmail, $disputeData) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($adminEmail);
         $mail->isHTML(true);
-        $mail->Subject = 'Dispute Raised - ' . MAIL_FROM_NAME;
+        $mail->Subject = '⚠️ Dispute Raised - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         
@@ -1241,7 +1267,7 @@ function sendAdminPaymentIssueEmail($adminEmail, $paymentData) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($adminEmail);
         $mail->isHTML(true);
-        $mail->Subject = 'Payment Issue - ' . MAIL_FROM_NAME;
+        $mail->Subject = '💳 Payment Issue - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
         

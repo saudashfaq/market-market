@@ -122,7 +122,7 @@ try {
             if ($buyer && $seller && $listing) {
                 // Send offer accepted email to buyer
                 $offerData = ['id' => $offer['id'], 'amount' => $offer['amount']];
-                $listingData = ['title' => $listing['name'], 'price' => $listing['asking_price']];
+                $listingData = ['id' => $offer['listing_id'], 'title' => $listing['name'], 'price' => $listing['asking_price']];
                 sendOfferAcceptedEmail($buyer['email'], $buyer['name'], $offerData, $listingData);
                 
                 // Send order confirmation emails

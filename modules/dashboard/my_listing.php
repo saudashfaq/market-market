@@ -32,7 +32,6 @@ if (isset($_GET['export'])) {
 
 // Clean version of my_listing.php with working polling
 require_once __DIR__ . '/../../config.php';
-require_once __DIR__ . '/../../middlewares/auth.php';
 require_once __DIR__ . '/../../includes/pagination_helper.php';
 
 require_login();
@@ -50,16 +49,6 @@ $user_id = $user['id'];
 
 // Debug: Log the user ID being used
 error_log("MY_LISTING DEBUG: Current user ID: " . $user_id);
-
-// Additional debug: Check if user exists in database
-try {
-    $userCheckStmt = $pdo->prepare("SELECT id, name, email FROM users WHERE id = ?");
-    $userCheckStmt->execute([$user_id]);
-    $userExists = $userCheckStmt->fetch(PDO::FETCH_ASSOC);
-    error_log("MY_LISTING DEBUG: User exists in DB: " . ($userExists ? "YES - " . $userExists['name'] : "NO"));
-} catch (Exception $e) {
-    error_log("MY_LISTING ERROR: User check failed: " . $e->getMessage());
-}
 
 $pdo = db();
 
@@ -123,20 +112,14 @@ $countSql = "
 error_log("MY_LISTING DEBUG: SQL Query: " . $sql);
 error_log("MY_LISTING DEBUG: Parameters: " . print_r($params, true));
 
-try {
-    $result = getCustomPaginationData($pdo, $sql, $countSql, $params, $page, $perPage);
-    $listings = $result['data'];
-    $pagination = $result['pagination'];
+$result = getCustomPaginationData($pdo, $sql, $countSql, $params, $page, $perPage);
+$listings = $result['data'];
+$pagination = $result['pagination'];
 
-    // Debug: Log the results
-    error_log("MY_LISTING DEBUG: Found " . count($listings) . " listings for user ID: " . $user_id);
-    if (!empty($listings)) {
-        error_log("MY_LISTING DEBUG: First listing: " . print_r($listings[0], true));
-    }
-} catch (Exception $e) {
-    error_log("MY_LISTING ERROR: Query failed: " . $e->getMessage());
-    $listings = [];
-    $pagination = ['current_page' => 1, 'total_pages' => 1, 'total_records' => 0];
+// Debug: Log the results
+error_log("MY_LISTING DEBUG: Found " . count($listings) . " listings for user ID: " . $user_id);
+if (!empty($listings)) {
+    error_log("MY_LISTING DEBUG: First listing: " . print_r($listings[0], true));
 }
 
 // Get categories for filter
@@ -320,7 +303,7 @@ $categories = $categoriesStmt->fetchAll(PDO::FETCH_COLUMN);
           </thead>
           <tbody class="divide-y divide-gray-100">
             <?php foreach ($listings as $listing): ?>
-              <tr class="hover:bg-blue-50/50 transition-colors">
+              <tr class="hover:bg-blue-50/50 transition-colors" data-listing-id="<?= $listing['id'] ?>">
                 <td class="py-3 px-3">
                   <div class="flex items-center gap-3">
                     <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -521,7 +504,7 @@ window.testPollingURL = function() {
   } else {
     basePath = '/marketplace';
   }
-  const pollingUrl = origin + basePath + '/includes/polling_integration.php';
+  const pollingUrl = origin + basePath + '/api/polling_integration.php';
   console.log('🧪 Test Polling URL:', pollingUrl);
   console.log('🧪 Base path:', basePath);
   console.log('🧪 Current pathname:', pathname);
@@ -574,64 +557,35 @@ document.addEventListener('DOMContentLoaded', function() {
   
 
   
-  // Track processed listings and offers to avoid duplicates
-  const processedListings = new Set();
-  const processedOffers = new Set();
-  
   startPolling({
     listings: (newListings) => {
       console.log('📋 Listings callback triggered!');
       console.log('📊 Received listings count:', newListings.length);
+      console.log('📦 Raw listings data:', newListings);
+      
+      // Debug: Show all user IDs in the received listings
+      if (newListings.length > 0) {
+        console.log('🔍 User IDs in received listings:', newListings.map(l => ({id: l.id, user_id: l.user_id, name: l.name})));
+      }
       
       // Filter listings for current user only
       const userListings = newListings.filter(item => {
+        console.log(`🔍 Checking listing ${item.id}: user_id=${item.user_id}, currentUserId=${currentUserId}, match=${item.user_id == currentUserId}`);
         return item.user_id == currentUserId;
       });
-      
-      // Filter out already processed listings
-      const unprocessedListings = userListings.filter(item => {
-        const key = `${item.id}_${item.status}_${item.updated_at || item.created_at}`;
-        if (processedListings.has(key)) {
-          console.log(`⏭️ Skipping already processed listing: ${item.name}`);
-          return false;
-        }
-        processedListings.add(key);
-        return true;
-      });
-      
       console.log('👤 User listings filtered:', userListings.length, 'listings');
-      console.log('🆕 Unprocessed listings:', unprocessedListings.length, 'listings');
+      console.log('👤 Filtered data:', userListings);
       
-      if (unprocessedListings.length > 0) {
-        console.log('✅ Processing', unprocessedListings.length, 'new listings');
-        handleNewListings(unprocessedListings);
+      if (userListings.length > 0) {
+        console.log('✅ Processing', userListings.length, 'new listings');
+        handleNewListings(userListings);
       } else {
-        console.log('ℹ️ No new listings to process');
+        console.log('ℹ️ No new listings for current user');
       }
     },
     offers: (newOffers) => {
       console.log('💰 Offers callback triggered!');
-      
-      // Filter offers for current user's listings only
-      const myOffers = newOffers.filter(offer => offer.seller_id == currentUserId);
-      
-      // Filter out already processed offers
-      const unprocessedOffers = myOffers.filter(offer => {
-        const key = `${offer.id}_${offer.status}_${offer.created_at}`;
-        if (processedOffers.has(key)) {
-          console.log(`⏭️ Skipping already processed offer: ${offer.id}`);
-          return false;
-        }
-        processedOffers.add(key);
-        return true;
-      });
-      
-      console.log('👤 My offers filtered:', myOffers.length);
-      console.log('🆕 Unprocessed offers:', unprocessedOffers.length);
-      
-      if (unprocessedOffers.length > 0) {
-        handleNewOffers(unprocessedOffers);
-      }
+      handleNewOffers(newOffers);
     }
   });
 });

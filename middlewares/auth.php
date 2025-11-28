@@ -39,6 +39,9 @@ function redirect_if_authenticated(): void {
     if (is_logged_in()) {
         $role = user_role();
         
+        // Log the redirect for debugging
+        error_log("Redirecting authenticated user with role: " . ($role ?? 'null'));
+        
         // Redirect based on role
         switch ($role) {
             case 'superadmin':

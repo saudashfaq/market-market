@@ -8,6 +8,11 @@ require_once __DIR__ . "/../includes/email_helper.php";
 // Redirect if already logged in
 redirect_if_authenticated();
 
+// Prevent browser caching for security
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // Get validation errors and old input
 $validationErrors = FormValidator::getStoredErrors();
 $oldInput = FormValidator::getOldInput();
