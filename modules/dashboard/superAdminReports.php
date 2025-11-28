@@ -565,6 +565,13 @@ try {
         }
       }
       
+      // Ensure API_BASE_PATH is set
+      if (!window.API_BASE_PATH) {
+        const path = window.location.pathname;
+        window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+        console.log('🔧 [Reports] API_BASE_PATH:', window.API_BASE_PATH);
+      }
+      
       // Load polling for real-time updates
       console.log('📦 Loading polling for reports...');
       const script = document.createElement('script');
@@ -572,6 +579,7 @@ try {
     
     script.onload = function() {
       console.log('✅ Polling loaded for reports');
+      console.log('✅ API_BASE_PATH:', window.API_BASE_PATH);
       
       if (typeof startPolling !== 'undefined') {
         startPolling({

@@ -506,6 +506,13 @@ document.addEventListener('click', function(event) {
 
 // Polling Integration for SuperAdmin Questions
 window.addEventListener('load', function() {
+  // Ensure API_BASE_PATH is set
+  if (!window.API_BASE_PATH) {
+    const path = window.location.pathname;
+    window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+    console.log('🔧 [Questions] API_BASE_PATH:', window.API_BASE_PATH);
+  }
+  
   console.log('🚀 SuperAdmin Questions polling initialization started');
   
   if (typeof startPolling !== 'undefined') {

@@ -25,12 +25,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $url = trim($_POST['url'] ?? '');
-    $traffic_trend = $_POST['traffic_trend'] ?? '';
+    $traffic_trend = !empty($_POST['traffic_trend']) ? $_POST['traffic_trend'] : null;
     $monthly_revenue = $_POST['monthly_revenue'] ?? 0;
     $asking_price = $_POST['asking_price'] ?? 0;
-    $site_age = $_POST['site_age'] ?? '';
-    $category = $_POST['category'] ?? '';
-    $monetization_methods = $_POST['monetization'] ?? '';
+    $site_age = !empty($_POST['site_age']) ? $_POST['site_age'] : null;
+    $category = !empty($_POST['category']) ? $_POST['category'] : null;
+    $monetization_methods = !empty($_POST['monetization']) ? $_POST['monetization'] : null;
     $subscribers = $_POST['subscribers'] ?? null;
     $videos_count = $_POST['videos_count'] ?? null;
     $faceless = isset($_POST['faceless']) ? 1 : 0;

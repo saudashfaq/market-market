@@ -748,6 +748,13 @@ $showEmptyState = ($activeTab === 'payments' && !$hasPaymentData) || ($activeTab
             });
         });
         
+        // Ensure API_BASE_PATH is set
+        if (!window.API_BASE_PATH) {
+            const path = window.location.pathname;
+            window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+            console.log('🔧 [Payment] API_BASE_PATH:', window.API_BASE_PATH);
+        }
+        
         // Polling Integration for SuperAdmin Payment
         if (typeof startPolling !== 'undefined') {
             console.log('🚀 SuperAdmin Payment polling initialization started');

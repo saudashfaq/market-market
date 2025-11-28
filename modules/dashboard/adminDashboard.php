@@ -434,12 +434,31 @@ try {
   </div>
 </div>
 
+<script>
+// Ensure API_BASE_PATH is set before loading polling.js
+if (!window.API_BASE_PATH) {
+  (function() {
+    const path = window.location.pathname;
+    let basePath = '';
+    
+    if (path.includes('/marketplace/')) {
+      basePath = '/marketplace';
+    } else if (path.includes('/public/')) {
+      basePath = path.substring(0, path.indexOf('/public/'));
+    }
+    
+    window.API_BASE_PATH = basePath + '/api';
+    console.log('🔧 [Admin Dashboard] API_BASE_PATH set to:', window.API_BASE_PATH);
+  })();
+}
+</script>
 <script src="<?= BASE ?>js/polling.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 Admin Dashboard polling initialization started');
   console.log('Current user role: <?= $user["role"] ?>');
   console.log('Base URL: <?= BASE ?>');
+  console.log('API_BASE_PATH:', window.API_BASE_PATH);
   
   if (typeof startPolling === 'undefined') {
     console.error('❌ Polling system not loaded');

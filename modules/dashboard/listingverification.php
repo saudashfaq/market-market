@@ -577,6 +577,14 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 
+<script>
+// Ensure API_BASE_PATH is set
+if (!window.API_BASE_PATH) {
+  const path = window.location.pathname;
+  window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+  console.log('🔧 API_BASE_PATH:', window.API_BASE_PATH);
+}
+</script>
 <script src="<?= BASE ?>js/polling.js"></script>
 <script>
 // AJAX Verification Function

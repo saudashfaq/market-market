@@ -1299,6 +1299,13 @@ function addNewOrders(newOrders) {
   }
 }
 
+  // Ensure API_BASE_PATH is set
+  if (!window.API_BASE_PATH) {
+    const path = window.location.pathname;
+    window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+    console.log('🔧 [Offers] API_BASE_PATH:', window.API_BASE_PATH);
+  }
+  
   // Load polling.js and start polling
   console.log('📦 Loading polling.js for offers/orders...');
   const pollingScript = document.createElement('script');
@@ -1306,6 +1313,7 @@ function addNewOrders(newOrders) {
 
   pollingScript.onload = function() {
     console.log('✅ polling.js loaded for offers/orders page');
+    console.log('✅ API_BASE_PATH:', window.API_BASE_PATH);
     
     if (typeof startPolling !== 'undefined') {
       console.log('✅ Starting polling for offers and orders');

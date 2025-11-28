@@ -228,7 +228,7 @@ if (isset($_GET['debug'])) {
       <?php else: ?>
         <?php foreach ($listings as $listing): ?>
           <div class="group relative rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden hover:-translate-y-2 animate-fade-in
-          <?php echo $user_logged_in ? 'bg-white' : 'bg-white/90 filter blur-sm pointer-events-none'; ?>
+          <?php echo $user_logged_in ? 'bg-white' : 'bg-white/80 filter blur-md pointer-events-none'; ?>
 ">
 
             <!-- Image -->
@@ -1304,7 +1304,7 @@ function createListingHTML(listing) {
   const isOwnListing = userLoggedIn && listing.user_id == currentUserId;
   
   return `
-    <div class="group relative rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden hover:-translate-y-2 animate-fade-in ${userLoggedIn ? 'bg-white' : 'bg-white/90 filter blur-sm pointer-events-none'}" data-listing-id="${listing.id}">
+    <div class="group relative rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden hover:-translate-y-2 animate-fade-in ${userLoggedIn ? 'bg-white' : 'bg-white/80 filter blur-md pointer-events-none'}" data-listing-id="${listing.id}">
       <!-- Image -->
       <div class="relative h-56 overflow-hidden bg-gray-100">
         ${proofImage ? `
@@ -1414,8 +1414,16 @@ function createListingHTML(listing) {
   `;
 }
 
+// Ensure API_BASE_PATH is set for home page
+if (!window.API_BASE_PATH) {
+  const path = window.location.pathname;
+  window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+  console.log('🔧 [Home] API_BASE_PATH:', window.API_BASE_PATH);
+}
+
 // Home page - using global polling system
 console.log('🏠 HOME PAGE: Using global polling system for listings');
+console.log('🏠 API_BASE_PATH available:', window.API_BASE_PATH);
 
 // Wait for global polling to be available and add custom home page handling
 setTimeout(() => {

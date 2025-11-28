@@ -217,6 +217,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     // Define BASE constant globally
     const BASE = "<?php echo BASE; ?>";
     
+    // Define API base path for polling (if not already set by header)
+    if (!window.API_BASE_PATH) {
+      (function() {
+        const path = window.location.pathname;
+        let basePath = '';
+        
+        // Check if we're in /marketplace/ subdirectory (localhost)
+        if (path.includes('/marketplace/')) {
+          basePath = '/marketplace';
+        } else if (path.includes('/public/')) {
+          // Extract base path before /public/
+          basePath = path.substring(0, path.indexOf('/public/'));
+        }
+        
+        window.API_BASE_PATH = basePath + '/api';
+        console.log('🔧 API_BASE_PATH set to:', window.API_BASE_PATH);
+      })();
+    }
+    
     console.log('🚀 Script loaded - waiting for DOM');
     console.log('Current page:', '<?php echo $page; ?>');
     console.log('User role:', '<?php echo $role; ?>');
@@ -233,6 +252,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       console.log('Sidebar element:', sidebar);
       console.log('Window width:', window.innerWidth);
       console.log('Is mobile view:', window.innerWidth < 1024);
+
+      if (!sidebar) {
+        console.error('❌ Sidebar element not found!');
+        return;
+      }
 
       // Mobile Navbar Sidebar Toggle Functionality
       function toggleMobileSidebar() {
@@ -251,18 +275,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
       // Listen for navbar toggle events (mobile only)
       window.addEventListener('toggleSidebar', (e) => {
+        console.log('🔘 Received sidebar toggle event from:', e.detail?.source || 'unknown');
         if (window.innerWidth < 1024) {
-          console.log('🔘 Received mobile sidebar toggle event from:', e.detail.source);
           toggleMobileSidebar();
         }
       });
 
-      if (!sidebar) {
-        console.error('❌ Sidebar element not found!');
-        return;
-      }
-
       // Desktop sidebar toggle functionality
+      const desktopToggle = document.getElementById('desktopSidebarToggle');
       if (desktopToggle && sidebar) {
         console.log('✅ Adding click event listener to desktop toggle button');
         
@@ -450,12 +470,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   @media (max-width: 1023px) {
     #sidebar {
       position: fixed !important;
-      top: 60px !important;
+      top: 0 !important;
       left: 0 !important;
-      height: calc(100vh - 60px) !important;
+      height: 100vh !important;
       transform: translateX(-100%) !important;
       transition: transform 0.3s ease-in-out !important;
-      z-index: 500 !important;
+      z-index: 9999 !important;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
     }
 
     #sidebar.show {
@@ -469,30 +490,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     body.sidebar-open::before {
       content: '';
       position: fixed;
-      top: 60px;
+      top: 0;
       left: 0;
       width: 100%;
-      height: calc(100% - 60px);
+      height: 100%;
       background: rgba(0, 0, 0, 0.5);
-      z-index: 499;
+      z-index: 9998;
       backdrop-filter: blur(4px);
-    }
-
-    /* Toggle button - Force visibility on mobile */
-    button#sidebarToggle {
-      display: flex !important;
-      position: fixed !important;
-      top: 80px !important;
-      left: 1rem !important;
-      z-index: 600 !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      pointer-events: auto !important;
-    }
-    
-    /* Hide toggle when sidebar is open */
-    body.sidebar-open button#sidebarToggle {
-      display: none !important;
     }
   }
 

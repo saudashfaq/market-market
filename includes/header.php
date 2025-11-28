@@ -15,10 +15,29 @@ require_once __DIR__ . "/popup_helper.php";
     rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <?php if (is_logged_in()): ?>
-  <script src="<?= BASE ?>/js/notifications.js" defer></script>
+  <script>
+    // Define API base path globally for JavaScript
+    // Detect if we're in a subdirectory or root
+    (function() {
+      const path = window.location.pathname;
+      let basePath = '';
+      
+      // Check if we're in /marketplace/ subdirectory (localhost)
+      if (path.includes('/marketplace/')) {
+        basePath = '/marketplace';
+      } else if (path.includes('/public/')) {
+        // Extract base path before /public/
+        basePath = path.substring(0, path.indexOf('/public/'));
+      }
+      
+      window.API_BASE_PATH = basePath + '/api';
+      console.log('🔧 API_BASE_PATH set to:', window.API_BASE_PATH);
+    })();
+  </script>
+  <script src="<?= BASE ?>js/notifications.js" defer></script>
   <?php endif; ?>
-  <script src="<?= BASE ?>/js/popup.js" defer></script>
-  <script src="<?= BASE ?>/js/logout-confirmation.js" defer></script>
+  <script src="<?= BASE ?>js/popup.js"></script>
+  <script src="<?= BASE ?>js/logout-confirmation.js" defer></script>
   <style>
     @keyframes slideUpFade {
       from {
@@ -136,10 +155,11 @@ require_once __DIR__ . "/popup_helper.php";
         ?>
           <button 
             id="navbarSidebarToggle" 
-            class="flex lg:hidden w-8 h-8 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg items-center justify-center transition-all duration-200 group"
-            title="Open Sidebar"
+            class="flex lg:hidden w-9 h-9 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 rounded-lg items-center justify-center transition-all duration-200 group shadow-sm"
+            title="Open Menu"
+            aria-label="Toggle Sidebar"
           >
-            <i class="fa-solid fa-rectangle-list text-gray-600 text-sm group-hover:text-gray-800 transition-colors duration-200"></i>
+            <i class="fa-solid fa-bars text-blue-600 text-base group-hover:text-blue-700 transition-colors duration-200"></i>
           </button>
         <?php endif; ?>
       </div>
@@ -484,18 +504,25 @@ require_once __DIR__ . "/popup_helper.php";
     // Navbar Sidebar Toggle Functionality
     const navbarSidebarToggle = document.getElementById('navbarSidebarToggle');
     if (navbarSidebarToggle) {
+      console.log('✅ Navbar sidebar toggle button found');
+      
       navbarSidebarToggle.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
         
+        console.log('🔘 Navbar sidebar toggle clicked - dispatching event');
+        
         // Dispatch custom event that dashboard can listen to
         const toggleEvent = new CustomEvent('toggleSidebar', {
-          detail: { source: 'navbar' }
+          detail: { source: 'navbar' },
+          bubbles: true
         });
         window.dispatchEvent(toggleEvent);
         
-        console.log('🔘 Navbar sidebar toggle clicked');
+        console.log('✅ Toggle event dispatched');
       });
+    } else {
+      console.log('ℹ️ Navbar sidebar toggle button not found (not on dashboard page)');
     }
   </script>
 </body>

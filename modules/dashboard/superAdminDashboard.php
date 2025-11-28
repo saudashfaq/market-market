@@ -1339,6 +1339,13 @@ if (isset($_GET['export'])) {
       }
     }
     
+    // Ensure API_BASE_PATH is set before loading polling.js
+    if (!window.API_BASE_PATH) {
+      const path = window.location.pathname;
+      window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+      console.log('🔧 [SuperAdmin] API_BASE_PATH:', window.API_BASE_PATH);
+    }
+    
     // Load polling.js first, then start polling
     console.log('📦 Loading polling.js for SuperAdmin Dashboard...');
     const pollingScript = document.createElement('script');
@@ -1346,6 +1353,7 @@ if (isset($_GET['export'])) {
     
     pollingScript.onload = function() {
       console.log('✅ polling.js loaded for SuperAdmin Dashboard');
+      console.log('✅ API_BASE_PATH available:', window.API_BASE_PATH);
       
       if (typeof startPolling !== 'undefined') {
         console.log('✅ Starting real-time polling for SuperAdmin Dashboard');
