@@ -281,18 +281,18 @@ function debug_log($msg, $data = null)
 // }
 
 
-// function update_pandascrow_webhook($auth)
-// {
-//     $payload = [
-//         "uuid" => "468cfad2-6800-486f-a08b-0a77d2e5b0e7",
-//         "webhook_url" => "https://359412d604de.ngrok-free.app/marketplace/public/webhook.php", // ✅ correct
-//         "ip_whitelist" => ""
-//     ];
+function update_pandascrow_webhook($auth)
+{
+    $payload = [
+        "uuid" => PANDASCROW_UUID,
+        "webhook_url" => url('webhook.php'), // Dynamic URL
+        "ip_whitelist" => ""
+    ];
 
-//     debug_log("🔁 Updating Pandascrow webhook", $payload);
+    debug_log("🔁 Updating Pandascrow webhook", $payload);
 
-//     return pandascrow_api_request('POST', '/application', $payload, $auth);
-// }
+    return pandascrow_api_request('POST', '/application', $payload, $auth);
+}
 
 function create_pandascrow_escrow($amount, $title, $description, $buyerDetails = [], $sellerDetails = [], $sellerPayoutConfig = null)
 {
