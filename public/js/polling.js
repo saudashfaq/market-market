@@ -1,6 +1,5 @@
 class PollingManager {
   constructor() {
-    console.log('🏗️ PollingManager constructor called');
     this.lastCheckTimes = this.loadTimestamps();
     this.pollingInterval = null;
     this.isPolling = false;
@@ -11,11 +10,27 @@ class PollingManager {
     this.renderCallbacks = {};
     this.isUserActive = true;
     
-    console.log('🎯 PollingManager initialized successfully');
+    console.log('🎯 PollingManager initialized');
     console.log('📊 Initial timestamps:', this.lastCheckTimes);
+    
+    // Initialize PathDetector if available
+    this.initializePathDetector();
     
     // Track user activity
     this.setupActivityTracking();
+  }
+
+  // Initialize PathDetector utility
+  initializePathDetector() {
+    if (window.pathDetector) {
+      console.log('✅ PathDetector available');
+      // Enable debug mode in development
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        window.pathDetector.enableDebug();
+      }
+    } else {
+      console.warn('⚠️ PathDetector not available - using fallback path detection');
+    }
   }
 
   // Load timestamps from localStorage with fallback
@@ -118,10 +133,41 @@ class PollingManager {
     console.log('📅 Last check times:', this.lastCheckTimes);
 
     try {
-      // Simple and reliable URL construction
-      const pollingUrl = '/marketplace/api/polling_integration.php';
+      // Build correct polling URL using centralized PathDetector
+      let pollingUrl;
       
-      console.log('📡 Polling URL (fixed):', pollingUrl);
+      // Use PathDetector utility for consistent path detection
+      if (window.pathDetector) {
+        pollingUrl = window.pathDetector.buildApiUrl('/api/polling_integration.php');
+        const detectionInfo = window.pathDetector.getDetectionInfo();
+        
+        console.log('📡 Polling URL (PathDetector):', pollingUrl);
+        console.log('📡 Detection info:', detectionInfo);
+      } else {
+        // Fallback to manual detection if PathDetector not available
+        console.warn('⚠️ PathDetector not available, using fallback logic');
+        const origin = window.location.origin;
+        const pathname = window.location.pathname;
+        
+        let basePath = '';
+        if (pathname.includes('/public/')) {
+          basePath = pathname.substring(0, pathname.indexOf('/public/'));
+        } else if (pathname.includes('/modules/')) {
+          basePath = pathname.substring(0, pathname.indexOf('/modules/'));
+        } else if (pathname.includes('/index.php')) {
+          basePath = pathname.substring(0, pathname.indexOf('/index.php'));
+        } else {
+          // For production servers with nginx root, use empty base path
+          const hostname = window.location.hostname;
+          const ipPattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+          basePath = ipPattern.test(hostname) ? '' : '/marketplace';
+        }
+        
+        pollingUrl = origin + basePath + '/api/polling_integration.php';
+        console.log('📡 Polling URL (fallback):', pollingUrl);
+        console.log('📡 Base path detected:', basePath);
+      }
+      
       console.log('📤 Sending payload:', JSON.stringify(this.lastCheckTimes));
       
       const response = await fetch(pollingUrl, {
@@ -130,7 +176,7 @@ class PollingManager {
           'Content-Type': 'application/json',
           'Cache-Control': 'no-cache'
         },
-        credentials: 'include', // Changed from 'same-origin' to 'include'
+        credentials: 'same-origin',
         body: JSON.stringify(this.lastCheckTimes)
       });
 
@@ -232,18 +278,95 @@ class PollingManager {
     console.log('💾 Timestamps saved');
   }
 
-  // Handle polling errors
-  handleError(error) {
+  // Handle polling errors with retry logic
+  async handleError(error) {
     this.errorCount++;
     console.error(`Polling error (${this.errorCount}/${this.maxErrors}):`, error);
 
+    // If it's a 404 error and we have PathDetector, try alternative paths
+    if (error.message.includes('404') && window.pathDetector && this.errorCount <= 2) {
+      console.log('🔄 404 error detected, trying alternative path configurations...');
+      
+      try {
+        // Reset PathDetector cache to force re-detection
+        window.pathDetector.reset();
+        
+        // Try alternative path detection methods
+        const alternativePaths = this.getAlternativePaths();
+        
+        for (const altPath of alternativePaths) {
+          console.log(`🧪 Testing alternative path: ${altPath}`);
+          
+          const testUrl = window.location.origin + altPath + '/api/polling_integration.php';
+          
+          try {
+            // Test the alternative path with a simple HEAD request
+            const testResponse = await fetch(testUrl, { 
+              method: 'HEAD',
+              timeout: 5000 
+            });
+            
+            if (testResponse.ok) {
+              console.log(`✅ Alternative path works: ${altPath}`);
+              
+              // Temporarily override PathDetector's cached result
+              window.pathDetector.cachedBasePath = altPath;
+              window.pathDetector.detectionMethod = 'error-recovery';
+              
+              // Retry the polling request immediately
+              setTimeout(() => this.fetchUpdates(), 1000);
+              return;
+            }
+          } catch (testError) {
+            console.log(`❌ Alternative path failed: ${altPath} - ${testError.message}`);
+          }
+        }
+        
+        console.log('⚠️ No alternative paths worked, continuing with normal error handling');
+      } catch (retryError) {
+        console.error('❌ Error during path retry logic:', retryError);
+      }
+    }
+
+    // Normal error handling
     if (this.errorCount >= this.maxErrors) {
       console.error('Max polling errors reached. Stopping polling.');
       this.stop();
       
-      // Show user notification
-      this.showErrorNotification('Connection lost. Please refresh the page.');
+      // Show user notification with debugging info
+      const debugInfo = window.pathDetector ? window.pathDetector.getDetectionInfo() : null;
+      const message = debugInfo ? 
+        `Connection lost. Current path: ${debugInfo.basePath || 'empty'}. Please refresh the page.` :
+        'Connection lost. Please refresh the page.';
+      
+      this.showErrorNotification(message);
     }
+  }
+
+  // Get alternative paths to try when main path fails
+  getAlternativePaths() {
+    const hostname = window.location.hostname;
+    const pathname = window.location.pathname;
+    
+    // Common alternative paths based on different server configurations
+    const alternatives = [];
+    
+    // If currently using empty path, try /marketplace
+    if (window.pathDetector && window.pathDetector.cachedBasePath === '') {
+      alternatives.push('/marketplace');
+    }
+    
+    // If currently using /marketplace, try empty path
+    if (window.pathDetector && window.pathDetector.cachedBasePath === '/marketplace') {
+      alternatives.push('');
+    }
+    
+    // Add other common patterns
+    alternatives.push('/marketplace/public', '');
+    
+    // Remove duplicates and current path
+    const currentPath = window.pathDetector ? window.pathDetector.cachedBasePath : '';
+    return [...new Set(alternatives)].filter(path => path !== currentPath);
   }
 
   // Show error notification to user

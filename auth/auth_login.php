@@ -56,7 +56,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user && password_verify($password, $user['password'])) {
             // Check if email is verified (only if column exists)
             if ($columnExists && isset($user['email_verified']) && $user['email_verified'] == 0) {
-                setWarningMessage("Please verify your email address to continue. <a href='" . url('resend-verification.php') . "' class='underline font-semibold'>Resend verification email</a>");
+                setWarningMessage("Please verify your email address to continue. You can resend the verification email from the signup page or contact support.");
+                
+                // Also set a popup with resend functionality
+                require_once __DIR__ . "/../includes/popup_helper.php";
+                setWarningPopup(
+                    "Please verify your email address before logging in. Check your inbox and spam folder for the verification email.",
+                    [
+                        'title' => 'Email Verification Required',
+                        'autoClose' => false,
+                        'showResendOption' => true,
+                        'userEmail' => $email
+                    ]
+                );
                 header("Location: " . url("index.php?p=login&tab=login"));
                 exit;
             }

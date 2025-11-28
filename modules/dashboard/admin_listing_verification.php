@@ -134,7 +134,8 @@ if ($isAjax) {
         } else {
             $listingData = [
                 'id' => $listing['id'],
-                'title' => $listing['name']
+                'title' => $listing['name'],
+                'type' => $listing['type'] ?? 'website'
             ];
             $reason = $_GET['reason'] ?? 'Your listing does not meet our community guidelines.';
             sendListingRejectedEmail($listing['seller_email'], $listing['seller_name'], $listingData, $reason);

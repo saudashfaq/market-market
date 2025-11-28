@@ -4,6 +4,7 @@ require_once __DIR__ . "/../includes/log_helper.php";
 require_once __DIR__ . "/../includes/flash_helper.php";
 require_once __DIR__ . "/../includes/validation_helper.php";
 require_once __DIR__ . "/../includes/popup_helper.php";
+require_once __DIR__ . "/../includes/signup_notification_helper.php";
 
 // form submit check
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -91,23 +92,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             require_once __DIR__ . '/../includes/email_helper.php';
             
-            // Send verification email to user
-            sendEmailVerificationEmail($email, $name, $verificationToken);
+            try {
+                // Send verification email to user
+                $emailSent = sendEmailVerificationEmail($email, $name, $verificationToken);
+                
+                if ($emailSent) {
+                    SignupNotificationHelper::setVerificationNotifications($email, $name);
+                    log_action("Verification Email Sent", "Verification email sent to {$email}", "auth", $newUserId);
+                } else {
+                    SignupNotificationHelper::setEmailFailureNotifications($email, $name);
+                    log_action("Email Send Failed", "Failed to send verification email to {$email}", "auth", $newUserId);
+                }
+            } catch (Exception $e) {
+                SignupNotificationHelper::setEmailFailureNotifications($email, $name);
+                log_action("Email Send Error", "Error sending verification email: " . $e->getMessage(), "auth", $newUserId);
+            }
             
             // Notify superadmin about new user
-            sendSuperAdminNotification(
-                'New User Registered',
-                'New User Account Created',
-                'A new user has registered on your marketplace platform.',
-                [
-                    'User ID' => '#' . $newUserId,
-                    'Name' => $name,
-                    'Email' => $email,
-                    'Registration Date' => date('F j, Y \a\t g:i A'),
-                    'Status' => 'Email verification pending'
-                ],
-                url('index.php?p=dashboard&page=userManagement')
-            );
+            try {
+                sendSuperAdminNotification(
+                    'New User Registered',
+                    'New User Account Created',
+                    'A new user has registered on your marketplace platform.',
+                    [
+                        'User ID' => '#' . $newUserId,
+                        'Name' => $name,
+                        'Email' => $email,
+                        'Registration Date' => date('F j, Y \a\t g:i A'),
+                        'Status' => 'Email verification pending'
+                    ],
+                    url('index.php?p=dashboard&page=userManagement')
+                );
+            } catch (Exception $e) {
+                log_action("Admin Notification Failed", "Failed to notify admin about new user: " . $e->getMessage(), "auth", $newUserId);
+            }
         });
     } else {
         // Email verification disabled (columns not added yet)
@@ -128,23 +146,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             require_once __DIR__ . '/../includes/email_helper.php';
             
-            // Send welcome email to user
-            sendWelcomeEmail($email, $name);
+            try {
+                // Send welcome email to user
+                sendWelcomeEmail($email, $name);
+                log_action("Welcome Email Sent", "Welcome email sent to {$email}", "auth", $newUserId);
+            } catch (Exception $e) {
+                log_action("Welcome Email Failed", "Failed to send welcome email: " . $e->getMessage(), "auth", $newUserId);
+            }
             
             // Notify superadmin about new user
-            sendSuperAdminNotification(
-                'New User Registered',
-                'New User Account Created',
-                'A new user has registered on your marketplace platform.',
-                [
-                    'User ID' => '#' . $newUserId,
-                    'Name' => $name,
-                    'Email' => $email,
-                    'Registration Date' => date('F j, Y \a\t g:i A'),
-                    'Status' => 'Active (no verification required)'
-                ],
-                url('index.php?p=dashboard&page=userManagement')
-            );
+            try {
+                sendSuperAdminNotification(
+                    'New User Registered',
+                    'New User Account Created',
+                    'A new user has registered on your marketplace platform.',
+                    [
+                        'User ID' => '#' . $newUserId,
+                        'Name' => $name,
+                        'Email' => $email,
+                        'Registration Date' => date('F j, Y \a\t g:i A'),
+                        'Status' => 'Active (no verification required)'
+                    ],
+                    url('index.php?p=dashboard&page=userManagement')
+                );
+            } catch (Exception $e) {
+                log_action("Admin Notification Failed", "Failed to notify admin about new user: " . $e->getMessage(), "auth", $newUserId);
+            }
         });
     }
 
@@ -152,10 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($columnExists) {
         // Email verification enabled - don't auto-login
         FormValidator::clearOldInput();
-        setSuccessPopup("Account created successfully! Please check your email to verify your account.", [
-            'title' => 'Registration Successful',
-            'autoClose' => false
-        ]);
+        // Note: Notifications will be set by the shutdown function after email sending
         header("Location: " . url('index.php?p=login&tab=login'));
         exit;
     } else {
@@ -169,11 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ];
 
         FormValidator::clearOldInput();
-        setSuccessPopup("Welcome! Your account has been created successfully.", [
-            'title' => 'Welcome to MarketPlace',
-            'autoClose' => true,
-            'autoCloseTime' => 4000
-        ]);
+        SignupNotificationHelper::setWelcomeNotifications($name);
         header("Location: " . url('index.php?p=dashboard&page=userDashboard'));
         exit;
     }

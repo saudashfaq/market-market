@@ -1,316 +1,220 @@
 <?php
 /**
- * PandaScrow Webhook Handler
- * Receives and processes webhook events from PandaScrow
+ * webhook.php — Pandascrow Webhook Listener
+ * Listens for webhook events like escrow.created, payment.success, etc.
  */
 
+header('Content-Type: application/json');
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/transaction_logger.php';
+require_once __DIR__ . '/../includes/log_helper.php';
 
-// Log all incoming requests
-$rawInput = file_get_contents('php://input');
-$headers = getallheaders();
-$method = $_SERVER['REQUEST_METHOD'];
+$pdo = db(); // your existing DB connection
+$logDir = __DIR__ . '/logs';
+if (!is_dir($logDir)) mkdir($logDir, 0777, true);
+$logFile = $logDir . '/webhook_log.txt';
 
-// Log webhook received
-log_transaction_event('webhook_received_raw', [
-    'method' => $method,
-    'headers' => $headers,
-    'raw_body' => $rawInput,
-    'ip_address' => $_SERVER['REMOTE_ADDR'] ?? 'unknown'
-], 'info');
+// ✅ Step 1: Capture raw webhook payload
+$input = file_get_contents("php://input");
+$event = json_decode($input, true);
 
-// Only accept POST requests
-if ($method !== 'POST') {
-    log_transaction_event('webhook_invalid_method', ['method' => $method], 'warning');
-    http_response_code(405);
-    echo json_encode(['error' => 'Method not allowed']);
-    exit;
-}
-
-// Parse JSON payload
-$payload = json_decode($rawInput, true);
-
-if (json_last_error() !== JSON_ERROR_NONE) {
-    log_transaction_event('webhook_invalid_json', [
-        'error' => json_last_error_msg(),
-        'raw' => $rawInput
-    ], 'error');
+// ✅ Step 2: Validate structure
+if (!$event || !isset($event['event']) || !isset($event['data'])) {
+    file_put_contents($logFile, date('Y-m-d H:i:s') . " - Invalid payload: " . $input . PHP_EOL, FILE_APPEND);
+    log_action("Webhook Failed", "Invalid payload structure received", "webhook", null, "system");
     http_response_code(400);
-    echo json_encode(['error' => 'Invalid JSON']);
+    echo json_encode(['status' => false, 'message' => 'Invalid payload structure']);
     exit;
 }
 
-// Extract event data
-$event = $payload['event'] ?? null;
-$escrowId = $payload['escrow_id'] ?? $payload['data']['escrow_id'] ?? null;
-$status = $payload['status'] ?? $payload['data']['status'] ?? null;
-$transactionRef = $payload['transaction_ref'] ?? $payload['data']['transaction_ref'] ?? null;
+// ✅ Step 3: Validate signature (only if headers exist)
+$receivedSignature = $_SERVER['HTTP_X_PANDASCROW_SIGNATURE'] ?? '';
+$appKey = $_SERVER['HTTP_X_PANDASCROW_APP'] ?? '';
+$expectedSecret = PANDASCROW_SECRET_KEY;
 
-// Log parsed webhook
-log_webhook_received($event, $escrowId, $status, $payload);
+if (!empty($receivedSignature)) {
+    $calculatedSignature = hash_hmac('sha256', json_encode([
+        'event'     => $event['event'],
+        'data'      => $event['data'],
+        'timestamp' => $event['timestamp'] ?? ''
+    ]), $expectedSecret);
 
-if (!$escrowId) {
-    log_transaction_event('webhook_missing_escrow_id', ['payload' => $payload], 'error');
-    http_response_code(400);
-    echo json_encode(['error' => 'Missing escrow_id']);
-    exit;
-}
-
-try {
-    $pdo = db();
-    
-    // Find transaction by escrow ID
-    $stmt = $pdo->prepare("
-        SELECT t.*, l.name AS listing_name, 
-               b.email AS buyer_email, b.name AS buyer_name,
-               s.email AS seller_email, s.name AS seller_name
-        FROM transactions t
-        LEFT JOIN listings l ON t.listing_id = l.id
-        LEFT JOIN users b ON t.buyer_id = b.id
-        LEFT JOIN users s ON t.seller_id = s.id
-        WHERE t.pandascrow_escrow_id = ?
-    ");
-    $stmt->execute([$escrowId]);
-    $transaction = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$transaction) {
-        log_transaction_event('webhook_transaction_not_found', [
-            'escrow_id' => $escrowId,
-            'event' => $event
-        ], 'warning');
-        
-        // Still return 200 to prevent retries
-        http_response_code(200);
-        echo json_encode(['status' => 'ok', 'message' => 'Transaction not found']);
+    if (!hash_equals($calculatedSignature, $receivedSignature)) {
+        file_put_contents($logFile, date('Y-m-d H:i:s') . " - Invalid signature" . PHP_EOL, FILE_APPEND);
+        log_action("Webhook Failed", "Invalid signature for event: " . ($event['event'] ?? 'unknown'), "webhook", null, "system");
+        http_response_code(401);
+        echo json_encode(['status' => false, 'message' => 'Invalid signature']);
         exit;
     }
-    
-    $transactionId = $transaction['id'];
-    
-    // Process different webhook events
-    switch ($event) {
+}
+
+// ✅ Step 4: Extract details
+$eventType = $event['event'];
+$data = $event['data'] ?? [];
+$escrow_id = $data['escrow_id'] ?? 'N/A';
+
+// ✅ Step 5: Log received event
+file_put_contents(
+    $logFile,
+    date('Y-m-d H:i:s') . " - EVENT: {$eventType} | DATA: " . json_encode($data) . PHP_EOL,
+    FILE_APPEND
+);
+
+// Log webhook receipt to database
+log_action("Webhook Received", "Event: {$eventType}, Escrow ID: {$escrow_id}", "webhook", null, "system");
+
+// ✅ Step 6: Handle webhook events
+try {
+    file_put_contents($logFile, "→ Handling Event: {$eventType}" . PHP_EOL, FILE_APPEND);
+
+    switch ($eventType) {
         case 'escrow.created':
-        case 'escrow.initiated':
-            // Escrow created successfully
-            log_transaction_event('webhook_escrow_created', [
-                'transaction_id' => $transactionId,
-                'escrow_id' => $escrowId
-            ], 'info');
-            
-            $pdo->prepare("UPDATE transactions SET status = 'pending' WHERE id = ?")
-                ->execute([$transactionId]);
+            file_put_contents($logFile, "→ Escrow Created: " . json_encode($data) . PHP_EOL, FILE_APPEND);
+            log_action("Webhook Processed", "Escrow created - ID: {$escrow_id}", "webhook", null, "system");
             break;
-            
+
         case 'escrow.paid':
-        case 'payment.received':
-            // Buyer has paid
-            log_transaction_event('webhook_payment_received', [
-                'transaction_id' => $transactionId,
-                'escrow_id' => $escrowId,
-                'amount' => $transaction['amount']
-            ], 'success');
-            
-            $pdo->prepare("
-                UPDATE transactions 
-                SET status = 'paid', 
-                    transfer_status = 'paid',
-                    updated_at = NOW() 
-                WHERE id = ?
-            ")->execute([$transactionId]);
-            
-            // Notify seller to submit credentials
+        case 'escrow.payment.success':
+        case 'success.transaction':
+            require_once __DIR__ . '/../includes/encryption_helper.php';
             require_once __DIR__ . '/../includes/notification_helper.php';
-            createNotification(
-                $transaction['seller_id'],
-                'transaction',
-                'Payment Received! 💰',
-                "Buyer has paid for '{$transaction['listing_name']}'. Please submit access credentials.",
-                $transactionId,
-                'transaction'
-            );
             
-            // Send email to seller
-            require_once __DIR__ . '/../includes/email_helper.php';
-            sendPaymentReceivedEmail(
-                $transaction['seller_email'],
-                $transaction['seller_name'],
-                $transaction['listing_name'],
-                $transaction['amount']
-            );
-            break;
-            
-        case 'escrow.completed':
-        case 'escrow.confirmed':
-            // Buyer confirmed receipt with OTP
-            log_transaction_event('webhook_escrow_confirmed', [
-                'transaction_id' => $transactionId,
-                'escrow_id' => $escrowId
-            ], 'success');
-            
-            $pdo->prepare("
-                UPDATE transactions 
-                SET status = 'completed',
-                    transfer_status = 'credentials_submitted',
-                    completed_at = NOW() 
-                WHERE id = ?
-            ")->execute([$transactionId]);
-            break;
-            
-        case 'escrow.released':
-        case 'funds.released':
-            // Funds released to seller
-            log_transaction_event('webhook_funds_released', [
-                'transaction_id' => $transactionId,
-                'escrow_id' => $escrowId,
-                'seller_amount' => $transaction['seller_amount'],
-                'platform_fee' => $transaction['platform_fee']
-            ], 'success');
-            
-            $pdo->prepare("
-                UPDATE transactions 
-                SET status = 'released',
-                    transfer_status = 'released',
-                    platform_paid = 1,
-                    released_at = NOW() 
-                WHERE id = ?
-            ")->execute([$transactionId]);
-            
-            // Track platform earnings
-            $pdo->prepare("
-                INSERT INTO platform_earnings (transaction_id, amount, earned_at)
-                VALUES (?, ?, NOW())
-            ")->execute([$transactionId, $transaction['platform_fee']]);
-            
-            // Notify seller
-            require_once __DIR__ . '/../includes/notification_helper.php';
-            createNotification(
-                $transaction['seller_id'],
-                'transaction',
-                'Funds Released! 🎉',
-                "Payment of $" . number_format($transaction['seller_amount'], 2) . " has been released for '{$transaction['listing_name']}'.",
-                $transactionId,
-                'transaction'
-            );
-            
-            // Notify buyer
-            createNotification(
-                $transaction['buyer_id'],
-                'transaction',
-                'Transaction Complete! ✅',
-                "Your purchase of '{$transaction['listing_name']}' is complete. Thank you!",
-                $transactionId,
-                'transaction'
-            );
-            break;
-            
-        case 'escrow.cancelled':
-        case 'escrow.refunded':
-            // Escrow cancelled or refunded
-            log_transaction_event('webhook_escrow_cancelled', [
-                'transaction_id' => $transactionId,
-                'escrow_id' => $escrowId
-            ], 'warning');
-            
-            $pdo->prepare("
-                UPDATE transactions 
-                SET status = 'cancelled',
-                    transfer_status = 'cancelled',
-                    updated_at = NOW() 
-                WHERE id = ?
-            ")->execute([$transactionId]);
-            
-            // Notify both parties
-            require_once __DIR__ . '/../includes/notification_helper.php';
-            createNotification(
-                $transaction['buyer_id'],
-                'transaction',
-                'Transaction Cancelled',
-                "Transaction for '{$transaction['listing_name']}' has been cancelled.",
-                $transactionId,
-                'transaction'
-            );
-            createNotification(
-                $transaction['seller_id'],
-                'transaction',
-                'Transaction Cancelled',
-                "Transaction for '{$transaction['listing_name']}' has been cancelled.",
-                $transactionId,
-                'transaction'
-            );
-            break;
-            
-        case 'dispute.opened':
-            // Dispute opened
-            log_transaction_event('webhook_dispute_opened', [
-                'transaction_id' => $transactionId,
-                'escrow_id' => $escrowId
-            ], 'warning');
-            
-            $pdo->prepare("
-                UPDATE transactions 
-                SET status = 'disputed',
-                    transfer_status = 'disputed',
-                    updated_at = NOW() 
-                WHERE id = ?
-            ")->execute([$transactionId]);
-            
-            // Notify admins
-            require_once __DIR__ . '/../includes/notification_helper.php';
-            $adminStmt = $pdo->query("SELECT id FROM users WHERE role IN ('admin', 'superadmin')");
-            while ($admin = $adminStmt->fetch(PDO::FETCH_ASSOC)) {
-                createNotification(
-                    $admin['id'],
-                    'dispute',
-                    '⚠️ Dispute Opened',
-                    "A dispute has been opened for transaction #{$transactionId}",
-                    $transactionId,
-                    'dispute'
-                );
+            $escrow_id = $data['escrow_id'] ?? null;
+            $transaction_ref = $data['transaction']['transaction_ref'] ?? null;
+            $amount = $data['escrow_data']['amount'] ?? 0;
+
+            if ($escrow_id) {
+                // Find transaction
+                $findStmt = $pdo->prepare("
+                    SELECT t.*, 
+                           l.name as listing_name, 
+                           l.category,
+                           seller.email as seller_email, 
+                           seller.name as seller_name,
+                           seller.id as seller_id
+                    FROM transactions t
+                    JOIN listings l ON t.listing_id = l.id
+                    JOIN users seller ON t.seller_id = seller.id
+                    WHERE t.pandascrow_escrow_id = ? OR t.escrow_transaction_id = ?
+                    LIMIT 1
+                ");
+                $findStmt->execute([$escrow_id, $transaction_ref]);
+                $transaction = $findStmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($transaction) {
+                    // Generate encryption key
+                    $encryptionKey = generateEncryptionKey();
+                    $stmt = $pdo->prepare("
+                        UPDATE transactions 
+                        SET status = 'holding',
+                            escrow_transaction_id = ?,
+                            encryption_key = ?,
+                            transfer_status = 'awaiting_credentials',
+                            updated_at = NOW()
+                        WHERE id = ?
+                    ");
+                    $stmt->execute([$transaction_ref, $encryptionKey, $transaction['id']]);
+
+                    file_put_contents($logFile, "→ Escrow Paid Updated: escrow_id={$escrow_id}, ref={$transaction_ref}, encryption_key generated" . PHP_EOL, FILE_APPEND);
+                    
+                    // Log successful payment processing
+                    log_action(
+                        "Webhook Processed", 
+                        "Payment confirmed - Escrow ID: {$escrow_id}, Transaction: {$transaction['id']}, Listing: {$transaction['listing_name']}, Amount: $" . number_format($amount, 2), 
+                        "webhook", 
+                        $transaction['seller_id'], 
+                        "system"
+                    );
+                    
+                    // Send email to seller
+                    $credentialSubmitUrl = url("modules/dashboard/submit_credentials.php?transaction_id=" . $transaction['id']);
+                    
+                    $subject = "Payment Received - Submit Credentials Now";
+                    $emailBody = "
+                    <html>
+                    <body style='font-family: Arial, sans-serif;'>
+                        <h2>Payment Confirmed! 🎉</h2>
+                        <p>Hi {$transaction['seller_name']},</p>
+                        <p>Great news! Payment has been confirmed for your listing: <strong>{$transaction['listing_name']}</strong></p>
+                        
+                        <p><strong>Transaction Details:</strong></p>
+                        <ul>
+                            <li>Transaction ID: #{$transaction['id']}</li>
+                            <li>Amount: $" . number_format($amount, 2) . "</li>
+                        </ul>
+                        
+                        <p style='color: #d9534f;'><strong>⏰ Action Required:</strong></p>
+                        <p>You have <strong>48 hours</strong> to submit the access credentials.</p>
+                        
+                        <p style='margin: 30px 0;'>
+                            <a href='{$credentialSubmitUrl}' 
+                               style='background-color: #5cb85c; color: white; padding: 12px 30px; 
+                                      text-decoration: none; border-radius: 5px; display: inline-block;'>
+                                Submit Credentials Now
+                            </a>
+                        </p>
+                        
+                        <p><small>If the button doesn't work, copy this link:<br>{$credentialSubmitUrl}</small></p>
+                    </body>
+                    </html>
+                    ";
+                    
+                    $headers = "MIME-Version: 1.0" . "\r\n";
+                    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+                    $headers .= "From: noreply@marketplace.com" . "\r\n";
+                    
+                    mail($transaction['seller_email'], $subject, $emailBody, $headers);
+                    
+                    // Create notification
+                    createNotification(
+                        $transaction['seller_id'],
+                        'payment',
+                        'Payment Received - Submit Credentials',
+                        "Payment confirmed for '{$transaction['listing_name']}'. Submit credentials within 48 hours.",
+                        $transaction['id'],
+                        'transaction'
+                    );
+                    
+                    file_put_contents($logFile, "→ Email & notification sent to seller" . PHP_EOL, FILE_APPEND);
+                } else {
+                    file_put_contents($logFile, "→ WARNING: Transaction not found for escrow_id={$escrow_id}" . PHP_EOL, FILE_APPEND);
+                    log_action("Webhook Failed", "Transaction not found for Escrow ID: {$escrow_id}", "webhook", null, "system");
+                }
             }
             break;
-            
+
+        case 'escrow.completed':
+            $escrow_id = $data['escrow_id'] ?? null;
+            if ($escrow_id) {
+                $stmt = $pdo->prepare("UPDATE transactions SET status = 'completed' WHERE pandascrow_escrow_id = ?");
+                $stmt->execute([$escrow_id]);
+                log_action("Webhook Processed", "Escrow completed - ID: {$escrow_id}", "webhook", null, "system");
+            }
+            break;
+
+        case 'escrow.refunded':
+            $escrow_id = $data['escrow_id'] ?? null;
+            if ($escrow_id) {
+                $stmt = $pdo->prepare("UPDATE transactions SET status = 'refunded' WHERE pandascrow_escrow_id = ?");
+                $stmt->execute([$escrow_id]);
+                log_action("Webhook Processed", "Escrow refunded - ID: {$escrow_id}", "webhook", null, "system");
+            }
+            break;
+
         default:
-            // Unknown event
-            log_transaction_event('webhook_unknown_event', [
-                'event' => $event,
-                'escrow_id' => $escrowId,
-                'payload' => $payload
-            ], 'warning');
+            file_put_contents($logDir . '/webhook_unknown.txt', date('Y-m-d H:i:s') . " - Unhandled Event: {$eventType}" . PHP_EOL, FILE_APPEND);
+            log_action("Webhook Received", "Unhandled event type: {$eventType}", "webhook", null, "system");
             break;
     }
-    
-    // Log action in audit log
-    log_action(
-        "Webhook Processed",
-        "Event: {$event}, Escrow ID: {$escrowId}, Transaction ID: {$transactionId}",
-        "webhook",
-        null
-    );
-    
-    // Return success response
-    http_response_code(200);
-    echo json_encode([
-        'status' => 'success',
-        'message' => 'Webhook processed',
-        'event' => $event,
-        'transaction_id' => $transactionId
-    ]);
-    
 } catch (Exception $e) {
-    log_transaction_event('webhook_exception', [
-        'error' => $e->getMessage(),
-        'trace' => $e->getTraceAsString(),
-        'escrow_id' => $escrowId,
-        'event' => $event
-    ], 'error');
-    
-    error_log("Webhook error: " . $e->getMessage());
-    
-    // Return 500 to trigger retry
+    file_put_contents($logFile, date('Y-m-d H:i:s') . " - DB ERROR: " . $e->getMessage() . PHP_EOL, FILE_APPEND);
+    log_action("Webhook Failed", "Event: {$eventType}, Error: " . $e->getMessage(), "webhook", null, "system");
     http_response_code(500);
-    echo json_encode([
-        'status' => 'error',
-        'message' => 'Internal server error'
-    ]);
+    echo json_encode(['status' => false, 'message' => 'Database error']);
+    exit;
 }
+
+
+// ✅ Step 7: Send acknowledgement
+http_response_code(200);
+echo json_encode(['status' => true, 'message' => 'Webhook received successfully']);
+

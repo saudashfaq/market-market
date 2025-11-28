@@ -42,7 +42,6 @@ Desktop.ini
 *.swp
 /tree-maker
 
-# 
-Transaction logs
-logs/*.log
-!logs/.gitkeep
+# Session files
+/storage/sessions/*
+!/storage/sessions/.gitkeep

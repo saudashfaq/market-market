@@ -68,7 +68,7 @@ function displayFlashMessages($autoHide = true) {
     
     foreach ($messages as $index => $flash) {
         $type = $flash['type'];
-        $message = htmlspecialchars($flash['message'], ENT_QUOTES, 'UTF-8');
+        $message = $flash['message']; // Allow HTML in flash messages
         
         // Define CSS classes based on message type with solid backgrounds
         $typeClasses = [

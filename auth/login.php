@@ -7,6 +7,11 @@
 
   // Redirect if already logged in
   redirect_if_authenticated();
+  
+  // Prevent browser caching of login page for security
+  header("Cache-Control: no-cache, no-store, must-revalidate");
+  header("Pragma: no-cache");
+  header("Expires: 0");
 
   // Get validation errors and old input
   $validationErrors = FormValidator::getStoredErrors();
@@ -23,6 +28,8 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     rel="stylesheet"
   />
+  <script src="<?= url('public/js/popup.js') ?>" defer></script>
+  <script src="<?= url('public/js/enhanced-notifications.js') ?>" defer></script>
   <style>
     .shake {
       animation: shake 0.5s ease-in-out;
@@ -80,6 +87,12 @@
           
           <!-- Display Flash Messages -->
           <?php displayFlashMessages(); ?>
+          
+          <!-- Display Popup Messages -->
+          <?php 
+          require_once __DIR__ . "/../includes/popup_helper.php";
+          renderPopup(); 
+          ?>
           
           <div class="auth-tabs mb-8">
             <div class="flex bg-gray-100 rounded-xl p-1">
@@ -651,6 +664,37 @@
             form.classList.remove('shake');
         }, 500);
     }
+    
+    // Prevent back button access for logged in users
+    window.addEventListener('pageshow', function(event) {
+        // Check if page is loaded from cache (back button)
+        if (event.persisted) {
+            // Force reload to trigger server-side redirect check
+            window.location.reload();
+        }
+    });
+    
+    // Additional protection - check login status via AJAX
+    function checkLoginStatus() {
+        fetch('<?= url("api/check_login_status.php") ?>', {
+            method: 'GET',
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.logged_in) {
+                // User is logged in, redirect to dashboard
+                window.location.href = data.redirect_url;
+            }
+        })
+        .catch(error => {
+            // Ignore errors, user might not be logged in
+            console.log('Login status check failed:', error);
+        });
+    }
+    
+    // Check login status when page loads
+    document.addEventListener('DOMContentLoaded', checkLoginStatus);
   </script>
   </body>
   </html>
