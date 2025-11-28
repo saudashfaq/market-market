@@ -14,29 +14,43 @@ require_once __DIR__ . "/popup_helper.php";
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="<?= BASE ?>js/popup.js"></script>
   <?php if (is_logged_in()): ?>
   <script>
     // Define API base path globally for JavaScript
-    // Detect if we're in a subdirectory or root
+    // Use relative path from current location
     (function() {
-      const path = window.location.pathname;
+      const currentPath = window.location.pathname;
+      const baseUrl = window.location.origin;
+      
+      // Detect base directory
       let basePath = '';
       
-      // Check if we're in /marketplace/ subdirectory (localhost)
-      if (path.includes('/marketplace/')) {
-        basePath = '/marketplace';
-      } else if (path.includes('/public/')) {
-        // Extract base path before /public/
-        basePath = path.substring(0, path.indexOf('/public/'));
+      if (currentPath.includes('/public/')) {
+        // We're in public folder, go up one level
+        basePath = currentPath.substring(0, currentPath.indexOf('/public/'));
+      } else if (currentPath.includes('/index.php')) {
+        // We're at root with index.php
+        basePath = currentPath.substring(0, currentPath.indexOf('/index.php'));
+      } else if (currentPath.includes('/modules/')) {
+        // We're in modules folder
+        basePath = currentPath.substring(0, currentPath.indexOf('/modules/'));
+      } else {
+        // Default: assume root
+        basePath = '';
       }
       
+      // Set API_BASE_PATH as relative path (works better with nginx)
       window.API_BASE_PATH = basePath + '/api';
-      console.log('🔧 API_BASE_PATH set to:', window.API_BASE_PATH);
+      
+      console.log('🔧 Current Path:', currentPath);
+      console.log('🔧 Base Path:', basePath);
+      console.log('🔧 API_BASE_PATH:', window.API_BASE_PATH);
+      console.log('🔧 Test URL:', baseUrl + window.API_BASE_PATH + '/notifications_api.php');
     })();
   </script>
-  <script src="<?= BASE ?>js/notifications.js" defer></script>
+  <script src="<?= BASE ?>js/notifications.js"></script>
   <?php endif; ?>
-  <script src="<?= BASE ?>js/popup.js"></script>
   <script src="<?= BASE ?>js/logout-confirmation.js" defer></script>
   <style>
     @keyframes slideUpFade {
