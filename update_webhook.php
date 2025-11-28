@@ -1,38 +1,37 @@
 <?php
 /**
- * Temporary file to update Pandascrow webhook URL
- * Run this once, then delete this file
+ * Temporary file to show webhook URL
+ * Copy this URL and update manually in Pandascrow dashboard
  */
 
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/api/escrow_api.php';
 
-echo "🔧 Updating Pandascrow Webhook URL...\n\n";
+echo "🔧 Pandascrow Webhook URL Configuration\n";
+echo "==========================================\n\n";
 
-// Get auth token
-echo "1️⃣ Getting authentication token...\n";
-$token = get_pandascrow_token();
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+$host = $_SERVER['HTTP_HOST'] ?? '91.99.115.150';
+$webhookUrl = $protocol . $host . '/webhook.php';
 
-if (!$token) {
-    die("❌ Failed to get auth token. Check your Pandascrow credentials in .env file.\n");
-}
+echo "📋 Your Webhook URL:\n";
+echo "   " . $webhookUrl . "\n\n";
 
-echo "✅ Token received\n\n";
+echo "📝 Steps to Update:\n";
+echo "   1. Login to Pandascrow Dashboard\n";
+echo "   2. Go to Settings → Application/Webhooks\n";
+echo "   3. Update webhook URL to: " . $webhookUrl . "\n";
+echo "   4. Save changes\n\n";
 
-// Update webhook
-echo "2️⃣ Updating webhook URL...\n";
-$result = update_pandascrow_webhook($token);
+echo "✅ Current Configuration:\n";
+echo "   - PANDASCROW_MODE: " . (defined('PANDASCROW_MODE') ? PANDASCROW_MODE : 'Not set') . "\n";
+echo "   - PANDASCROW_UUID: " . (defined('PANDASCROW_UUID') ? PANDASCROW_UUID : 'Not set') . "\n";
+echo "   - BASE URL: " . BASE . "\n";
+echo "   - Webhook Path: /webhook.php\n\n";
 
-if ($result['success']) {
-    echo "✅ Webhook URL updated successfully!\n\n";
-    echo "📋 New webhook URL: " . url('webhook.php') . "\n";
-    echo "📋 Full URL: " . ((!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://') . $_SERVER['HTTP_HOST'] . url('webhook.php') . "\n\n";
-    echo "🎉 Done! You can now delete this file.\n";
-} else {
-    echo "❌ Failed to update webhook\n";
-    echo "Error: " . ($result['error'] ?? 'Unknown error') . "\n";
-    print_r($result);
-}
+echo "🧪 Test Webhook:\n";
+echo "   curl -X POST " . $webhookUrl . " \\\n";
+echo "     -H 'Content-Type: application/json' \\\n";
+echo "     -d '{\"event\":\"test\",\"data\":{}}'\n\n";
 
-echo "\n";
+echo "🎉 Done! Delete this file after updating Pandascrow dashboard.\n";
 ?>
