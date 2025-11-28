@@ -751,6 +751,13 @@ $pagination = [
   }
   
   document.addEventListener('DOMContentLoaded', () => {
+    // Ensure API_BASE_PATH is set
+    if (!window.API_BASE_PATH) {
+      const path = window.location.pathname;
+      window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+      console.log('🔧 [Delligence] API_BASE_PATH:', window.API_BASE_PATH);
+    }
+    
     console.log('🚀 SuperAdmin Due Diligence polling initialization started');
     
     if (typeof startPolling !== 'undefined') {

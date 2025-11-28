@@ -414,6 +414,12 @@ function reportIssue(transactionId) {
 </script>
 
 <!-- Add Transaction Polling -->
+<script>
+if (!window.API_BASE_PATH) {
+  const path = window.location.pathname;
+  window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+}
+</script>
 <script src="<?= BASE ?>js/polling.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {

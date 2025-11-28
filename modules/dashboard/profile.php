@@ -14,7 +14,7 @@ $passwordChangeRequired = isset($_SESSION['password_change_required']) && $_SESS
 
 // Clear the session flag after reading it
 if ($passwordChangeRequired) {
-    unset($_SESSION['password_change_required']);
+  unset($_SESSION['password_change_required']);
 }
 
 // Get validation errors and old input
@@ -47,12 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   // Create validator with form data
   $validator = new FormValidator($_POST);
-  
+
   // Validate basic fields
   $validator
     ->required('name', 'Full name is required')
     ->name('name', 'Name can only contain letters, spaces, hyphens and apostrophes');
-  
+
   // Only validate email for non-OAuth users
   if (!$isOAuthUser) {
     $validator
@@ -64,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $current_password = $_POST['current_password'] ?? '';
   $new_password = $_POST['new_password'] ?? '';
   $confirm_password = $_POST['confirm_password'] ?? '';
-  
+
   if (!$isOAuthUser && (!empty($current_password) || !empty($new_password) || !empty($confirm_password))) {
     $validator
       ->required('current_password', 'Current password is required to change password')
@@ -86,7 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
       $stmt->execute([$email, $user_id]);
       if ($stmt->fetch()) {
-        $validator->custom('email', function() { return false; }, 'This email address is already taken');
+        $validator->custom('email', function () {
+          return false;
+        }, 'This email address is already taken');
       }
     }
   }
@@ -94,7 +96,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // Validate current password if password change is requested (only for non-OAuth users)
   if ($validator->passes() && !$isOAuthUser && !empty($current_password)) {
     if (!password_verify($current_password, $user['password'])) {
-      $validator->custom('current_password', function() { return false; }, 'Current password is incorrect');
+      $validator->custom('current_password', function () {
+        return false;
+      }, 'Current password is incorrect');
     }
   }
 
@@ -107,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   $name = trim($_POST['name']);
   $profile_pic = null;
-  
+
   // Handle email change for non-OAuth users
   $emailChanged = false;
   if (!$isOAuthUser) {
@@ -115,10 +119,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($newEmail !== $user['email']) {
       // Email is being changed - require verification
       require_once __DIR__ . '/../../includes/email_verification_helper.php';
-      
+
       $token = generateEmailVerificationToken();
       $expiresAt = date('Y-m-d H:i:s', strtotime('+24 hours'));
-      
+
       // Store pending email and token
       $stmt = $pdo->prepare("
         UPDATE users 
@@ -128,59 +132,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         WHERE id = ?
       ");
       $stmt->execute([$newEmail, $token, $expiresAt, $user_id]);
-      
+
       // Send verification email to new address
       sendEmailVerificationLink($newEmail, $user['name'], $token);
-      
+
       // Send notification to old email
       sendEmailChangeNotification($user['email'], $user['name'], $newEmail);
-      
+
       $emailChanged = true;
     }
   }
 
   // ✅ Handle profile image upload
- // ✅ Handle profile image upload
-if (!empty($_FILES['profile_pic']['name'])) {
-  $targetDir = dirname(__DIR__, 2) . '/public/uploads/profile_pics/';
-  if (!file_exists($targetDir)) mkdir($targetDir, 0777, true);
+  // ✅ Handle profile image upload
+  if (!empty($_FILES['profile_pic']['name'])) {
+    $targetDir = dirname(__DIR__, 2) . '/public/uploads/profile_pics/';
+    if (!file_exists($targetDir)) mkdir($targetDir, 0777, true);
 
-  $ext = strtolower(pathinfo($_FILES['profile_pic']['name'], PATHINFO_EXTENSION));
-  $filename = 'user_' . $user_id . '_' . time() . '.' . $ext;
-  $targetFile = $targetDir . $filename;
+    $ext = strtolower(pathinfo($_FILES['profile_pic']['name'], PATHINFO_EXTENSION));
+    $filename = 'user_' . $user_id . '_' . time() . '.' . $ext;
+    $targetFile = $targetDir . $filename;
 
-  if (move_uploaded_file($_FILES['profile_pic']['tmp_name'], $targetFile)) {
-    // store relative path for DB
-    $profile_pic = 'uploads/profile_pics/' . $filename;
+    if (move_uploaded_file($_FILES['profile_pic']['tmp_name'], $targetFile)) {
+      // store relative path for DB
+      $profile_pic = 'uploads/profile_pics/' . $filename;
+    }
+  } else {
+    $profile_pic = $user['profile_pic']; // keep old one if unchanged
   }
-} else {
-  $profile_pic = $user['profile_pic']; // keep old one if unchanged
-}
   // ✅ Update name and profile picture (email handled separately above)
   $stmt = $pdo->prepare("UPDATE users SET name = ?, profile_pic = ? WHERE id = ?");
   $stmt->execute([$name, $profile_pic, $user_id]);
-
   // ✅ Handle password change (only for non-OAuth users)
   if (!$isOAuthUser && $current_password && $new_password && $new_password === $confirm_password) {
     if (password_verify($current_password, $user['password'])) {
       $newHash = password_hash($new_password, PASSWORD_DEFAULT);
-      
+
       // Update password and reset requires_password_change flag
       try {
-        // Check if requires_password_change column exists
-        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'requires_password_change'");
-        if ($stmt->rowCount() > 0) {
-          // Column exists, update both password and flag
-          $pdo->prepare("UPDATE users SET password = ?, requires_password_change = 0 WHERE id = ?")->execute([$newHash, $user_id]);
-        } else {
-          // Column doesn't exist, just update password
-          $pdo->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$newHash, $user_id]);
-        }
+        // Try to update both (optimistic)
+        $stmt = $pdo->prepare("UPDATE users SET password = ?, requires_password_change = 0 WHERE id = ?");
+        $stmt->execute([$newHash, $user_id]);
       } catch (Exception $e) {
-        // Fallback to just updating password
+        // If it fails (likely because column doesn't exist), update only password
         $pdo->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$newHash, $user_id]);
       }
-      
+
       // Send email notification about password change
       // TODO: Implement email notification
     }
@@ -193,7 +190,7 @@ if (!empty($_FILES['profile_pic']['name'])) {
 
   $_SESSION['user'] = $user; // refresh session
   $success = true;
-  
+
   // Set appropriate success message
   if ($emailChanged) {
     setFlashMessage('success', 'Profile updated! A verification email has been sent to your new email address. Please check your inbox and verify within 24 hours.');
@@ -216,20 +213,20 @@ if (!empty($_FILES['profile_pic']['name'])) {
   <?php endif; ?>
 
   <?php if ($passwordChangeRequired): ?>
-  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg shadow-md">
-    <div class="flex items-start">
-      <div class="flex-shrink-0">
-        <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl"></i>
-      </div>
-      <div class="ml-3 flex-1">
-        <h3 class="text-sm font-medium text-yellow-800 mb-1">🔒 Password Change Required</h3>
-        <p class="text-sm text-yellow-700 leading-relaxed">
-          For security reasons, you must change your default password before you can access other features.
-          Please use the form below to set a new, secure password.
-        </p>
+    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-r-lg shadow-md">
+      <div class="flex items-start">
+        <div class="flex-shrink-0">
+          <i class="fas fa-exclamation-triangle text-yellow-400 text-2xl"></i>
+        </div>
+        <div class="ml-3 flex-1">
+          <h3 class="text-sm font-medium text-yellow-800 mb-1">🔒 Password Change Required</h3>
+          <p class="text-sm text-yellow-700 leading-relaxed">
+            For security reasons, you must change your default password before you can access other features.
+            Please use the form below to set a new, secure password.
+          </p>
+        </div>
       </div>
     </div>
-  </div>
   <?php endif; ?>
 
   <!-- Profile Update Form -->
@@ -328,13 +325,13 @@ if (!empty($_FILES['profile_pic']['name'])) {
                         Please check your inbox at <strong><?= htmlspecialchars($user['pending_email']) ?></strong> and click the verification link.
                       </p>
                       <div class="flex flex-col sm:flex-row gap-2">
-                        <a href="index.php?p=dashboard&page=resend_email_verification" 
-                           class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                        <a href="index.php?p=dashboard&page=resend_email_verification"
+                          class="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-200">
                           <i class="fas fa-paper-plane mr-2"></i>
                           Resend Verification Email
                         </a>
-                        <a href="index.php?p=dashboard&page=cancel_email_change" 
-                           class="inline-flex items-center justify-center px-4 py-2 border-2 border-red-600 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors duration-200">
+                        <a href="index.php?p=dashboard&page=cancel_email_change"
+                          class="inline-flex items-center justify-center px-4 py-2 border-2 border-red-600 text-red-600 text-xs font-semibold rounded-lg hover:bg-red-50 transition-colors duration-200">
                           <i class="fas fa-times mr-2"></i>
                           Cancel Email Change
                         </a>
@@ -388,9 +385,9 @@ if (!empty($_FILES['profile_pic']['name'])) {
                   <p class="text-sm text-blue-700 mb-3">
                     Your account is secured by <?= $oauthProvider ?>. Password management is handled by your <?= $oauthProvider ?> account.
                   </p>
-                  <a href="<?= $oauthProvider === 'Google' ? 'https://myaccount.google.com/security' : 'https://www.facebook.com/settings?tab=security' ?>" 
-                     target="_blank" 
-                     class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium">
+                  <a href="<?= $oauthProvider === 'Google' ? 'https://myaccount.google.com/security' : 'https://www.facebook.com/settings?tab=security' ?>"
+                    target="_blank"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium">
                     <i class="fas fa-external-link-alt mr-2"></i>
                     Manage in <?= $oauthProvider ?> Account
                   </a>
@@ -418,7 +415,7 @@ if (!empty($_FILES['profile_pic']['name'])) {
                   </button>
                 </div>
                 <?php displayFieldError('new_password', $validationErrors); ?>
-                
+
                 <!-- Password Strength Indicator (Hidden by default) -->
                 <div id="password-strength-container" class="mt-2 hidden">
                   <div class="flex items-center justify-between mb-1">
@@ -453,7 +450,7 @@ if (!empty($_FILES['profile_pic']['name'])) {
                 </button>
               </div>
               <?php displayFieldError('confirm_password', $validationErrors); ?>
-              
+
               <p class="text-xs text-gray-500 flex items-center">
                 <i class="fas fa-info-circle mr-1"></i>
                 Leave blank if you don't want to change your password
@@ -495,7 +492,7 @@ if (!empty($_FILES['profile_pic']['name'])) {
   function togglePasswordVisibility(fieldId) {
     const field = document.getElementById(fieldId);
     const icon = document.getElementById(fieldId + '-icon');
-    
+
     if (field.type === 'password') {
       field.type = 'text';
       icon.classList.remove('fa-eye');
@@ -510,7 +507,7 @@ if (!empty($_FILES['profile_pic']['name'])) {
   // Password strength checker
   const newPasswordField = document.getElementById('new_password');
   const strengthContainer = document.getElementById('password-strength-container');
-  
+
   if (newPasswordField) {
     newPasswordField.addEventListener('input', function() {
       const password = this.value;
@@ -519,7 +516,7 @@ if (!empty($_FILES['profile_pic']['name'])) {
       const reqLength = document.getElementById('req-length');
       const reqLetter = document.getElementById('req-letter');
       const reqNumber = document.getElementById('req-number');
-      
+
       // Show/hide strength indicator based on input
       if (password.length > 0) {
         strengthContainer.classList.remove('hidden');
@@ -527,26 +524,26 @@ if (!empty($_FILES['profile_pic']['name'])) {
         strengthContainer.classList.add('hidden');
         return;
       }
-      
+
       // Check requirements
       const hasLength = password.length >= 6;
       const hasLetter = /[a-zA-Z]/.test(password);
       const hasNumber = /[0-9]/.test(password);
-      
+
       // Update requirement indicators
       updateRequirement(reqLength, hasLength);
       updateRequirement(reqLetter, hasLetter);
       updateRequirement(reqNumber, hasNumber);
-      
+
       // Calculate strength
       let strength = 0;
       if (hasLength) strength += 33;
       if (hasLetter) strength += 33;
       if (hasNumber) strength += 34;
-      
+
       // Update strength bar
       strengthBar.style.width = strength + '%';
-      
+
       // Update colors and text
       if (strength === 0) {
         strengthBar.style.backgroundColor = '#e5e7eb';
@@ -567,11 +564,11 @@ if (!empty($_FILES['profile_pic']['name'])) {
       }
     });
   }
-  
+
   function updateRequirement(element, isMet) {
     const icon = element.querySelector('i');
     const text = element.querySelector('span');
-    
+
     if (isMet) {
       icon.classList.remove('fa-circle');
       icon.classList.add('fa-check-circle');

@@ -67,8 +67,9 @@ class NotificationManager {
     async updateNotificationCount() {
         try {
             console.log('Fetching notification count...');
-            // Use absolute path from root
-            const response = await fetch('/marketplace/api/notifications_api.php?action=count');
+            // Use API_BASE_PATH from global config
+            const apiPath = window.API_BASE_PATH || '/marketplace/api';
+            const response = await fetch(`${apiPath}/notifications_api.php?action=count`);
             const data = await response.json();
             console.log('Notification count response:', data);
             
@@ -165,7 +166,9 @@ class NotificationManager {
     async loadNotifications(listId) {
         try {
             console.log('Loading notifications for list:', listId);
-            const response = await fetch('http://localhost/marketplace/api/notifications_api.php?action=list&limit=10');
+            // Use API_BASE_PATH from global config
+            const apiPath = window.API_BASE_PATH || '/marketplace/api';
+            const response = await fetch(`${apiPath}/notifications_api.php?action=list&limit=10`);
             console.log('API response status:', response.status);
             
             const data = await response.json();
@@ -378,7 +381,9 @@ class NotificationManager {
             formData.append('action', 'mark_read');
             formData.append('id', notificationId);
             
-            const response = await fetch('http://localhost/marketplace/api/notifications_api.php', {
+            // Use API_BASE_PATH from global config
+            const apiPath = window.API_BASE_PATH || '/marketplace/api';
+            const response = await fetch(`${apiPath}/notifications_api.php`, {
                 method: 'POST',
                 body: formData
             });
@@ -401,7 +406,9 @@ class NotificationManager {
             const formData = new FormData();
             formData.append('action', 'mark_all_read');
             
-            const response = await fetch('http://localhost/marketplace/api/notifications_api.php', {
+            // Use API_BASE_PATH from global config
+            const apiPath = window.API_BASE_PATH || '/marketplace/api';
+            const response = await fetch(`${apiPath}/notifications_api.php`, {
                 method: 'POST',
                 body: formData
             });

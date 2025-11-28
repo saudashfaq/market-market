@@ -172,22 +172,7 @@ try {
     ?>
     
     <!-- AI Assistant Widget -->
-    <div class="mx-3 my-4">
-      <div class="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-4 text-white shadow-lg">
-        <div class="flex items-start gap-3 mb-3">
-          <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-robot text-white text-lg"></i>
-          </div>
-          <div class="flex-1 min-w-0">
-            <h3 class="font-semibold text-white text-sm mb-1">AI Assistant</h3>
-            <p class="text-white/80 text-xs leading-relaxed">Always here to help</p>
-          </div>
-        </div>
-        <button onclick="startAIChat()" class="w-full bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-all duration-200 border border-white/20 hover:border-white/30">
-          Start Chat
-        </button>
-      </div>
-    </div>
+   
     
     <hr class="my-4 border-gray-200">
     <a href="#" onclick="confirmLogout(event)" class="group flex items-center px-3 py-2.5 mx-1 rounded-lg text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition" title="Logout">
@@ -200,26 +185,7 @@ try {
 </aside>
 <script>
 
-function startAIChat() {
-    console.log('AI Assistant chat started');
-    
-    // You can customize this function to:
-    // 1. Open a chat modal
-    // 2. Redirect to a chat page
-    // 3. Open an external chat service
-    // 4. Show a popup with AI assistant
-    
-    // For now, show a simple popup
-    if (typeof showSuccess !== 'undefined') {
-        showSuccess('AI Assistant feature coming soon! This will open a chat interface to help you with your marketplace needs.', {
-            title: 'AI Assistant',
-            autoClose: true,
-            autoCloseTime: 4000
-        });
-    } else {
-        alert('AI Assistant feature coming soon!');
-    }
-}
+
 
 function confirmLogout(event) {
     if (event && event.preventDefault) {

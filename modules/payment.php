@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $escrow_id = $escrow_data['escrow_id'] ?? null;
     $payment_url = $escrow_data['payment_url'] ?? null;
     $transaction_ref = $escrow_data['transaction_ref'] ?? null;
-    $provider = $escrow_data['provider'] ?? null;
+    $provider = !empty($escrow_data['provider']) ? $escrow_data['provider'] : 'pandascrow';
     
     if (!$escrow_id || !$payment_url) {
       throw new Exception("Escrow created but payment link not found | Response: " . json_encode($escrow_res));
@@ -151,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       INSERT INTO transactions 
         (listing_id, buyer_id, seller_id, pandascrow_escrow_id, escrow_transaction_id, amount, platform_fee, seller_amount, status, escrow_provider, created_at)
       VALUES 
-        (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, NOW())
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     ");
     $insert->execute([
       $listing_id,
@@ -162,6 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $amount,
       $platformFee,
       $sellerAmount,
+      'pending',
       $provider
     ]);
 

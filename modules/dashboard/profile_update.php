@@ -45,7 +45,9 @@ if ($validator->passes()) {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
         $stmt->execute([$email, $user['id']]);
         if ($stmt->fetch()) {
-            $validator->custom('email', function() { return false; }, 'This email address is already taken');
+            $validator->custom('email', function () {
+                return false;
+            }, 'This email address is already taken');
         }
     }
 }
@@ -55,9 +57,11 @@ if ($validator->passes() && !empty($current_password)) {
     $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
     $stmt->execute([$user['id']]);
     $hash = $stmt->fetchColumn();
-    
+
     if (!password_verify($current_password, $hash)) {
-        $validator->custom('current_password', function() { return false; }, 'Current password is incorrect');
+        $validator->custom('current_password', function () {
+            return false;
+        }, 'Current password is incorrect');
     }
 }
 
@@ -77,19 +81,19 @@ $profile_pic = $user['profile_pic'] ?? null;
 if (!empty($_FILES['profile_pic']['name'])) {
     $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     $maxSize = 5 * 1024 * 1024; // 5MB
-    
+
     if (!in_array($_FILES['profile_pic']['type'], $allowedTypes)) {
         setErrorMessage('Please upload a valid image file (JPEG, PNG, GIF, or WebP).');
         header("Location: index.php?p=dashboard&page=profile");
         exit;
     }
-    
+
     if ($_FILES['profile_pic']['size'] > $maxSize) {
         setErrorMessage('Image file size must be less than 5MB.');
         header("Location: index.php?p=dashboard&page=profile");
         exit;
     }
-    
+
     $targetDir = dirname(__DIR__, 2) . '/public/uploads/profile_pics/';
     if (!file_exists($targetDir)) {
         mkdir($targetDir, 0777, true);
@@ -117,25 +121,19 @@ $passwordUpdated = false;
 // Handle password change (if requested and validated)
 if (!empty($current_password) && !empty($new_password)) {
     $newHash = password_hash($new_password, PASSWORD_DEFAULT);
-    
+
     // Update password and reset requires_password_change flag
     try {
-        // Check if requires_password_change column exists
-        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'requires_password_change'");
-        if ($stmt->rowCount() > 0) {
-            // Column exists, update both password and flag
-            $pdo->prepare("UPDATE users SET password = ?, requires_password_change = 0 WHERE id = ?")->execute([$newHash, $user['id']]);
-        } else {
-            // Column doesn't exist, just update password
-            $pdo->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$newHash, $user['id']]);
-        }
+        // Try to update both (optimistic)
+        $stmt = $pdo->prepare("UPDATE users SET password = ?, requires_password_change = 0 WHERE id = ?");
+        $stmt->execute([$newHash, $user['id']]);
     } catch (Exception $e) {
-        // Fallback to just updating password
+        // If it fails (likely because column doesn't exist), update only password
         $pdo->prepare("UPDATE users SET password = ? WHERE id = ?")->execute([$newHash, $user['id']]);
     }
-    
+
     $passwordUpdated = true;
-    
+
     // Send password changed confirmation email
     require_once __DIR__ . '/../../includes/email_helper.php';
     sendPasswordChangedEmail($email, $name);

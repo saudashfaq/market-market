@@ -162,7 +162,7 @@
                 </div>
                 
                 <div class="flex items-center justify-between">
-                  <a href="../public/forgot-password.php" class="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">Forgot password?</a>
+                  <a href="../forgot-password.php" class="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200">Forgot password?</a>
                 </div>
                 
                 <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-4 rounded-xl hover:from-blue-700 hover:to-purple-700 transform hover:scale-[1.02] transition-all duration-200 shadow-lg">

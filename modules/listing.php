@@ -63,7 +63,7 @@ $categories = ['All', 'Website', 'YouTube'];
 <style>
 /* Enhanced blur effect for non-logged-in users */
 .blur-content {
-  filter: blur(3px);
+  filter: blur(6px);
   user-select: none;
   pointer-events: none;
 }
@@ -786,14 +786,23 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
+// Ensure API_BASE_PATH is set for listing page
+if (!window.API_BASE_PATH) {
+  const path = window.location.pathname;
+  window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+  console.log('🔧 [Listing] API_BASE_PATH:', window.API_BASE_PATH);
+}
+
 // WORKING POLLING SYSTEM for listing page
 console.log('🚀 LISTING PAGE: Starting real-time polling system');
+console.log('🚀 API_BASE_PATH available:', window.API_BASE_PATH);
 
 const pollingScript = document.createElement('script');
 pollingScript.src = '<?= BASE ?>js/polling.js';
 
 pollingScript.onload = function() {
   console.log('✅ Polling system loaded for listing page');
+  console.log('✅ API_BASE_PATH:', win
   
   if (typeof startPolling !== 'undefined') {
     console.log('🎯 Starting listing polling...');

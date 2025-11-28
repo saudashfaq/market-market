@@ -137,7 +137,12 @@ class PollingManager {
       let pollingUrl;
       
       // Use PathDetector utility for consistent path detection
-      if (window.pathDetector) {
+      // Use API_BASE_PATH if available (set by header.php or dashboard.php)
+      if (window.API_BASE_PATH) {
+        pollingUrl = window.location.origin + window.API_BASE_PATH + '/polling_integration.php';
+        console.log('📡 Polling URL (using API_BASE_PATH):', pollingUrl);
+        console.log('📡 API_BASE_PATH:', window.API_BASE_PATH);
+      } else if (window.pathDetector) {
         pollingUrl = window.pathDetector.buildApiUrl('/api/polling_integration.php');
         const detectionInfo = window.pathDetector.getDetectionInfo();
         
@@ -145,7 +150,7 @@ class PollingManager {
         console.log('📡 Detection info:', detectionInfo);
       } else {
         // Fallback to manual detection if PathDetector not available
-        console.warn('⚠️ PathDetector not available, using fallback logic');
+        console.warn('⚠️ API_BASE_PATH and PathDetector not available, using fallback logic');
         const origin = window.location.origin;
         const pathname = window.location.pathname;
         
@@ -158,9 +163,7 @@ class PollingManager {
           basePath = pathname.substring(0, pathname.indexOf('/index.php'));
         } else {
           // For production servers with nginx root, use empty base path
-          const hostname = window.location.hostname;
-          const ipPattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-          basePath = ipPattern.test(hostname) ? '' : '/marketplace';
+          basePath = '';
         }
         
         pollingUrl = origin + basePath + '/api/polling_integration.php';

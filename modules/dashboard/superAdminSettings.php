@@ -351,6 +351,13 @@
     // Load settings on page load
     loadBiddingSettings();
     
+    // Ensure API_BASE_PATH is set
+    if (!window.API_BASE_PATH) {
+      const path = window.location.pathname;
+      window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+      console.log('🔧 [Settings] API_BASE_PATH:', window.API_BASE_PATH);
+    }
+    
     // Polling Integration for SuperAdmin Settings
     console.log('🚀 SuperAdmin Settings polling initialization started');
     

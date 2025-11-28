@@ -4,6 +4,11 @@ require_once __DIR__ . "/../includes/log_helper.php";
 require_once __DIR__ . "/../includes/flash_helper.php";
 require_once __DIR__ . "/../includes/popup_helper.php";
 
+// Ensure session is started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $user = $_SESSION['user'] ?? null;
 
 if ($user) {
@@ -17,7 +22,21 @@ if ($user) {
     ]);
 }
 
+// Clear all session data
+$_SESSION = array();
+
+// Delete session cookie
+if (isset($_COOKIE[session_name()])) {
+    setcookie(session_name(), '', time() - 3600, '/');
+}
+
+// Destroy session
 session_destroy();
+
+// Prevent caching
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 header("Location: " . url("index.php?p=home"));
 exit;

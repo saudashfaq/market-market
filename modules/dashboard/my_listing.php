@@ -484,6 +484,12 @@ $categories = $categoriesStmt->fetchAll(PDO::FETCH_COLUMN);
   </div>
 </section>
 
+<script>
+if (!window.API_BASE_PATH) {
+  const path = window.location.pathname;
+  window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+}
+</script>
 <script src="<?= BASE ?>js/polling.js?v=<?= time() ?>"></script>
 <script>
 // Use centralized polling system

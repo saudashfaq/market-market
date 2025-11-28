@@ -262,6 +262,12 @@ $pagination = $result['pagination'];
   </div>
 </section>
 
+<script>
+if (!window.API_BASE_PATH) {
+  const path = window.location.pathname;
+  window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+}
+</script>
 <script src="<?= BASE ?>js/polling.js"></script>
 <script>
 // Initialize polling for my orders (offers as buyer)
