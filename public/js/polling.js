@@ -334,10 +334,10 @@ class PollingManager {
       this.stop();
       
       // Show user notification with debugging info
-      const debugInfo = window.pathDetector ? window.pathDetector.getDetectionInfo() : null;
-      const message = debugInfo ? 
-        `Connection lost. Current path: ${debugInfo.basePath || 'empty'}. Please refresh the page.` :
-        'Connection lost. Please refresh the page.';
+      // const debugInfo = window.pathDetector ? window.pathDetector.getDetectionInfo() : null;
+      // const message = debugInfo ? 
+      //   `Connection lost. Current path: ${debugInfo.basePath || 'empty'}. Please refresh the page.` :
+      //   'Connection lost. Please refresh the page.';
       
       this.showErrorNotification(message);
     }
