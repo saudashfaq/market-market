@@ -270,6 +270,10 @@ if (!window.API_BASE_PATH) {
 </script>
 <script src="<?= BASE ?>js/polling.js"></script>
 <script>
+// Define BASE constant globally
+const BASE = "<?php echo BASE; ?>";
+console.log('🔧 BASE constant defined:', BASE);
+
 // Initialize polling for my orders (offers as buyer)
 const currentUserId = <?= $user['id'] ?>;
 console.log('ðŸ”§ My Orders Page - User ID:', currentUserId);

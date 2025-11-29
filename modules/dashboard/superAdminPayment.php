@@ -748,6 +748,10 @@ $showEmptyState = ($activeTab === 'payments' && !$hasPaymentData) || ($activeTab
             });
         });
         
+        // Define BASE constant globally
+        const BASE = "<?php echo BASE; ?>";
+        console.log('🔧 BASE constant defined:', BASE);
+        
         // Ensure API_BASE_PATH is set
         if (!window.API_BASE_PATH) {
             const path = window.location.pathname;
