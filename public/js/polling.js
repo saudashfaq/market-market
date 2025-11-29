@@ -404,6 +404,24 @@ class PollingManager {
       this.fetchUpdates();
     }
   }
+
+  // Reset timestamps for testing (forces re-fetch of all data)
+  resetTimestamps() {
+    console.log('🔄 Resetting timestamps to force data refresh...');
+    this.lastCheckTimes = {
+      listings: '1970-01-01 00:00:00',
+      offers: '1970-01-01 00:00:00',
+      orders: '1970-01-01 00:00:00',
+      notifications: '1970-01-01 00:00:00'
+    };
+    this.saveTimestamps();
+    console.log('✅ Timestamps reset. Next poll will fetch all recent data.');
+    
+    // Trigger immediate fetch
+    if (this.isPolling) {
+      this.fetchUpdates();
+    }
+  }
 }
 
 // Global polling manager instance
@@ -428,6 +446,9 @@ function startPolling(renderCallbacks) {
   console.log('🆕 Creating new polling manager');
   pollingManager = new PollingManager();
   pollingManager.start(renderCallbacks);
+  
+  // Expose to window for debugging
+  window.pollingManager = pollingManager;
 }
 
 // Generic helper functions for UI updates
@@ -551,4 +572,14 @@ if (!document.querySelector('#polling-animations')) {
 // Export for modern usage
 window.PollingManager = PollingManager;
 window.startPolling = startPolling;
+window.pollingManager = pollingManager; // Expose global instance for debugging
+
+// Add global helper for testing
+window.resetPollingTimestamps = function() {
+  if (pollingManager) {
+    pollingManager.resetTimestamps();
+  } else {
+    console.warn('⚠️ Polling manager not initialized yet');
+  }
+};
   

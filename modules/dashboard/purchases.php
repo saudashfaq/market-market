@@ -430,15 +430,15 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
-    // Initialize polling for transactions
+    // Initialize polling for transactions (using 'orders' key from API)
     startPolling({
-        transactions: (newTransactions) => {
-            console.log('✅ Transactions callback triggered!');
-            console.log('Processing new transactions:', newTransactions);
+        orders: (newOrders) => {
+            console.log('✅ Orders callback triggered!');
+            console.log('Processing new orders:', newOrders);
             
-            // Reload page when transaction status changes
-            if (newTransactions.length > 0) {
-                console.log('🔄 Transaction status updated - reloading page');
+            // Reload page when order status changes
+            if (newOrders.length > 0) {
+                console.log('🔄 Order status updated - reloading page');
                 location.reload();
             }
         }

@@ -119,10 +119,12 @@ try {
         if (!empty($newListings)) {
             $newData['listings'] = $newListings;
             $newTimestamps['listings'] = $newListings[0]['created_at'];
+            error_log("Polling API: Found " . count($newListings) . " new listings for role: $userRole");
+            error_log("Polling API: Latest listing timestamp: " . $newListings[0]['created_at']);
         } else {
             $newTimestamps['listings'] = $lastCheckTimes['listings'] ?? date('Y-m-d H:i:s');
+            error_log("Polling API: No new listings found. Last check: " . ($lastCheckTimes['listings'] ?? '1970-01-01 00:00:00'));
         }
-        error_log("Polling API: Found " . count($newListings) . " new listings for role: $userRole");
     } catch (Exception $e) {
         error_log("Polling API: Listings query error: " . $e->getMessage());
         $newTimestamps['listings'] = $lastCheckTimes['listings'] ?? date('Y-m-d H:i:s');
@@ -216,7 +218,7 @@ try {
         $newOrders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         if (!empty($newOrders)) {
-            $newData['transactions'] = $newOrders;
+            $newData['orders'] = $newOrders; // Changed from 'transactions' to 'orders' to match callback
             $newTimestamps['orders'] = $newOrders[0]['created_at'];
         } else {
             $newTimestamps['orders'] = $lastCheckTimes['orders'] ?? date('Y-m-d H:i:s');
