@@ -66,8 +66,9 @@ function getCallbacksForPage(pageInfo) {
                 case 'userDashboard':
                 case 'adminDashboard':
                 case 'superAdminDashboard':
+                case 'superadminDashboard': // Support both variations
                     callbacks.offers = handleNewOffers;
-                    callbacks.transactions = handleNewTransactions;
+                    callbacks.orders = handleNewTransactions; // Changed from transactions to orders
                     if (pageInfo.subpage !== 'userDashboard') {
                         callbacks.listings = handleNewListings;
                     }

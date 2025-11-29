@@ -50,6 +50,10 @@ require_once __DIR__ . "/popup_helper.php";
     })();
   </script>
   <script src="<?= BASE ?>js/notifications.js"></script>
+  <script src="<?= BASE ?>js/path-detector.js"></script>
+  <script src="<?= BASE ?>js/polling.js"></script>
+  <script src="<?= BASE ?>js/polling-init.js"></script>
+  <script src="<?= BASE ?>js/polling-debug.js"></script>
   <?php endif; ?>
   <script src="<?= BASE ?>js/logout-confirmation.js" defer></script>
   <style>
@@ -347,7 +351,7 @@ require_once __DIR__ . "/popup_helper.php";
 
             switch ($role) {
               case 'superadmin':
-                $dashboardLink = 'index.php?p=dashboard&page=superadminDashboard';
+                $dashboardLink = 'index.php?p=dashboard&page=superAdminDashboard';
                 break;
               case 'admin':
                 $dashboardLink = 'index.php?p=dashboard&page=adminDashboard';

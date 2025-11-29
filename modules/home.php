@@ -228,7 +228,7 @@ if (isset($_GET['debug'])) {
       <?php else: ?>
         <?php foreach ($listings as $listing): ?>
           <div class="group relative rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden hover:-translate-y-2 animate-fade-in
-          <?php echo $user_logged_in ? 'bg-white' : 'bg-white/80 filter blur-md pointer-events-none'; ?>
+          <?php echo $user_logged_in ? 'bg-white' : 'bg-white/90 filter blur-sm pointer-events-none'; ?>
 ">
 
             <!-- Image -->
@@ -1304,7 +1304,7 @@ function createListingHTML(listing) {
   const isOwnListing = userLoggedIn && listing.user_id == currentUserId;
   
   return `
-    <div class="group relative rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden hover:-translate-y-2 animate-fade-in ${userLoggedIn ? 'bg-white' : 'bg-white/80 filter blur-md pointer-events-none'}" data-listing-id="${listing.id}">
+    <div class="group relative rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden hover:-translate-y-2 animate-fade-in ${userLoggedIn ? 'bg-white' : 'bg-white/90 filter blur-sm pointer-events-none'}" data-listing-id="${listing.id}">
       <!-- Image -->
       <div class="relative h-56 overflow-hidden bg-gray-100">
         ${proofImage ? `
@@ -1414,60 +1414,149 @@ function createListingHTML(listing) {
   `;
 }
 
-// Define BASE constant globally
-const BASE = "<?php echo BASE; ?>";
-console.log('🔧 BASE constant defined:', BASE);
+// Home page polling integration with PathDetector fix
+console.log('🏠 HOME PAGE: Initializing polling system with PathDetector fix');
 
-// Ensure API_BASE_PATH is set for home page
-if (!window.API_BASE_PATH) {
-  const path = window.location.pathname;
-  window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
-  console.log('🔧 [Home] API_BASE_PATH:', window.API_BASE_PATH);
+// PathDetector Server Fix for Home Page
+console.log('🔧 Home Page: Applying PathDetector server fix...');
+
+// Ensure BASE constant is available
+if (typeof BASE === 'undefined') {
+    console.error('❌ BASE constant not defined in home page');
+    var BASE = '<?= defined('BASE') ? BASE : '' ?>';
+    if (!BASE) {
+        BASE = window.location.origin + '/';
+    }
+    console.log('🔧 Using fallback BASE for home page:', BASE);
+} else {
+    console.log('✅ BASE constant available for home page:', BASE);
 }
 
-// Home page - using global polling system
-console.log('🏠 HOME PAGE: Using global polling system for listings');
-console.log('🏠 API_BASE_PATH available:', window.API_BASE_PATH);
-
-// Wait for global polling to be available and add custom home page handling
-setTimeout(() => {
-  if (window.globalPollingManager) {
-    console.log('✅ Global polling manager found, adding home page listings callback');
-    
-    // Add custom callback for home page listings
-    window.globalPollingManager.renderCallbacks.listings = function(newListings) {
-      console.log('🏠 Home page listings callback triggered:', newListings.length);
-      
-      // Filter only approved listings for home page
-      const approvedListings = newListings.filter(listing => 
-        listing.status === 'approved' &&
-        listing.name && 
-        listing.name.trim() !== '' &&
-        !listing.name.toLowerCase().includes('test listing')
-      );
-      
-      if (approvedListings.length > 0) {
-        console.log(`🎉 Found ${approvedListings.length} new approved listings for home page`);
-        addNewListingsToPage(approvedListings);
-        
-        // Show notification
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-          position: fixed; top: 20px; right: 20px; z-index: 9999;
-          background: #28a745; color: white; padding: 15px 20px;
-          border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-          font-family: Arial, sans-serif; font-weight: bold;
-        `;
-        notification.innerHTML = `🎉 ${approvedListings.length} new verified listing${approvedListings.length > 1 ? 's' : ''}!`;
-        document.body.appendChild(notification);
-        
-        setTimeout(() => notification.remove(), 4000);
-      }
+// Override PathDetector if it exists to use BASE
+if (window.pathDetector) {
+    console.log('🔧 Home Page: Overriding PathDetector to use BASE constant');
+    window.pathDetector.buildApiUrl = function(endpoint) {
+        if (!endpoint.startsWith('/')) endpoint = '/' + endpoint;
+        let baseUrl = BASE;
+        if (baseUrl.endsWith('/') && endpoint.startsWith('/')) {
+            endpoint = endpoint.substring(1);
+        }
+        const fullUrl = baseUrl + endpoint;
+        console.log('🔗 Home Page PathDetector using BASE:', { endpoint, BASE, fullUrl });
+        return fullUrl;
     };
-  } else {
-    console.warn('⚠️ Global polling manager not found on home page');
+}
+
+// Load polling.js if not already loaded
+function loadPollingForHome() {
+  if (typeof BASE === 'undefined') {
+    console.error('❌ BASE constant not defined for home page polling');
+    return;
   }
-}, 2000);
+  
+  if (typeof startPolling === 'undefined') {
+    console.log('📦 Loading polling.js for home page...');
+    const script = document.createElement('script');
+    script.src = BASE + 'js/polling.js';
+    
+    script.onload = function() {
+      console.log('✅ polling.js loaded for home page');
+      initHomePolling();
+    };
+    
+    script.onerror = function() {
+      console.error('❌ Failed to load polling.js for home page');
+      // Retry after 5 seconds
+      setTimeout(() => {
+        console.log('🔄 Retrying to load polling.js for home page...');
+        document.head.appendChild(script.cloneNode(true));
+      }, 5000);
+    };
+    
+    document.head.appendChild(script);
+  } else {
+    console.log('✅ polling.js already loaded for home page');
+    initHomePolling();
+  }
+}
+
+// Initialize home page specific polling
+function initHomePolling() {
+  // Wait for polling manager to be available
+  function waitForPollingManager() {
+    if (window.pollingManager) {
+      console.log('✅ Polling manager found, adding home page callbacks');
+      
+      // Add home page specific callbacks
+      window.pollingManager.renderCallbacks = {
+        ...window.pollingManager.renderCallbacks,
+        listings: function(newListings) {
+          console.log('🏠 Home page listings callback triggered:', newListings.length);
+          
+          // Filter only approved listings for home page
+          const approvedListings = newListings.filter(listing => 
+            listing.status === 'approved' &&
+            listing.name && 
+            listing.name.trim() !== '' &&
+            !listing.name.toLowerCase().includes('test listing')
+          );
+          
+          if (approvedListings.length > 0) {
+            console.log(`🎉 Found ${approvedListings.length} new approved listings for home page`);
+            addNewListingsToPage(approvedListings);
+            
+            // Show notification
+            showHomeNotification(`🎉 ${approvedListings.length} new verified listing${approvedListings.length > 1 ? 's' : ''}!`, 'success');
+          }
+        }
+      };
+      
+      // Start polling for home page
+      console.log('🚀 Starting polling for home page');
+      
+    } else {
+      console.log('⏳ Waiting for polling manager on home page...');
+      setTimeout(waitForPollingManager, 1000);
+    }
+  }
+  
+  waitForPollingManager();
+}
+
+// Show home page notifications
+function showHomeNotification(message, type = 'info') {
+  const colors = {
+    info: 'bg-blue-500',
+    success: 'bg-green-500',
+    warning: 'bg-yellow-500',
+    error: 'bg-red-500'
+  };
+  
+  const notification = document.createElement('div');
+  notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg z-50 animate-fade-in`;
+  notification.innerHTML = `
+    <div class="flex items-center gap-2">
+      <i class="fas fa-${type === 'success' ? 'check' : 'info'}-circle"></i>
+      <span>${message}</span>
+      <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => notification.remove(), 300);
+  }, 4000);
+}
+
+// Start loading polling when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🏠 Home page DOM loaded, starting polling initialization');
+  setTimeout(loadPollingForHome, 1000);
+});
 
 // Event delegation for Buy Now and Make Offer buttons
 document.addEventListener('click', function(e) {
