@@ -117,13 +117,8 @@ class PathDetector {
 
     // Check if URL structure suggests nginx root configuration
     // If we're at root level without /marketplace/ in path, likely production
-    // Server path: /var/www/marketplace/public (nginx root is public folder)
-    // URL will be: http://domain.com/modules/... (NOT /marketplace/modules/...)
-    if (pathname === '/' || 
-        (pathname.startsWith('/modules/') && !pathname.startsWith('/marketplace/')) ||
-        (pathname.startsWith('/auth/') && !pathname.startsWith('/marketplace/')) ||
-        (pathname.startsWith('/api/') && !pathname.startsWith('/marketplace/'))) {
-      this.log('URL structure suggests nginx root configuration (public folder as root)');
+    if (pathname === '/' || pathname.startsWith('/modules/') || pathname.startsWith('/public/')) {
+      this.log('URL structure suggests nginx root configuration');
       return true;
     }
 
@@ -208,18 +203,11 @@ class PathDetector {
    */
   getEnvironmentDefault() {
     const hostname = window.location.hostname;
-    const pathname = window.location.pathname;
     
     // Development environment defaults
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('local')) {
       this.log('Development environment - defaulting to /marketplace');
       return '/marketplace';
-    }
-
-    // If pathname doesn't include /marketplace/, we're in production with nginx root
-    if (!pathname.includes('/marketplace/')) {
-      this.log('Production environment (nginx root at public folder) - using empty path');
-      return '';
     }
 
     // Production environment default

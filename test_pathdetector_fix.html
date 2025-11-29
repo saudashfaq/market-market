@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PathDetector Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 5px solid; }
+        .success { background: #d4edda; color: #155724; border-color: #28a745; }
+        .error { background: #f8d7da; color: #721c24; border-color: #dc3545; }
+        .warning { background: #fff3cd; color: #856404; border-color: #ffc107; }
+        .info { background: #d1ecf1; color: #0c5460; border-color: #17a2b8; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .code { background: #f8f9fa; padding: 10px; font-family: 'Courier New', monospace; border-radius: 5px; margin: 10px 0; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .log { background: #f8f9fa; border: 1px solid #ddd; padding: 10px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 PathDetector Fix Test</h1>
+        <p>This page tests the PathDetector vs BASE constant conflict resolution.</p>
+        
+        <div class="grid">
+            <div>
+                <div class="test-section">
+                    <h2>🌐 Environment Detection</h2>
+                    <div id="environmentInfo"></div>
+                    <button onclick="detectEnvironment()">🔍 Detect Environment</button>
+                </div>
+                
+                <div class="test-section">
+                    <h2>🔧 BASE Constant Test</h2>
+                    <div id="baseConstantInfo"></div>
+                    <button onclick="testBaseConstant()">🧪 Test BASE</button>
+                </div>
+                
+                <div class="test-section">
+                    <h2>📦 PathDetector Test</h2>
+                    <div id="pathDetectorInfo"></div>
+                    <button onclick="testPathDetector()">🧪 Test PathDetector</button>
+                </div>
+            </div>
+            
+            <div>
+                <div class="test-section">
+                    <h2>📡 Polling URL Test</h2>
+                    <div id="pollingUrlInfo"></div>
+                    <button onclick="testPollingUrls()">🧪 Test URLs</button>
+                </div>
+                
+                <div class="test-section">
+                    <h2>🚀 Live API Test</h2>
+                    <div id="apiTestInfo"></div>
+                    <button onclick="testLiveApi()">🧪 Test Live API</button>
+                </div>
+                
+                <div class="test-section">
+                    <h2>🔄 Fix Application</h2>
+                    <div id="fixInfo"></div>
+                    <button onclick="applyFix()">🔧 Apply Fix</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>📋 Test Log</h2>
+            <div id="testLog" class="log"></div>
+            <button onclick="clearLog()">🗑️ Clear Log</button>
+            <button onclick="exportLog()">📄 Export Log</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>📊 Summary</h2>
+            <div id="testSummary"></div>
+        </div>
+    </div>
+
+    <!-- Include PathDetector if available -->
+    <script src="public/js/path-detector.js" onerror="console.log('PathDetector not found at public/js/path-detector.js')"></script>
+    
+    <script>
+        let testResults = {
+            environment: null,
+            baseConstant: null,
+            pathDetector: null,
+            pollingUrls: null,
+            liveApi: null,
+            fixApplied: false
+        };
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.innerHTML = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            entry.style.color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : type === 'warning' ? '#ffc107' : '#17a2b8';
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[PathDetector Test] ${message}`);
+        }
+        
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function detectEnvironment() {
+            log('🌐 Starting environment detection...');
+            
+            const hostname = window.location.hostname;
+            const pathname = window.location.pathname;
+            const origin = window.location.origin;
+            const protocol = window.location.protocol;
+            
+            // Environment detection logic
+            const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+            const isLocal = hostname.includes('local');
+            const isIP = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname);
+            const isDevelopment = isLocalhost || isLocal;
+            const isProduction = isIP || (!isDevelopment && !hostname.includes('localhost'));
+            
+            const envInfo = {
+                hostname,
+                pathname,
+                origin,
+                protocol,
+                isLocalhost,
+                isLocal,
+                isIP,
+                isDevelopment,
+                isProduction
+            };
+            
+            testResults.environment = envInfo;
+            
+            let statusMessage = `
+                <strong>Environment Details:</strong><br>
+                🌐 Hostname: ${hostname}<br>
+                📂 Pathname: ${pathname}<br>
+                🔗 Origin: ${origin}<br>
+                🔒 Protocol: ${protocol}<br>
+                🏠 Is Localhost: ${isLocalhost ? '✅' : '❌'}<br>
+                🏠 Is Local: ${isLocal ? '✅' : '❌'}<br>
+                🌍 Is IP: ${isIP ? '✅' : '❌'}<br>
+                🛠️ Is Development: ${isDevelopment ? '✅' : '❌'}<br>
+                🚀 Is Production: ${isProduction ? '✅' : '❌'}
+            `;
+            
+            showStatus('environmentInfo', statusMessage, 'info');
+            log(`Environment detected: ${isDevelopment ? 'Development' : 'Production'}`, 'success');
+            
+            updateSummary();
+        }
+        
+        function testBaseConstant() {
+            log('🔧 Testing BASE constant...');
+            
+            let baseStatus = 'undefined';
+            let baseValue = '';
+            let baseSource = 'not defined';
+            
+            if (typeof BASE !== 'undefined') {
+                baseStatus = 'defined';
+                baseValue = BASE;
+                baseSource = 'global constant';
+            } else if (typeof window.BASE !== 'undefined') {
+                baseStatus = 'defined on window';
+                baseValue = window.BASE;
+                baseSource = 'window.BASE';
+            }
+            
+            testResults.baseConstant = {
+                status: baseStatus,
+                value: baseValue,
+                source: baseSource
+            };
+            
+            let statusMessage = `
+                <strong>BASE Constant Status:</strong><br>
+                📊 Status: ${baseStatus === 'undefined' ? '❌ Not Defined' : '✅ Defined'}<br>
+                📍 Value: ${baseValue || 'N/A'}<br>
+                📋 Source: ${baseSource}<br>
+            `;
+            
+            if (baseStatus === 'undefined') {
+                statusMessage += `<br><strong>🔧 Auto-Detection:</strong><br>`;
+                
+                // Auto-detect BASE
+                const hostname = window.location.hostname;
+                const origin = window.location.origin;
+                let detectedBase = '';
+                
+                if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('local')) {
+                    detectedBase = origin + '/marketplace/';
+                } else {
+                    detectedBase = origin + '/';
+                }
+                
+                statusMessage += `🎯 Detected BASE: ${detectedBase}`;
+                
+                // Set the detected BASE
+                window.BASE = detectedBase;
+                log(`BASE auto-detected and set: ${detectedBase}`, 'success');
+            }
+            
+            showStatus('baseConstantInfo', statusMessage, baseStatus === 'undefined' ? 'warning' : 'success');
+            log(`BASE constant test completed: ${baseStatus}`, baseStatus === 'undefined' ? 'warning' : 'success');
+            
+            updateSummary();
+        }
+        
+        function testPathDetector() {
+            log('📦 Testing PathDetector...');
+            
+            let pathDetectorStatus = {
+                available: false,
+                basePath: null,
+                detectionMethod: null,
+                isProduction: null,
+                buildApiUrl: false
+            };
+            
+            if (window.pathDetector) {
+                pathDetectorStatus.available = true;
+                pathDetectorStatus.buildApiUrl = typeof window.pathDetector.buildApiUrl === 'function';
+                
+                try {
+                    const detectionInfo = window.pathDetector.getDetectionInfo();
+                    pathDetectorStatus.basePath = detectionInfo.basePath;
+                    pathDetectorStatus.detectionMethod = detectionInfo.detectionMethod;
+                    pathDetectorStatus.isProduction = detectionInfo.isProduction;
+                } catch (error) {
+                    log(`PathDetector error: ${error.message}`, 'error');
+                }
+            }
+            
+            testResults.pathDetector = pathDetectorStatus;
+            
+            let statusMessage = `
+                <strong>PathDetector Status:</strong><br>
+                📦 Available: ${pathDetectorStatus.available ? '✅' : '❌'}<br>
+            `;
+            
+            if (pathDetectorStatus.available) {
+                statusMessage += `
+                    📍 Base Path: ${pathDetectorStatus.basePath || 'null'}<br>
+                    🔍 Detection Method: ${pathDetectorStatus.detectionMethod || 'unknown'}<br>
+                    🚀 Is Production: ${pathDetectorStatus.isProduction ? '✅' : '❌'}<br>
+                    🔧 buildApiUrl Function: ${pathDetectorStatus.buildApiUrl ? '✅' : '❌'}<br>
+                `;
+            }
+            
+            showStatus('pathDetectorInfo', statusMessage, pathDetectorStatus.available ? 'success' : 'warning');
+            log(`PathDetector test completed: ${pathDetectorStatus.available ? 'Available' : 'Not Available'}`, pathDetectorStatus.available ? 'success' : 'warning');
+            
+            updateSummary();
+        }
+        
+        function testPollingUrls() {
+            log('📡 Testing polling URLs...');
+            
+            const testEndpoints = [
+                '/api/polling_integration.php',
+                'api/polling_integration.php',
+                '/api/test_polling.php',
+                'api/test_polling.php'
+            ];
+            
+            let urlResults = [];
+            
+            testEndpoints.forEach(endpoint => {
+                let result = {
+                    endpoint,
+                    baseUrl: null,
+                    pathDetectorUrl: null,
+                    manualUrl: null
+                };
+                
+                // Test with BASE constant
+                if (typeof BASE !== 'undefined' || typeof window.BASE !== 'undefined') {
+                    const baseConstant = BASE || window.BASE;
+                    let cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+                    result.baseUrl = baseConstant + cleanEndpoint;
+                }
+                
+                // Test with PathDetector
+                if (window.pathDetector && typeof window.pathDetector.buildApiUrl === 'function') {
+                    try {
+                        result.pathDetectorUrl = window.pathDetector.buildApiUrl(endpoint);
+                    } catch (error) {
+                        log(`PathDetector buildApiUrl error for ${endpoint}: ${error.message}`, 'error');
+                    }
+                }
+                
+                // Manual URL construction
+                const origin = window.location.origin;
+                const hostname = window.location.hostname;
+                let basePath = '';
+                
+                if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('local')) {
+                    basePath = '/marketplace';
+                } else {
+                    basePath = '';
+                }
+                
+                let cleanEndpoint = endpoint.startsWith('/') ? endpoint : '/' + endpoint;
+                result.manualUrl = origin + basePath + cleanEndpoint;
+                
+                urlResults.push(result);
+            });
+            
+            testResults.pollingUrls = urlResults;
+            
+            let statusMessage = '<strong>Polling URL Test Results:</strong><br>';
+            
+            urlResults.forEach(result => {
+                statusMessage += `<br><strong>Endpoint:</strong> ${result.endpoint}<br>`;
+                if (result.baseUrl) statusMessage += `🔧 BASE URL: ${result.baseUrl}<br>`;
+                if (result.pathDetectorUrl) statusMessage += `📦 PathDetector URL: ${result.pathDetectorUrl}<br>`;
+                statusMessage += `🔨 Manual URL: ${result.manualUrl}<br>`;
+                
+                // Check if URLs match
+                const urlsMatch = result.baseUrl === result.pathDetectorUrl;
+                statusMessage += `🎯 URLs Match: ${urlsMatch ? '✅' : '❌'}<br>`;
+            });
+            
+            showStatus('pollingUrlInfo', statusMessage, 'info');
+            log('Polling URL test completed', 'success');
+            
+            updateSummary();
+        }
+        
+        function testLiveApi() {
+            log('🚀 Testing live API endpoints...');
+            
+            const testUrls = [];
+            
+            // Get URLs from previous test
+            if (testResults.pollingUrls) {
+                testResults.pollingUrls.forEach(result => {
+                    if (result.baseUrl) testUrls.push(result.baseUrl);
+                    if (result.pathDetectorUrl && result.pathDetectorUrl !== result.baseUrl) {
+                        testUrls.push(result.pathDetectorUrl);
+                    }
+                });
+            }
+            
+            // Remove duplicates
+            const uniqueUrls = [...new Set(testUrls)];
+            
+            let apiResults = [];
+            let completedTests = 0;
+            
+            function updateApiResults() {
+                let statusMessage = '<strong>Live API Test Results:</strong><br>';
+                
+                apiResults.forEach(result => {
+                    statusMessage += `<br>🔗 <strong>URL:</strong> ${result.url}<br>`;
+                    statusMessage += `📊 <strong>Status:</strong> ${result.status}<br>`;
+                    statusMessage += `⏱️ <strong>Response Time:</strong> ${result.responseTime}ms<br>`;
+                    if (result.error) {
+                        statusMessage += `❌ <strong>Error:</strong> ${result.error}<br>`;
+                    }
+                });
+                
+                showStatus('apiTestInfo', statusMessage, 'info');
+                
+                if (completedTests === uniqueUrls.length) {
+                    testResults.liveApi = apiResults;
+                    log('Live API test completed', 'success');
+                    updateSummary();
+                }
+            }
+            
+            if (uniqueUrls.length === 0) {
+                showStatus('apiTestInfo', '<div class="status warning">❌ No URLs to test. Run URL test first.</div>', 'warning');
+                return;
+            }
+            
+            uniqueUrls.forEach(url => {
+                const startTime = Date.now();
+                
+                fetch(url, { method: 'HEAD' })
+                    .then(response => {
+                        const endTime = Date.now();
+                        const responseTime = endTime - startTime;
+                        
+                        apiResults.push({
+                            url,
+                            status: response.ok ? `✅ ${response.status} ${response.statusText}` : `❌ ${response.status} ${response.statusText}`,
+                            responseTime,
+                            error: null
+                        });
+                        
+                        log(`API test: ${url} - ${response.status} (${responseTime}ms)`, response.ok ? 'success' : 'error');
+                    })
+                    .catch(error => {
+                        const endTime = Date.now();
+                        const responseTime = endTime - startTime;
+                        
+                        apiResults.push({
+                            url,
+                            status: '❌ Failed',
+                            responseTime,
+                            error: error.message
+                        });
+                        
+                        log(`API test failed: ${url} - ${error.message}`, 'error');
+                    })
+                    .finally(() => {
+                        completedTests++;
+                        updateApiResults();
+                    });
+            });
+        }
+        
+        function applyFix() {
+            log('🔧 Applying PathDetector fix...');
+            
+            // Apply the fix
+            if (typeof BASE === 'undefined' && typeof window.BASE === 'undefined') {
+                // Auto-detect and set BASE
+                const hostname = window.location.hostname;
+                const origin = window.location.origin;
+                
+                if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('local')) {
+                    window.BASE = origin + '/marketplace/';
+                } else {
+                    window.BASE = origin + '/';
+                }
+                
+                log(`BASE constant set to: ${window.BASE}`, 'success');
+            }
+            
+            // Override PathDetector if available
+            if (window.pathDetector) {
+                const originalBuildApiUrl = window.pathDetector.buildApiUrl;
+                
+                window.pathDetector.buildApiUrl = function(endpoint) {
+                    const baseConstant = BASE || window.BASE;
+                    if (baseConstant) {
+                        if (!endpoint.startsWith('/')) endpoint = '/' + endpoint;
+                        let baseUrl = baseConstant;
+                        if (baseUrl.endsWith('/') && endpoint.startsWith('/')) {
+                            endpoint = endpoint.substring(1);
+                        }
+                        const fullUrl = baseUrl + endpoint;
+                        log(`PathDetector using BASE: ${fullUrl}`, 'info');
+                        return fullUrl;
+                    } else {
+                        return originalBuildApiUrl.call(this, endpoint);
+                    }
+                };
+                
+                log('PathDetector override applied', 'success');
+            }
+            
+            testResults.fixApplied = true;
+            
+            showStatus('fixInfo', '<div class="status success">✅ PathDetector fix applied successfully!</div>', 'success');
+            log('PathDetector fix application completed', 'success');
+            
+            updateSummary();
+        }
+        
+        function updateSummary() {
+            const summary = document.getElementById('testSummary');
+            
+            let summaryHtml = '<h3>📊 Test Summary</h3>';
+            
+            // Environment
+            if (testResults.environment) {
+                const env = testResults.environment;
+                summaryHtml += `<p>🌐 <strong>Environment:</strong> ${env.isDevelopment ? 'Development' : 'Production'} (${env.hostname})</p>`;
+            }
+            
+            // BASE Constant
+            if (testResults.baseConstant) {
+                const base = testResults.baseConstant;
+                summaryHtml += `<p>🔧 <strong>BASE Constant:</strong> ${base.status === 'undefined' ? '❌ Not Defined' : '✅ Defined'} (${base.value || 'N/A'})</p>`;
+            }
+            
+            // PathDetector
+            if (testResults.pathDetector) {
+                const pd = testResults.pathDetector;
+                summaryHtml += `<p>📦 <strong>PathDetector:</strong> ${pd.available ? '✅ Available' : '❌ Not Available'}</p>`;
+            }
+            
+            // Fix Status
+            summaryHtml += `<p>🔧 <strong>Fix Applied:</strong> ${testResults.fixApplied ? '✅ Yes' : '❌ No'}</p>`;
+            
+            // Overall Status
+            const hasIssues = (testResults.baseConstant && testResults.baseConstant.status === 'undefined') ||
+                             (testResults.pathDetector && !testResults.pathDetector.available);
+            
+            if (testResults.fixApplied) {
+                summaryHtml += '<div class="status success">🎉 <strong>Status:</strong> Fix applied - polling should work correctly!</div>';
+            } else if (hasIssues) {
+                summaryHtml += '<div class="status warning">⚠️ <strong>Status:</strong> Issues detected - apply fix to resolve polling problems</div>';
+            } else {
+                summaryHtml += '<div class="status success">✅ <strong>Status:</strong> No issues detected - polling should work correctly</div>';
+            }
+            
+            summary.innerHTML = summaryHtml;
+        }
+        
+        function clearLog() {
+            document.getElementById('testLog').innerHTML = '';
+            log('Test log cleared', 'info');
+        }
+        
+        function exportLog() {
+            const logContent = document.getElementById('testLog').innerText;
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `pathdetector-test-log-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            log('Test log exported', 'success');
+        }
+        
+        // Auto-run basic tests on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 PathDetector Fix Test page loaded', 'info');
+            
+            setTimeout(() => {
+                detectEnvironment();
+                testBaseConstant();
+                testPathDetector();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

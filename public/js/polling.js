@@ -137,12 +137,7 @@ class PollingManager {
       let pollingUrl;
       
       // Use PathDetector utility for consistent path detection
-      // Use API_BASE_PATH if available (set by header.php or dashboard.php)
-      if (window.API_BASE_PATH) {
-        pollingUrl = window.location.origin + window.API_BASE_PATH + '/polling_integration.php';
-        console.log('📡 Polling URL (using API_BASE_PATH):', pollingUrl);
-        console.log('📡 API_BASE_PATH:', window.API_BASE_PATH);
-      } else if (window.pathDetector) {
+      if (window.pathDetector) {
         pollingUrl = window.pathDetector.buildApiUrl('/api/polling_integration.php');
         const detectionInfo = window.pathDetector.getDetectionInfo();
         
@@ -150,7 +145,7 @@ class PollingManager {
         console.log('📡 Detection info:', detectionInfo);
       } else {
         // Fallback to manual detection if PathDetector not available
-        console.warn('⚠️ API_BASE_PATH and PathDetector not available, using fallback logic');
+        console.warn('⚠️ PathDetector not available, using fallback logic');
         const origin = window.location.origin;
         const pathname = window.location.pathname;
         
@@ -163,7 +158,9 @@ class PollingManager {
           basePath = pathname.substring(0, pathname.indexOf('/index.php'));
         } else {
           // For production servers with nginx root, use empty base path
-          basePath = '';
+          const hostname = window.location.hostname;
+          const ipPattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+          basePath = ipPattern.test(hostname) ? '' : '/marketplace';
         }
         
         pollingUrl = origin + basePath + '/api/polling_integration.php';
@@ -192,8 +189,6 @@ class PollingManager {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Response error (status ' + response.status + '):', errorText.substring(0, 500));
-        console.error('❌ Failed URL:', pollingUrl);
-        console.error('❌ Request payload:', JSON.stringify(this.lastCheckTimes));
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -339,10 +334,10 @@ class PollingManager {
       this.stop();
       
       // Show user notification with debugging info
-      // const debugInfo = window.pathDetector ? window.pathDetector.getDetectionInfo() : null;
-      // const message = debugInfo ? 
-      //   `Connection lost. Current path: ${debugInfo.basePath || 'empty'}. Please refresh the page.` :
-      //   'Connection lost. Please refresh the page.';
+      const debugInfo = window.pathDetector ? window.pathDetector.getDetectionInfo() : null;
+      const message = debugInfo ? 
+        `Connection lost. Current path: ${debugInfo.basePath || 'empty'}. Please refresh the page.` :
+        'Connection lost. Please refresh the page.';
       
       this.showErrorNotification(message);
     }
@@ -406,51 +401,6 @@ class PollingManager {
       this.fetchUpdates();
     }
   }
-
-  // Reset timestamps for testing (forces re-fetch of all data)
-  resetTimestamps() {
-    console.log('🔄 Resetting timestamps to force data refresh...');
-    this.lastCheckTimes = {
-      listings: '1970-01-01 00:00:00',
-      offers: '1970-01-01 00:00:00',
-      orders: '1970-01-01 00:00:00',
-      notifications: '1970-01-01 00:00:00'
-    };
-    this.saveTimestamps();
-    console.log('✅ Timestamps reset. Next poll will fetch all recent data.');
-    console.log('💡 Registered callbacks:', Object.keys(this.renderCallbacks));
-    
-    // Trigger immediate fetch
-    if (this.isPolling) {
-      this.fetchUpdates();
-    } else {
-      console.warn('⚠️ Polling is not running. Start polling first.');
-    }
-  }
-  
-  // Force fetch with specific timestamp (for testing)
-  forceRefresh(hoursAgo = 24) {
-    console.log(`🔄 Force refreshing data from last ${hoursAgo} hours...`);
-    const date = new Date();
-    date.setHours(date.getHours() - hoursAgo);
-    const timestamp = date.toISOString().slice(0, 19).replace('T', ' ');
-    
-    this.lastCheckTimes = {
-      listings: timestamp,
-      offers: timestamp,
-      orders: timestamp,
-      notifications: timestamp
-    };
-    this.saveTimestamps();
-    console.log('✅ Timestamps set to:', timestamp);
-    console.log('💡 Registered callbacks:', Object.keys(this.renderCallbacks));
-    
-    if (this.isPolling) {
-      this.fetchUpdates();
-    } else {
-      console.warn('⚠️ Polling is not running. Start polling first.');
-    }
-  }
 }
 
 // Global polling manager instance
@@ -475,9 +425,6 @@ function startPolling(renderCallbacks) {
   console.log('🆕 Creating new polling manager');
   pollingManager = new PollingManager();
   pollingManager.start(renderCallbacks);
-  
-  // Expose to window for debugging
-  window.pollingManager = pollingManager;
 }
 
 // Generic helper functions for UI updates
@@ -601,35 +548,4 @@ if (!document.querySelector('#polling-animations')) {
 // Export for modern usage
 window.PollingManager = PollingManager;
 window.startPolling = startPolling;
-window.pollingManager = pollingManager; // Expose global instance for debugging
-
-// Add global helpers for testing
-window.resetPollingTimestamps = function() {
-  if (pollingManager) {
-    pollingManager.resetTimestamps();
-  } else {
-    console.warn('⚠️ Polling manager not initialized yet');
-  }
-};
-
-window.forcePollingRefresh = function(hoursAgo = 24) {
-  if (pollingManager) {
-    pollingManager.forceRefresh(hoursAgo);
-  } else {
-    console.warn('⚠️ Polling manager not initialized yet');
-  }
-};
-
-window.checkPollingStatus = function() {
-  if (pollingManager) {
-    console.log('📊 Polling Status:');
-    console.log('  - Is polling:', pollingManager.isPolling);
-    console.log('  - Error count:', pollingManager.errorCount);
-    console.log('  - Registered callbacks:', Object.keys(pollingManager.renderCallbacks));
-    console.log('  - Last check times:', pollingManager.lastCheckTimes);
-    console.log('  - Current interval:', pollingManager.currentInterval + 'ms');
-  } else {
-    console.warn('⚠️ Polling manager not initialized yet');
-  }
-};
   

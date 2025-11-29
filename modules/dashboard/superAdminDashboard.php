@@ -1349,19 +1349,15 @@ if (isset($_GET['export'])) {
           window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
           console.log('🔧 [SuperAdmin] API_BASE_PATH:', window.API_BASE_PATH);
         }
-</script>
 
-<!-- Static Polling Integration -->
-<script src="<?= BASE ?>js/polling.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    console.log('📦 SuperAdmin Dashboard: Initializing polling...');
+    // Wait for polling system to be ready (loaded from header.php)
+    const waitForPolling = setInterval(() => {
+      if (typeof startPolling !== 'undefined') {
+        clearInterval(waitForPolling);
+        console.log('✅ Starting real-time polling for SuperAdmin Dashboard');
 
-    if (typeof startPolling !== 'undefined') {
-      console.log('✅ Starting real-time polling for SuperAdmin Dashboard');
-
-      try {
-        startPolling({
+        try {
+          startPolling({
           listings: (newListings) => {
             console.log('📋 New listings detected:', newListings.length);
             if (newListings.length > 0) {
@@ -1432,16 +1428,23 @@ if (isset($_GET['export'])) {
           }
         });
 
-        console.log('✅ Polling started successfully - checking every 5 seconds');
-        console.log('📊 Monitoring: listings, offers, orders');
-        console.log('🎯 Real-time updates enabled - NO page reload needed!');
-      } catch (error) {
-        console.error('❌ Error starting polling:', error);
-        console.error('❌ Error stack:', error.stack);
+          console.log('✅ Polling started successfully - checking every 5 seconds');
+          console.log('📊 Monitoring: listings, offers, orders');
+          console.log('🎯 Real-time updates enabled - NO page reload needed!');
+        } catch (error) {
+          console.error('❌ Error starting polling:', error);
+          console.error('❌ Error stack:', error.stack);
+        }
       }
-    } else {
-      console.error('❌ Polling system not available - startPolling function not found');
-    }
+    }, 100); // Check every 100ms until polling is available
+
+    // Timeout after 5 seconds
+    setTimeout(() => {
+      clearInterval(waitForPolling);
+      if (typeof startPolling === 'undefined') {
+        console.error('❌ Polling system not loaded after 5 seconds');
+      }
+    }, 5000);
   });
 </script>
 
