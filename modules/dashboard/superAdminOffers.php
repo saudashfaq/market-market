@@ -961,348 +961,12 @@ document.addEventListener('click', function(e) {
 
 
 <!-- Polling Integration -->
+<!-- Polling Integration -->
+<script src="<?= BASE ?>js/polling.js"></script>
 <script>
-// Define BASE constant globally
-const BASE = "<?php echo BASE; ?>";
-console.log('🔧 BASE constant defined:', BASE);
-
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 SuperAdmin Offers polling initialization started');
   
-  // Store current counts
-  let currentOffers = <?= $totalOffers ?>;
-  let currentOrders = <?= $totalOrders ?>;
-  let currentPendingOffers = <?= $pendingOffers ?>;
-  let currentCompletedOrders = <?= $completedOrders ?>;
-  
-  console.log('📊 Initial counts:', {
-    offers: currentOffers,
-    orders: currentOrders,
-    pendingOffers: currentPendingOffers,
-    completedOrders: currentCompletedOrders
-  });
-  
-  // Start polling for updates
-  const pollInterval = setInterval(() => {
-    console.log('🔄 Polling API...');
-    
-    fetch('<?= BASE ?>api/get_superadmin_stats.php', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      credentials: 'same-origin'
-    })
-      .then(response => {
-        console.log('📡 Response status:', response.status);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        console.log('📦 API Response:', data);
-        
-        if (data.success && data.stats) {
-          const newOffers = parseInt(data.stats.offers?.total) || 0;
-          const newOrders = parseInt(data.stats.orders?.total) || 0;
-          const newPendingOffers = parseInt(data.stats.offers?.pending) || 0;
-          const newCompletedOrders = parseInt(data.stats.orders?.completed) || 0;
-          
-          console.log('📊 Polling update:', {
-            offers: { current: currentOffers, new: newOffers, changed: newOffers !== currentOffers },
-            orders: { current: currentOrders, new: newOrders, changed: newOrders !== currentOrders },
-            pendingOffers: { current: currentPendingOffers, new: newPendingOffers, changed: newPendingOffers !== currentPendingOffers },
-            completedOrders: { current: currentCompletedOrders, new: newCompletedOrders, changed: newCompletedOrders !== currentCompletedOrders }
-          });
-          
-          // Check if data has changed
-          if (newOffers !== currentOffers || 
-              newOrders !== currentOrders || 
-              newPendingOffers !== currentPendingOffers || 
-              newCompletedOrders !== currentCompletedOrders) {
-            
-            console.log('🔄 Data changed, reloading page...');
-            location.reload();
-          } else {
-            console.log('✅ No changes detected');
-          }
-        } else {
-          console.warn('⚠️ Invalid API response:', data);
-        }
-      })
-      .catch(error => {
-        console.error('❌ Polling error:', error);
-      });
-  }, 5000); // Poll every 5 seconds
-  
-  console.log('✅ Polling started (interval: 5 seconds)');
-  
-  // Cleanup on page unload
-  window.addEventListener('beforeunload', () => {
-    console.log('🛑 Stopping polling...');
-    clearInterval(pollInterval);
-  });
-});
-</script>
-
-<!-- Real-time Polling System -->
-<script>
-// Wait for BASE constant to be available
-document.addEventListener('DOMContentLoaded', function() {
-  if (typeof BASE === 'undefined') {
-    console.error('❌ BASE constant not defined - polling may not work');
-    return;
-  }
-  console.log('🔧 Using BASE constant for offers/orders:', BASE);
-
-// Function to create offer row HTML
-function createOfferRow(offer) {
-  const belowAskingPrice = offer.amount < offer.asking_price;
-  
-  return `
-    <tr class="hover:bg-gray-50 transition-colors bg-blue-50 animate-fade-in" data-offer-id="${offer.id}">
-      <td class="py-4 px-6">
-        <div class="font-medium text-gray-900">OFF${offer.id}</div>
-      </td>
-      <td class="py-4 px-6">
-        <div class="font-medium text-gray-900">${offer.buyer_name || 'Unknown'}</div>
-        <div class="text-sm text-gray-500">${offer.buyer_email || ''}</div>
-      </td>
-      <td class="py-4 px-6">
-        <div class="font-medium text-gray-900">${offer.listing_name || 'Listing'}</div>
-        <div class="text-sm text-gray-500">Asking: $${Number(offer.listing_price || 0).toLocaleString()}</div>
-      </td>
-      <td class="py-4 px-6">
-        <div class="font-semibold text-gray-900">$${Number(offer.amount).toLocaleString()}</div>
-        ${belowAskingPrice ? '<div class="text-xs text-red-600 mt-1">Below asking price</div>' : ''}
-      </td>
-      <td class="py-4 px-6">
-        <span class="px-3 py-1 rounded-full text-xs font-medium ${getOfferStatusClass(offer.status)}">
-          ${offer.status || 'pending'}
-        </span>
-      </td>
-      <td class="py-4 px-6">
-        <div class="text-sm text-gray-900">${new Date(offer.created_at).toLocaleDateString()}</div>
-        <div class="text-xs text-gray-500">${new Date(offer.created_at).toLocaleTimeString()}</div>
-      </td>
-      <td class="py-4 px-6 text-right">
-        <div class="flex justify-end space-x-2">
-          <button onclick="viewOfferDetails(${offer.id}, '${offer.buyer_name}', '${offer.listing_name}', '${Number(offer.amount).toFixed(2)}', '${offer.status}', '${new Date(offer.created_at).toLocaleString()}', '')" 
-                  class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            View
-          </button>
-        </div>
-      </td>
-    </tr>
-  `;
-}
-
-// Function to create order row HTML
-function createOrderRow(order) {
-  return `
-    <tr class="hover:bg-gray-50 transition-colors bg-blue-50 animate-fade-in" data-order-id="${order.id}">
-      <td class="py-4 px-6">
-        <div class="font-medium text-gray-900">ORD${order.id}</div>
-      </td>
-      <td class="py-4 px-6">
-        <div class="font-medium text-gray-900">${order.buyer_name || 'Unknown'}</div>
-        <div class="text-sm text-gray-500">${order.buyer_email || ''}</div>
-      </td>
-      <td class="py-4 px-6">
-        <div class="font-medium text-gray-900">${order.seller_name || 'Unknown'}</div>
-        <div class="text-sm text-gray-500">${order.seller_email || ''}</div>
-      </td>
-      <td class="py-4 px-6">
-        <div class="font-semibold text-gray-900">$${Number(order.amount || 0).toLocaleString()}</div>
-        <div class="text-xs text-gray-500">Fee: $${Number(order.platform_fee || 0).toLocaleString()}</div>
-        <div class="text-sm font-medium text-blue-600">Total: $${Number((order.amount || 0) + (order.platform_fee || 0)).toLocaleString()}</div>
-      </td>
-      <td class="py-4 px-6">
-        <span class="px-3 py-1 rounded-full text-xs font-medium ${getOrderStatusClass(order.status)}">
-          ${order.status || 'pending'}
-        </span>
-      </td>
-      <td class="py-4 px-6">
-        <div class="text-sm text-gray-900">${new Date(order.created_at).toLocaleDateString()}</div>
-        <div class="text-xs text-gray-500">${new Date(order.created_at).toLocaleTimeString()}</div>
-      </td>
-      <td class="py-4 px-6 text-right">
-        <div class="flex justify-end space-x-2">
-          <button onclick="viewOrderDetails(${order.id})" 
-                  class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            View
-          </button>
-        </div>
-      </td>
-    </tr>
-  `;
-}
-
-function getOfferStatusClass(status) {
-  const classes = {
-    'pending': 'bg-yellow-100 text-yellow-800',
-    'accepted': 'bg-green-100 text-green-800',
-    'rejected': 'bg-red-100 text-red-800',
-    'expired': 'bg-gray-100 text-gray-800'
-  };
-  return classes[status] || 'bg-gray-100 text-gray-800';
-}
-
-function getOrderStatusClass(status) {
-  const classes = {
-    'pending': 'bg-yellow-100 text-yellow-800',
-    'paid': 'bg-blue-100 text-blue-800',
-    'processing': 'bg-purple-100 text-purple-800',
-    'completed': 'bg-green-100 text-green-800',
-    'cancelled': 'bg-red-100 text-red-800'
-  };
-  return classes[status] || 'bg-gray-100 text-gray-800';
-}
-
-// Function to update stats cards
-function updateStatsCards(newOffers, newOrders) {
-  console.log('📊 Updating stats cards');
-  
-  // Update Total Offers
-  const totalOffersEl = document.getElementById('total-offers-count');
-  if (totalOffersEl && newOffers.length > 0) {
-    const currentCount = parseInt(totalOffersEl.dataset.count) || 0;
-    const newCount = currentCount + newOffers.length;
-    totalOffersEl.dataset.count = newCount;
-    totalOffersEl.textContent = newCount;
-    totalOffersEl.classList.add('animate-pulse');
-    setTimeout(() => totalOffersEl.classList.remove('animate-pulse'), 1000);
-  }
-  
-  // Update Pending Offers - handle status changes
-  const pendingOffersEl = document.getElementById('pending-offers-count');
-  if (pendingOffersEl && newOffers.length > 0) {
-    const pendingCount = newOffers.filter(o => o.status === 'pending' || !o.status).length;
-    const acceptedCount = newOffers.filter(o => o.status === 'accepted').length;
-    const rejectedCount = newOffers.filter(o => o.status === 'rejected').length;
-    
-    const currentCount = parseInt(pendingOffersEl.dataset.count) || 0;
-    
-    // Add new pending offers
-    let newCount = currentCount + pendingCount;
-    
-    // Subtract accepted/rejected offers from pending
-    newCount = Math.max(0, newCount - acceptedCount - rejectedCount);
-    
-    pendingOffersEl.dataset.count = newCount;
-    pendingOffersEl.textContent = newCount;
-    pendingOffersEl.classList.add('animate-pulse');
-    setTimeout(() => pendingOffersEl.classList.remove('animate-pulse'), 1000);
-    
-    if (acceptedCount > 0 || rejectedCount > 0) {
-      console.log(`✅ Updated pending offers: ${currentCount} -> ${newCount} (accepted: ${acceptedCount}, rejected: ${rejectedCount})`);
-    }
-  }
-  
-  // Update Total Orders
-  const totalOrdersEl = document.getElementById('total-orders-count');
-  if (totalOrdersEl && newOrders.length > 0) {
-    const currentCount = parseInt(totalOrdersEl.dataset.count) || 0;
-    const newCount = currentCount + newOrders.length;
-    totalOrdersEl.dataset.count = newCount;
-    totalOrdersEl.textContent = newCount;
-    totalOrdersEl.classList.add('animate-pulse');
-    setTimeout(() => totalOrdersEl.classList.remove('animate-pulse'), 1000);
-  }
-  
-  // Update Completed Orders
-  const completedOrdersEl = document.getElementById('completed-orders-count');
-  if (completedOrdersEl && newOrders.length > 0) {
-    const completedCount = newOrders.filter(o => o.status === 'completed').length;
-    if (completedCount > 0) {
-      const currentCount = parseInt(completedOrdersEl.dataset.count) || 0;
-      const newCount = currentCount + completedCount;
-      completedOrdersEl.dataset.count = newCount;
-      completedOrdersEl.textContent = newCount;
-      completedOrdersEl.classList.add('animate-pulse');
-      setTimeout(() => completedOrdersEl.classList.remove('animate-pulse'), 1000);
-    }
-  }
-}
-
-// Function to add new offers to table
-function addNewOffers(newOffers) {
-  console.log('💰 Adding', newOffers.length, 'new offers to table');
-  
-  const tbody = document.getElementById('offers-table-body');
-  if (!tbody) {
-    console.warn('⚠️ Offers table body not found');
-    return;
-  }
-  
-  // Remove "no offers" message if present
-  const noOffersRow = tbody.querySelector('td[colspan]');
-  if (noOffersRow) {
-    noOffersRow.closest('tr').remove();
-  }
-  
-  // Add new offers to top of table
-  newOffers.forEach(offer => {
-    const rowHTML = createOfferRow(offer);
-    tbody.insertAdjacentHTML('afterbegin', rowHTML);
-  });
-  
-  // Remove highlight after 5 seconds
-  setTimeout(() => {
-    const newRows = tbody.querySelectorAll('.bg-blue-50');
-    newRows.forEach(row => row.classList.remove('bg-blue-50'));
-  }, 5000);
-  
-  // Keep only last 50 rows
-  while (tbody.children.length > 50) {
-    tbody.removeChild(tbody.lastChild);
-  }
-}
-
-// Function to add new orders to table
-function addNewOrders(newOrders) {
-  console.log('📦 Adding', newOrders.length, 'new orders to table');
-  
-  const tbody = document.getElementById('orders-table-body');
-  if (!tbody) {
-    console.warn('⚠️ Orders table body not found');
-    return;
-  }
-  
-  // Remove "no orders" message if present
-  const noOrdersRow = tbody.querySelector('td[colspan]');
-  if (noOrdersRow) {
-    noOrdersRow.closest('tr').remove();
-  }
-  
-  // Add new orders to top of table
-  newOrders.forEach(order => {
-    const rowHTML = createOrderRow(order);
-    tbody.insertAdjacentHTML('afterbegin', rowHTML);
-  });
-  
-  // Remove highlight after 5 seconds
-  setTimeout(() => {
-    const newRows = tbody.querySelectorAll('.bg-blue-50');
-    newRows.forEach(row => row.classList.remove('bg-blue-50'));
-  }, 5000);
-  
-  // Keep only last 50 rows
-  while (tbody.children.length > 50) {
-    tbody.removeChild(tbody.lastChild);
-  }
-}
-
   // Ensure API_BASE_PATH is set
   if (!window.API_BASE_PATH) {
     const path = window.location.pathname;
@@ -1310,21 +974,12 @@ function addNewOrders(newOrders) {
     console.log('🔧 [Offers] API_BASE_PATH:', window.API_BASE_PATH);
   }
   
-  // Load polling.js and start polling
-  console.log('📦 Loading polling.js for offers/orders...');
-  const pollingScript = document.createElement('script');
-  pollingScript.src = BASE + 'js/polling.js';
-
-  pollingScript.onload = function() {
-    console.log('✅ polling.js loaded for offers/orders page');
-    console.log('✅ API_BASE_PATH:', window.API_BASE_PATH);
+  if (typeof startPolling !== 'undefined') {
+    console.log('✅ Starting polling for offers and orders');
     
-    if (typeof startPolling !== 'undefined') {
-      console.log('✅ Starting polling for offers and orders');
-      
-        try {
-          startPolling({
-          offers: (newOffers) => {
+    try {
+      startPolling({
+        offers: (newOffers) => {
           console.log('💰 New offers detected:', newOffers.length);
           if (newOffers.length > 0) {
             console.log('💰 Offers data:', newOffers);
@@ -1367,22 +1022,14 @@ function addNewOrders(newOrders) {
         }
       });
       
-      console.log('✅ Offers/Orders polling started - checking every 5 seconds');
+      console.log('✅ Offers/Orders polling started');
     } catch (error) {
       console.error('❌ Error starting polling:', error);
     }
   } else {
-    console.error('❌ startPolling function not found');
+    console.error('❌ startPolling function not found - polling.js may not have loaded correctly');
   }
-};
-
-  pollingScript.onerror = function() {
-    console.error('❌ Failed to load polling.js');
-  };
-
-  document.head.appendChild(pollingScript);
-
-}); // End of DOMContentLoaded
+});
 </script>
 
 <style>
