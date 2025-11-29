@@ -352,6 +352,10 @@
     loadBiddingSettings();
     
     // Ensure API_BASE_PATH is set
+    // Define BASE constant globally
+    const BASE = "<?php echo BASE; ?>";
+    console.log('🔧 BASE constant defined:', BASE);
+    
     if (!window.API_BASE_PATH) {
       const path = window.location.pathname;
       window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';

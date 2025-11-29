@@ -962,6 +962,10 @@ document.addEventListener('click', function(e) {
 
 <!-- Polling Integration -->
 <script>
+// Define BASE constant globally
+const BASE = "<?php echo BASE; ?>";
+console.log('🔧 BASE constant defined:', BASE);
+
 document.addEventListener('DOMContentLoaded', () => {
   console.log('🚀 SuperAdmin Offers polling initialization started');
   

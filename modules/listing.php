@@ -787,6 +787,10 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Ensure API_BASE_PATH is set for listing page
+// Define BASE constant globally
+const BASE = "<?php echo BASE; ?>";
+console.log('🔧 BASE constant defined:', BASE);
+
 if (!window.API_BASE_PATH) {
   const path = window.location.pathname;
   window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
@@ -798,7 +802,7 @@ console.log('🚀 LISTING PAGE: Starting real-time polling system');
 console.log('🚀 API_BASE_PATH available:', window.API_BASE_PATH);
 
 const pollingScript = document.createElement('script');
-pollingScript.src = '<?= BASE ?>js/polling.js';
+pollingScript.src = BASE + 'js/polling.js';
 
 pollingScript.onload = function() {
   console.log('✅ Polling system loaded for listing page');

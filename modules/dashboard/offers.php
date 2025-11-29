@@ -1453,6 +1453,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 1000);
   
+  // Define BASE constant globally
+  const BASE = "<?php echo BASE; ?>";
+  console.log('🔧 BASE constant defined:', BASE);
+  
   console.log('🚀 Offers page polling initialization started');
   
   // Wait for global polling manager to be available

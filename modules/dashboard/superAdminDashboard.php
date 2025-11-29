@@ -1079,15 +1079,12 @@ if (isset($_GET['export'])) {
   </script>
 
   <script>
-    // BASE constant already defined in dashboard.php
+    // Define BASE constant globally for SuperAdmin Dashboard
+    const BASE = "<?php echo BASE; ?>";
+    console.log('🔧 BASE constant defined:', BASE);
     
-    // Wait for BASE constant to be available
+    // Wait for DOM to be ready
     document.addEventListener('DOMContentLoaded', function() {
-      if (typeof BASE === 'undefined') {
-        console.error('❌ BASE constant not defined - polling may not work');
-        return;
-      }
-      
       // Polling Integration for SuperAdmin Dashboard
       console.log('🔍 Initializing SuperAdmin Dashboard Polling...');
       console.log('🔧 BASE constant:', BASE);
@@ -1348,12 +1345,16 @@ if (isset($_GET['export'])) {
     
     // Load polling.js first, then start polling
     console.log('📦 Loading polling.js for SuperAdmin Dashboard...');
+    console.log('📦 BASE constant:', BASE);
+    console.log('📦 Full polling.js path:', BASE + 'js/polling.js');
+    
     const pollingScript = document.createElement('script');
     pollingScript.src = BASE + 'js/polling.js';
     
     pollingScript.onload = function() {
       console.log('✅ polling.js loaded for SuperAdmin Dashboard');
       console.log('✅ API_BASE_PATH available:', window.API_BASE_PATH);
+      console.log('✅ startPolling function available:', typeof startPolling);
       
       if (typeof startPolling !== 'undefined') {
         console.log('✅ Starting real-time polling for SuperAdmin Dashboard');

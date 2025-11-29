@@ -468,6 +468,10 @@ if ($isEmpty && ($userRole === 'admin' || $userRole === 'superadmin')):
 
 <!-- Transaction Polling Integration -->
 <script>
+// Define BASE constant globally
+const BASE = "<?php echo BASE; ?>";
+console.log('🔧 BASE constant defined:', BASE);
+
 const currentUserId = <?= $user_id ?>;
 const activeTab = '<?= $activeTab ?>';
 

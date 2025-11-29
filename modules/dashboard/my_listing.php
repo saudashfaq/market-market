@@ -486,6 +486,10 @@ $categories = $categoriesStmt->fetchAll(PDO::FETCH_COLUMN);
 
 <script src="<?= BASE ?>js/polling.js?v=<?= time() ?>"></script>
 <script>
+// Define BASE constant globally
+const BASE = "<?php echo BASE; ?>";
+console.log('🔧 BASE constant defined:', BASE);
+
 // Use centralized polling system
 const currentUserId = <?= $user_id ?>;
 console.log('🔧 My Listing Page - User ID:', currentUserId);
