@@ -192,6 +192,8 @@ class PollingManager {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Response error (status ' + response.status + '):', errorText.substring(0, 500));
+        console.error('❌ Failed URL:', pollingUrl);
+        console.error('❌ Request payload:', JSON.stringify(this.lastCheckTimes));
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
