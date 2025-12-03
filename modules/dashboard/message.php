@@ -67,6 +67,13 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
   }
 
   error_log("Redirecting to conversation ID: $conversation_id");
+  
+  // ✅ Add debug output before redirect
+  error_log("=== REDIRECT DEBUG ===");
+  error_log("From: " . $_SERVER['REQUEST_URI']);
+  error_log("To: ./index.php?p=dashboard&page=message&conversation_id=" . $conversation_id);
+  error_log("User ID: $userId, Seller ID: $seller_id, Listing ID: $listing_id");
+  
   header("Location: ./index.php?p=dashboard&page=message&conversation_id=" . $conversation_id);
   exit;
 }
@@ -233,19 +240,37 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
     <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">😢</button>
     <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">😭</button>
     <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">😡</button>
+  </div>
+</div>
+
+<script>
+    // ✅ BASE constant already defined in header.php
+    console.log('✅ Using BASE constant:', BASE);
+    
+    // Global variables
+    const userId = <?= $userId ?>; // Current user ID from PHP
+    let currentConversation = null;
+    let currentListingId = null;
+    let selectedImages = [];
+    let emojiPickerVisible = false;
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    
+    // Image validation
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    
+    function validateImage(file) {
 
-    if (!allowedTypes.includes(file.type)) {
-    showNotification('Please select a valid image file (JPEG, PNG, GIF, WebP)', 'error');
-    return false;
-    }
+      if (!allowedTypes.includes(file.type)) {
+        showNotification('Please select a valid image file (JPEG, PNG, GIF, WebP)', 'error');
+        return false;
+      }
 
-    if (file.size > maxSize) {
-    showNotification('Image size must be less than 5MB', 'error');
-    return false;
-    }
+      if (file.size > maxSize) {
+        showNotification('Image size must be less than 5MB', 'error');
+        return false;
+      }
 
-    return true;
+      return true;
     }
 
     function handleImageSelection(files) {
@@ -306,16 +331,37 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
     // Enhanced Message Sending
     async function sendMessage(formData) {
     try {
-    const res = await fetch(`${BASE}index.php?p=send_message`, {
+    const url = `${BASE}index.php?p=send_message`;
+    console.log('🔗 Sending message to:', url);
+    console.log('🔗 BASE constant:', BASE);
+    
+    const res = await fetch(url, {
     method: 'POST',
     body: formData
     });
+
+    console.log('📡 Response status:', res.status);
+    console.log('📡 Response headers:', [...res.headers.entries()]);
 
     if (!res.ok) {
     throw new Error(`HTTP ${res.status}: ${res.statusText}`);
     }
 
-    const result = await res.json();
+    // Get raw text first to debug
+    const text = await res.text();
+    console.log('🔍 Raw response from send_message:', text);
+    console.log('🔍 Response length:', text.length);
+    console.log('🔍 First 100 chars:', text.substring(0, 100));
+    console.log('🔍 Last 100 chars:', text.substring(text.length - 100));
+
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      console.error('❌ JSON parse error:', e);
+      console.error('❌ Full response text:', text);
+      throw new Error('Invalid JSON response: ' + text.substring(0, 100));
+    }
 
     if (result.success) {
     return result;
@@ -559,15 +605,19 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
       // Check if conversation_id is in URL and open it
       const urlParams = new URLSearchParams(window.location.search);
       const conversationId = urlParams.get('conversation_id');
+      
+      console.log('=== CONVERSATION AUTO-OPEN DEBUG ===');
+      console.log('Current URL:', window.location.href);
+      console.log('URL Parameters:', urlParams.toString());
+      console.log('conversation_id from URL:', conversationId);
+      
       if (conversationId) {
-      console.log('Opening conversation from URL:', conversationId);
-      // Wait for conversations to load first
-      setTimeout(() => {
-      const convElement = document.querySelector(`[data-conversation-id="${conversationId}"]`);
-      if (convElement) {
-      convElement.click();
-      }
-      }, 500);
+        console.log('🔵 Opening conversation from URL:', conversationId);
+        // Store the conversation ID to open after conversations load
+        window.pendingConversationId = conversationId;
+        console.log('✅ Stored in window.pendingConversationId');
+      } else {
+        console.log('❌ No conversation_id in URL');
       }
       });
 
@@ -582,28 +632,40 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
       }
 
       // Message form submission
-      document.getElementById('sendMessageForm').addEventListener('submit', handleMessageSubmit);
+      const sendForm = document.getElementById('sendMessageForm');
+      if (sendForm) {
+        sendForm.addEventListener('submit', handleMessageSubmit);
+      }
 
       // Image upload
-      document.getElementById('imageButton').addEventListener('click', () => {
-      document.getElementById('imageInput').click();
-      });
+      const imageButton = document.getElementById('imageButton');
+      if (imageButton) {
+        imageButton.addEventListener('click', () => {
+          document.getElementById('imageInput').click();
+        });
+      }
 
-      document.getElementById('imageInput').addEventListener('change', (e) => {
-      handleImageSelection(e.target.files);
-      e.target.value = ''; // Reset input
-      });
+      const imageInput = document.getElementById('imageInput');
+      if (imageInput) {
+        imageInput.addEventListener('change', (e) => {
+          handleImageSelection(e.target.files);
+          e.target.value = ''; // Reset input
+        });
+      }
 
       // Emoji picker
-      document.getElementById('emojiButton').addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (emojiPickerVisible) {
-      hideEmojiPicker();
-      } else {
-      showEmojiPicker();
+      const emojiButton = document.getElementById('emojiButton');
+      if (emojiButton) {
+        emojiButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (emojiPickerVisible) {
+            hideEmojiPicker();
+          } else {
+            showEmojiPicker();
+          }
+        });
       }
-      });
 
       // Emoji selection
       document.querySelectorAll('.emoji-btn').forEach(btn => {
@@ -623,31 +685,40 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
       });
 
       // Clear images
-      document.getElementById('clearImages').addEventListener('click', () => {
-      selectedImages = [];
-      updateImagePreview();
-      });
+      const clearImages = document.getElementById('clearImages');
+      if (clearImages) {
+        clearImages.addEventListener('click', () => {
+          selectedImages = [];
+          updateImagePreview();
+        });
+      }
 
       // Close emoji picker when clicking outside
       document.addEventListener('click', (e) => {
-      if (emojiPickerVisible && !e.target.closest('#emojiPicker') && !e.target.closest('#emojiButton')) {
-      hideEmojiPicker();
-      }
+        if (emojiPickerVisible && !e.target.closest('#emojiPicker') && !e.target.closest('#emojiButton')) {
+          hideEmojiPicker();
+        }
       });
 
       // Auto-resize textarea
-      document.getElementById('messageInput').addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-      });
+      const messageInput = document.getElementById('messageInput');
+      if (messageInput) {
+        messageInput.addEventListener('input', function() {
+          this.style.height = 'auto';
+          this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
 
-      // Send message on Enter (but not Shift+Enter)
-      document.getElementById('messageInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      document.getElementById('sendMessageForm').dispatchEvent(new Event('submit'));
+        // Send message on Enter (but not Shift+Enter)
+        messageInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            const form = document.getElementById('sendMessageForm');
+            if (form) {
+              form.dispatchEvent(new Event('submit'));
+            }
+          }
+        });
       }
-      });
 
       // Search functionality removed - no search input in header
       }
@@ -762,8 +833,39 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
       }
 
       if (data.success) {
+      console.log('✅ Conversations loaded successfully:', data.conversations.length);
       displayConversations(data.conversations);
       document.getElementById('conversationCount').textContent = data.conversations.length;
+      
+      // ✅ Auto-open conversation if conversation_id is in URL
+      if (window.pendingConversationId) {
+        console.log('🔵 Checking for pending conversation:', window.pendingConversationId);
+        console.log('🔍 Looking for element with data-conversation-id:', window.pendingConversationId);
+        
+        const convElement = document.querySelector(`[data-conversation-id="${window.pendingConversationId}"]`);
+        console.log('🔍 Found element:', convElement);
+        
+        if (convElement) {
+          console.log('✅ Found conversation element, clicking...');
+          convElement.click();
+          console.log('✅ Click triggered');
+          window.pendingConversationId = null; // Clear after opening
+        } else {
+          console.error('❌ Conversation element not found for ID:', window.pendingConversationId);
+          console.log('Available conversations:', data.conversations.map(c => c.id));
+          
+          // Try to find the conversation in the data
+          const conv = data.conversations.find(c => c.id == window.pendingConversationId);
+          if (conv) {
+            console.log('✅ Conversation exists in data:', conv);
+            console.log('❌ But element not found in DOM');
+          } else {
+            console.error('❌ Conversation not in loaded data');
+          }
+        }
+      } else {
+        console.log('ℹ️ No pending conversation to open');
+      }
       } else {
       throw new Error(data.error || 'Failed to load conversations');
       }
@@ -818,7 +920,7 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
           : 'bg-white border-transparent hover:border-blue-200 hover:shadow-sm hover:bg-gray-50'
       }"
         data-conversation-id="${conv.id}"
-        onclick="openConversation(${conv.id}, '${otherUser}', '${otherUserPic || ''}', ${conv.listing_id || 'null'})">
+        onclick="openConversation(${conv.id}, '${otherUser.replace(/'/g, "\\'")}', '${otherUserPic || ''}', ${conv.listing_id || 'null'})">
         <div class="flex items-center space-x-4">
           <div class="relative">
             ${getProfilePicHtml(otherUserPic, otherUser, 'w-14 h-14')}

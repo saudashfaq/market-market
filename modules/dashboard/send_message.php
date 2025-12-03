@@ -1,6 +1,13 @@
 <?php
+// Clean output buffer to prevent any whitespace/errors before JSON
+ob_start();
+
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../middlewares/auth.php';
+
+// Clear any output from includes and restart buffer
+ob_end_clean();
+ob_start();
 
 header('Content-Type: application/json');
 
@@ -140,13 +147,35 @@ try {
             'conversation'
         );
         
-        // Send email notification in background
-        register_shutdown_function(function() use ($pdo, $conversation, $senderName, $message) {
-            if (function_exists('fastcgi_finish_request')) {
-                fastcgi_finish_request();
-            }
-            
-            try {
+        // Send email notification in background (disabled to prevent output issues)
+        // Email notifications can be sent via a cron job or queue system instead
+    }
+    
+    $pdo->commit();
+    
+    // Clear any output that might have been generated
+    ob_clean();
+    
+    $response = json_encode([
+        'success' => true, 
+        'images' => $imageUrls,
+        'message_id' => $message_id
+    ]);
+    
+    echo $response;
+    
+    // Flush output and close connection
+    ob_end_flush();
+    
+    // Close connection to browser so email sending doesn't delay response
+    if (function_exists('fastcgi_finish_request')) {
+        fastcgi_finish_request();
+    }
+    
+    // Now try to send email notification (won't affect response)
+    if ($conversation && $conversation['recipient_id']) {
+        try {
+            if (file_exists(__DIR__ . '/../../vendor/autoload.php')) {
                 require_once __DIR__ . '/../../includes/email_helper.php';
                 
                 // Get recipient details
@@ -154,28 +183,29 @@ try {
                 $stmt->execute([$conversation['recipient_id']]);
                 $recipient = $stmt->fetch(PDO::FETCH_ASSOC);
                 
-                if ($recipient) {
+                if ($recipient && function_exists('sendNewMessageEmail')) {
                     sendNewMessageEmail($recipient['email'], $recipient['name'], $senderName, $message);
                     error_log("✅ Message notification email sent to: {$recipient['email']}");
                 }
-            } catch (Exception $e) {
-                error_log("❌ Error sending message notification email: " . $e->getMessage());
             }
-        });
+        } catch (Exception $e) {
+            error_log("❌ Error sending message notification email: " . $e->getMessage());
+        }
     }
     
-    $pdo->commit();
-    echo json_encode([
-        'success' => true, 
-        'images' => $imageUrls,
-        'message_id' => $pdo->lastInsertId()
-    ]);
+    exit;
     
 } catch (Exception $e) {
     if (isset($pdo)) {
         $pdo->rollBack();
     }
     error_log("Message send error: " . $e->getMessage());
+    
+    // Clear any output that might have been generated
+    ob_clean();
+    
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    
+    ob_end_flush();
+    exit;
 }
-exit;

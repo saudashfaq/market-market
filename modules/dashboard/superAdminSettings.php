@@ -356,9 +356,9 @@
     const BASE = "<?php echo BASE; ?>";
     console.log('🔧 BASE constant defined:', BASE);
     
-    if (!window.API_BASE_PATH) {
-      const path = window.location.pathname;
-      window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+    // Use PathUtils for API base path
+    if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
+      window.API_BASE_PATH = BASE + 'api';
       console.log('🔧 [Settings] API_BASE_PATH:', window.API_BASE_PATH);
     }
     

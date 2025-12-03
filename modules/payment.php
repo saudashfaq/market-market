@@ -1,4 +1,47 @@
 <?php
+// ============================================
+// PAYMENT FUNCTIONALITY TEMPORARILY DISABLED
+// ============================================
+// This page has been disabled as per client requirements
+// Users can browse, create, update listings but cannot make payments yet
+// To re-enable: Remove this block and uncomment the code below
+
+die("
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Payment Temporarily Unavailable</title>
+    <script src='https://cdn.tailwindcss.com'></script>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'>
+</head>
+<body class='bg-gray-50'>
+    <div class='min-h-screen flex items-center justify-center p-4'>
+        <div class='max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center'>
+            <div class='w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6'>
+                <i class='fas fa-tools text-yellow-600 text-3xl'></i>
+            </div>
+            <h1 class='text-2xl font-bold text-gray-900 mb-4'>Payment Feature Coming Soon</h1>
+            <p class='text-gray-600 mb-6'>
+                Payment functionality is currently under development. You can still browse listings and make offers to sellers.
+            </p>
+            <div class='space-y-3'>
+                <a href='index.php?p=listing' class='block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors'>
+                    <i class='fas fa-list mr-2'></i>Browse Listings
+                </a>
+                <a href='index.php?p=dashboard' class='block w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-4 rounded-lg transition-colors'>
+                    <i class='fas fa-home mr-2'></i>Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+");
+
+// ORIGINAL CODE - COMMENTED OUT
+/*
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../api/escrow_api.php';
 require_once __DIR__ . '/../includes/flash_helper.php';
@@ -10,6 +53,8 @@ if (!$user) {
 }
 $error=null;
 $pdo = db();
+*/
+// END OF COMMENTED CODE - Payment page disabled
 $listing_id = $_GET['id'] ?? null;
 $offer_id_param = $_GET['offer_id'] ?? null;
 // If listing ID is missing but offer ID is present, get listing ID from offer

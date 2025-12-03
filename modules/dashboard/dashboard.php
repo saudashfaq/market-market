@@ -223,9 +223,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         const path = window.location.pathname;
         let basePath = '';
         
-        // Check if we're in /marketplace/ subdirectory (localhost)
-        if (path.includes('/marketplace/')) {
-          basePath = '/marketplace';
+        // Use BASE constant if available
+        if (typeof BASE !== 'undefined') {
+          basePath = BASE.replace(/\/$/, ''); // Remove trailing slash
         } else if (path.includes('/public/')) {
           // Extract base path before /public/
           basePath = path.substring(0, path.indexOf('/public/'));

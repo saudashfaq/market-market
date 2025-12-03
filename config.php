@@ -36,12 +36,39 @@ if (!defined('PANDASCROW_BASE_URL')) {
         : 'https://api.pandascrow.io');
 }
 
-// Base URL
+// Base URL - Auto-detects for both local and production
 if (!defined('BASE')) {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
                 ($_SERVER['SERVER_PORT'] ?? 0) == 443 ? 'https://' : 'http://';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    define('BASE', $protocol . $host . '/');
+    
+    // Detect base path from script location
+    $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '';
+    $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+    $basePath = '/';
+    
+    // Check if we're in a subdirectory setup (like XAMPP: /marketplace/public/)
+    if (strpos($scriptPath, '/public/') !== false) {
+        // Extract everything up to and including /public/
+        $basePath = substr($scriptPath, 0, strpos($scriptPath, '/public/') + 8); // +8 to include '/public/'
+    } 
+    // Check if document root ends with 'public' (Nginx setup: root is /var/www/marketplace/public)
+    elseif (strpos($documentRoot, '/public') !== false && strpos($documentRoot, '/public') === strlen($documentRoot) - 7) {
+        // Server root is already set to public folder, so base path is just /
+        $basePath = '/';
+    }
+    // For other setups, try to detect from script path
+    elseif (strpos($scriptPath, '/') !== false && $scriptPath !== '/index.php') {
+        $basePath = dirname($scriptPath);
+        if ($basePath !== '/') {
+            $basePath .= '/';
+        }
+    }
+    
+    define('BASE', $protocol . $host . $basePath);
+    
+    // Log BASE for debugging (can be disabled in production)
+    error_log("BASE URL set to: " . BASE . " (DOCUMENT_ROOT: " . $documentRoot . ", SCRIPT_NAME: " . $scriptPath . ")");
 }
 
 // PDO connection
