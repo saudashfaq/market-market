@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/../config.php"; // Load config first to get BASE constant
 require_once __DIR__ . "/../middlewares/auth.php";
 require_once __DIR__ . "/flash_helper.php";
 require_once __DIR__ . "/popup_helper.php";
@@ -14,8 +15,32 @@ require_once __DIR__ . "/popup_helper.php";
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="<?= BASE ?>public/js/popup.js"></script>
-  <script src="<?= BASE ?>public/js/path-utils.js"></script>
+  <?php 
+  // Ensure BASE is defined with better error handling
+  if (!defined('BASE')) {
+      try {
+          $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https://' : 'http://';
+          $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+          $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '';
+          $basePath = '/';
+          
+          if (strpos($scriptPath, '/public/') !== false) {
+              $basePath = substr($scriptPath, 0, strpos($scriptPath, '/public/') + 8);
+          }
+          
+          define('BASE', $protocol . $host . $basePath);
+      } catch (Exception $e) {
+          // Fallback if something goes wrong
+          define('BASE', '/');
+          error_log("Error setting BASE: " . $e->getMessage());
+      }
+  }
+  
+  // Get relative path for JS files
+  $jsPath = defined('BASE') ? BASE . 'public/js/' : './public/js/';
+  ?>
+  <script src="<?= $jsPath ?>popup.js"></script>
+  <script src="<?= $jsPath ?>path-utils.js"></script>
   <?php if (is_logged_in()): ?>
   <script>
     // ✅ Define BASE constant globally
@@ -55,13 +80,13 @@ require_once __DIR__ . "/popup_helper.php";
       console.log('🔧 Test URL:', baseUrl + window.API_BASE_PATH + '/notifications_api.php');
     })();
   </script>
-  <script src="<?= BASE ?>public/js/notifications.js"></script>
-  <script src="<?= BASE ?>public/js/path-detector.js"></script>
-  <script src="<?= BASE ?>public/js/polling.js"></script>
-  <script src="<?= BASE ?>public/js/polling-init.js"></script>
-  <script src="<?= BASE ?>public/js/polling-debug.js"></script>
+  <script src="<?= $jsPath ?>notifications.js"></script>
+  <script src="<?= $jsPath ?>path-detector.js"></script>
+  <script src="<?= $jsPath ?>polling.js"></script>
+  <script src="<?= $jsPath ?>polling-init.js"></script>
+  <script src="<?= $jsPath ?>polling-debug.js"></script>
   <?php endif; ?>
-  <script src="<?= BASE ?>public/js/logout-confirmation.js" defer></script>
+  <script src="<?= $jsPath ?>logout-confirmation.js" defer></script>
   <style>
     @keyframes slideUpFade {
       from {
