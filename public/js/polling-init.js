@@ -341,9 +341,10 @@ function showUpdateNotification(message) {
 
 function showBrowserNotification(notification) {
     if ('Notification' in window && Notification.permission === 'granted') {
+        const iconPath = typeof BASE !== 'undefined' ? `${BASE}images/logo.png` : '/images/logo.png';
         new Notification(notification.title, {
             body: notification.message,
-            icon: '/marketplace/public/images/logo.png'
+            icon: iconPath
         });
     }
 }

@@ -18,7 +18,7 @@ $pdo = db();
 // Get current user ID
 $current_user_id = $_SESSION['user_id'] ?? null;
 
-// Fetch listing details
+// Fetch listing details - ✅ Allow viewing expired listings via direct URL
 try {
     $stmt = $pdo->prepare("
         SELECT l.*, u.name as seller_name, u.email as seller_email, u.profile_pic as seller_profile_pic
@@ -31,6 +31,13 @@ try {
     
     if (!$listing) {
         die("Listing not found");
+    }
+    
+    // ✅ Check if listing is expired
+    $is_expired = false;
+    if (!empty($listing['expires_at'])) {
+        $expires_at = strtotime($listing['expires_at']);
+        $is_expired = $expires_at < time();
     }
     
     // Get listing categories
@@ -213,10 +220,35 @@ try {
             <div class="lg:col-span-2 space-y-8">
                 <!-- Title & Status -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                    <?php if ($is_expired): ?>
+                    <!-- ✅ Expired Listing Notice -->
+                    <div class="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-400 text-xl"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm font-medium text-yellow-800">
+                                    This listing has expired and is no longer available for purchase.
+                                </p>
+                                <p class="text-xs text-yellow-700 mt-1">
+                                    Expired on: <?= date('F j, Y', strtotime($listing['expires_at'])) ?>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    
                     <div class="flex flex-wrap items-center gap-2 mb-4">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            <i class="fas fa-shield-alt mr-1"></i> <?= ucfirst($listing['status']) ?>
-                        </span>
+                        <?php if ($is_expired): ?>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <i class="fas fa-clock mr-1"></i> Expired
+                            </span>
+                        <?php else: ?>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <i class="fas fa-shield-alt mr-1"></i> <?= ucfirst($listing['status']) ?>
+                            </span>
+                        <?php endif; ?>
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             <?= ucfirst($listing['type']) ?>
                         </span>
@@ -789,17 +821,23 @@ try {
                             <?php else: ?>
                             <!-- Buyer's View -->
                             <div class="space-y-3">
-                                <button onclick="showBuyNowPopupDetail(<?= $listing['id'] ?>, '<?= htmlspecialchars($listing['name']) ?>', '<?= htmlspecialchars($listing['asking_price']) ?>', <?= $listing['user_id'] ?>)" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center cursor-pointer">
+                                <!-- Buy Now Button - Opens Chat -->
+                                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=buy" 
+                                   class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center text-decoration-none shadow-lg">
                                     <i class="fas fa-shopping-cart mr-2"></i>
                                     Buy Now
-                                </button>
+                                </a>
                                 
-                                <button onclick="showMakeOfferPopupDetail(<?= $listing['id'] ?>, '<?= htmlspecialchars($listing['name']) ?>', '<?= htmlspecialchars($listing['asking_price']) ?>', <?= $listing['user_id'] ?>)" class="w-full border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center cursor-pointer">
+                                <!-- Make Offer Button - Opens Chat -->
+                                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=offer" 
+                                   class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:opacity-90 text-white font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center text-decoration-none">
                                     <i class="fas fa-handshake mr-2"></i>
                                     Make Offer
-                                </button>
+                                </a>
                                 
-                                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center text-decoration-none">
+                                <!-- Contact Seller Button -->
+                                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>" 
+                                   class="w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center text-decoration-none">
                                     <i class="far fa-envelope mr-2"></i>
                                     Contact Seller
                                 </a>

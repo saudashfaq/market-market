@@ -17,12 +17,16 @@ $current_user_id = $user_logged_in ? $_SESSION['user']['id'] : null;
 $page = getCurrentPage('pg');
 $perPage = 12; // 12 listings per page (4x3 grid)
 // Base SQL
+// ✅ Only show listings that are approved AND not expired
 $sql = "SELECT l.*, 
                (SELECT file_path FROM listing_proofs WHERE listing_id = l.id LIMIT 1) AS proof_image
         FROM listings l
-        WHERE l.status = 'approved'";
+        WHERE l.status = 'approved' 
+        AND (l.expires_at IS NULL OR l.expires_at > NOW())";
 
-$countSql = "SELECT COUNT(*) as total FROM listings l WHERE l.status = 'approved'";
+$countSql = "SELECT COUNT(*) as total FROM listings l 
+             WHERE l.status = 'approved' 
+             AND (l.expires_at IS NULL OR l.expires_at > NOW())";
 
 $params = [];
 
@@ -267,15 +271,17 @@ $categories = ['All', 'Website', 'YouTube'];
               </a>
               <?php elseif ($user_logged_in): ?>
               <div class="flex gap-2 mb-2">
-                <!-- Buy Now Button -->
-                <button onclick="showBuyNowPopup(<?= $listing['id'] ?>, '<?= htmlspecialchars($listing['name']) ?>', '<?= htmlspecialchars($listing['asking_price']) ?>', <?= $listing['user_id'] ?>)" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-2 rounded-md hover:opacity-90 transition-opacity shadow-md">
+                <!-- Buy Now Button - Opens Chat -->
+                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=buy" 
+                   class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-2 rounded-md hover:opacity-90 transition-opacity shadow-md text-center flex items-center justify-center">
                   <i class="fa-solid fa-shopping-cart mr-1"></i> Buy Now
-                </button>
+                </a>
                 
-                <!-- Make Offer Button -->
-                <button onclick="showMakeOfferPopup(<?= $listing['id'] ?>, '<?= htmlspecialchars($listing['name']) ?>', '<?= htmlspecialchars($listing['asking_price']) ?>', <?= $listing['user_id'] ?>)" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-2 rounded-md hover:opacity-90 transition-opacity">
+                <!-- Make Offer Button - Opens Chat -->
+                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=offer" 
+                   class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-2 rounded-md hover:opacity-90 transition-opacity text-center flex items-center justify-center">
                   <i class="fa-solid fa-handshake mr-1"></i> Make Offer
-                </button>
+                </a>
               </div>
               
               <!-- View Details Button -->
@@ -291,13 +297,13 @@ $categories = ['All', 'Website', 'YouTube'];
               </div>
               
               <div class="flex gap-2 mb-2">
-                <!-- Login to Buy Button -->
-                <a href="<?= url('index.php?p=login') ?>" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-2 rounded-md hover:opacity-90 transition-opacity shadow-md text-center">
+                <!-- Login to Buy -->
+                <a href="<?= url('index.php?p=login') ?>" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-2 rounded-md hover:opacity-90 transition-opacity text-center flex items-center justify-center">
                   <i class="fa-solid fa-right-to-bracket mr-1"></i> Login to Buy
                 </a>
                 
-                <!-- Login to Offer Button -->
-                <a href="<?= url('index.php?p=login') ?>" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-2 rounded-md hover:opacity-90 transition-opacity text-center">
+                <!-- Login to Offer -->
+                <a href="<?= url('index.php?p=login') ?>" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-2 rounded-md hover:opacity-90 transition-opacity text-center flex items-center justify-center">
                   <i class="fa-solid fa-right-to-bracket mr-1"></i> Login to Offer
                 </a>
               </div>
@@ -334,11 +340,10 @@ $categories = ['All', 'Website', 'YouTube'];
   </div>
 </section>
 
-<!-- Buy Now Popup -->
-<div id="buyNowPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+<!-- Buy Now Popup - TEMPORARILY DISABLED -->
+<!-- <div id="buyNowPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
     <div class="p-6">
-      <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -354,7 +359,6 @@ $categories = ['All', 'Website', 'YouTube'];
         </button>
       </div>
 
-      <!-- Listing Info -->
       <div class="bg-gray-50 rounded-lg p-4 mb-6">
         <h4 class="font-semibold text-gray-900 mb-2" id="buyNowListingName">Loading...</h4>
         <div class="flex items-center justify-between">
@@ -363,7 +367,6 @@ $categories = ['All', 'Website', 'YouTube'];
         </div>
       </div>
 
-      <!-- Purchase Details -->
       <div class="space-y-3 mb-6">
         <div class="flex items-center gap-3 text-sm">
           <i class="fas fa-shield-alt text-green-500"></i>
@@ -379,7 +382,6 @@ $categories = ['All', 'Website', 'YouTube'];
         </div>
       </div>
 
-      <!-- Action Buttons -->
       <div class="flex flex-col gap-3">
         <div class="flex gap-3">
           <button onclick="closeBuyNowPopup()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
@@ -398,10 +400,10 @@ $categories = ['All', 'Website', 'YouTube'];
   </div>
   <input type="hidden" id="buyNowListingId" value="">
   <input type="hidden" id="buyNowSellerId" value="">
-</div>
+</div> -->
 
-<!-- Make Offer Popup -->
-<div id="makeOfferPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+<!-- Make Offer Popup - REMOVED (Now using direct chat) -->
+<!-- <div id="makeOfferPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
     <div class="p-6">
       <!-- Header -->
@@ -492,10 +494,11 @@ $categories = ['All', 'Website', 'YouTube'];
   </div>
   <input type="hidden" id="offerListingId" value="">
   <input type="hidden" id="offerSellerId" value="">
-</div>
+</div> -->
 
 <script>
-// Buy Now Popup Functions
+// Buy Now Popup Functions - TEMPORARILY DISABLED
+/*
 function showBuyNowPopup(listingId, listingName, askingPrice, sellerId) {
   document.getElementById('buyNowListingName').textContent = listingName;
   document.getElementById('buyNowPrice').textContent = '$' + askingPrice;
@@ -514,6 +517,7 @@ function proceedToBuy() {
   const listingId = document.getElementById('buyNowListingId').value;
   window.location.href = './index.php?p=payment&id=' + listingId;
 }
+*/
 
 function contactSellerFromPopup() {
   // Get listing ID and seller ID from either popup
@@ -542,7 +546,8 @@ function contactSellerFromPopup() {
   window.location.href = './index.php?p=dashboard&page=message&seller_id=' + sellerId + '&listing_id=' + listingId;
 }
 
-// Make Offer Popup Functions
+// Make Offer Popup Functions - REMOVED (Now using direct chat)
+/*
 function showMakeOfferPopup(listingId, listingName, askingPrice, sellerId) {
   document.getElementById('offerListingName').textContent = listingName;
   document.getElementById('offerAskingPrice').textContent = '$' + parseFloat(askingPrice).toLocaleString();
@@ -550,7 +555,7 @@ function showMakeOfferPopup(listingId, listingName, askingPrice, sellerId) {
   document.getElementById('offerSellerId').value = sellerId;
   
   // Get minimum offer percentage from server (default 70%)
-  fetch('/marketplace/api/get_min_offer_percentage.php')
+  fetch(PathUtils.getApiUrl('get_min_offer_percentage.php'))
     .then(response => response.json())
     .then(data => {
       const minPercentage = data.percentage || 70;
@@ -791,9 +796,9 @@ document.addEventListener('keydown', function(e) {
 const BASE = "<?php echo BASE; ?>";
 console.log('🔧 BASE constant defined:', BASE);
 
-if (!window.API_BASE_PATH) {
-  const path = window.location.pathname;
-  window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+// Use PathUtils for API base path
+if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
+  window.API_BASE_PATH = BASE + 'api';
   console.log('🔧 [Listing] API_BASE_PATH:', window.API_BASE_PATH);
 }
 
@@ -901,5 +906,7 @@ function setupOfferFormValidation() {
     });
   }
 }
+*/
+// END OF COMMENTED OFFER FUNCTIONS
 
 </script>

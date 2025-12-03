@@ -90,7 +90,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $subscribers = $_POST['subscribers'] ?? null;
     $videos_count = $_POST['videos_count'] ?? null;
     $faceless = isset($_POST['faceless']) ? (int)$_POST['faceless'] : 0;
-    $status = 'pending';
+    
+    // ✅ AUTO-APPROVE LISTINGS - No admin approval needed
+    $status = 'approved'; // Changed from 'pending' to 'approved'
+    
+    // ✅ SET EXPIRY DATE - Default 30 days from now (can be changed by SuperAdmin)
+    $default_listing_duration = 30; // days
+    $expires_at = date('Y-m-d H:i:s', strtotime("+{$default_listing_duration} days"));
 
     $selectedCategories = $_POST['categories'] ?? ''; 
     $selectedLabels = $_POST['labels'] ?? '';
@@ -122,8 +128,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 monetization_methods, subscribers, videos_count, faceless, status,
                 reserved_amount, min_down_payment_percentage, buy_now_price, 
                 auto_extend_enabled, auction_end_time, original_end_time,
-                created_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                expires_at, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
         ");
         $stmt->execute([
             $user_id,
@@ -146,7 +152,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $buy_now_price,
             $auto_extend_enabled,
             $auction_end_time,
-            $auction_end_time  // original_end_time same as auction_end_time initially
+            $auction_end_time,  // original_end_time same as auction_end_time initially
+            $expires_at  // ✅ Add expiry date
         ]);
 
         $listing_id = $pdo->lastInsertId();

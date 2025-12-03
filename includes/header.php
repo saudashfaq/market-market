@@ -14,9 +14,15 @@ require_once __DIR__ . "/popup_helper.php";
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="<?= BASE ?>js/popup.js"></script>
+  <script src="<?= BASE ?>public/js/popup.js"></script>
+  <script src="<?= BASE ?>public/js/path-utils.js"></script>
   <?php if (is_logged_in()): ?>
   <script>
+    // ✅ Define BASE constant globally
+    if (typeof BASE === 'undefined') {
+      var BASE = '<?= BASE ?>';
+    }
+    
     // Define API base path globally for JavaScript
     // Use relative path from current location
     (function() {
@@ -49,13 +55,13 @@ require_once __DIR__ . "/popup_helper.php";
       console.log('🔧 Test URL:', baseUrl + window.API_BASE_PATH + '/notifications_api.php');
     })();
   </script>
-  <script src="<?= BASE ?>js/notifications.js"></script>
-  <script src="<?= BASE ?>js/path-detector.js"></script>
-  <script src="<?= BASE ?>js/polling.js"></script>
-  <script src="<?= BASE ?>js/polling-init.js"></script>
-  <script src="<?= BASE ?>js/polling-debug.js"></script>
+  <script src="<?= BASE ?>public/js/notifications.js"></script>
+  <script src="<?= BASE ?>public/js/path-detector.js"></script>
+  <script src="<?= BASE ?>public/js/polling.js"></script>
+  <script src="<?= BASE ?>public/js/polling-init.js"></script>
+  <script src="<?= BASE ?>public/js/polling-debug.js"></script>
   <?php endif; ?>
-  <script src="<?= BASE ?>js/logout-confirmation.js" defer></script>
+  <script src="<?= BASE ?>public/js/logout-confirmation.js" defer></script>
   <style>
     @keyframes slideUpFade {
       from {
@@ -436,7 +442,11 @@ require_once __DIR__ . "/popup_helper.php";
     
     // Direct notification loading (fallback)
     function loadNotificationsDirectly(listId) {
-      fetch('/marketplace/api/notifications_api.php?action=list&limit=10')
+      // Use BASE constant for correct path
+      const apiUrl = typeof BASE !== 'undefined' ? 
+        `${BASE}api/notifications_api.php?action=list&limit=10` : 
+        '/api/notifications_api.php?action=list&limit=10';
+      fetch(apiUrl)
         .then(response => response.json())
         .then(data => {
           console.log('Direct API response:', data);

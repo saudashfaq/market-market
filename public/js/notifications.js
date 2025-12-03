@@ -67,9 +67,17 @@ class NotificationManager {
     async updateNotificationCount() {
         try {
             console.log('Fetching notification count...');
-            // Use API_BASE_PATH from global config
-            const apiPath = window.API_BASE_PATH || '/marketplace/api';
-            const response = await fetch(`${apiPath}/notifications_api.php?action=count`);
+            // Use PathDetector or BASE constant for correct path
+            let apiUrl;
+            if (window.pathDetector) {
+                apiUrl = window.pathDetector.buildApiUrl('/api/notifications_api.php?action=count');
+            } else if (typeof BASE !== 'undefined') {
+                apiUrl = `${BASE}api/notifications_api.php?action=count`;
+            } else {
+                // Fallback
+                apiUrl = `${window.location.origin}/api/notifications_api.php?action=count`;
+            }
+            const response = await fetch(apiUrl);
             const data = await response.json();
             console.log('Notification count response:', data);
             
@@ -166,9 +174,17 @@ class NotificationManager {
     async loadNotifications(listId) {
         try {
             console.log('Loading notifications for list:', listId);
-            // Use API_BASE_PATH from global config
-            const apiPath = window.API_BASE_PATH || '/marketplace/api';
-            const response = await fetch(`${apiPath}/notifications_api.php?action=list&limit=10`);
+            // Use PathDetector or BASE constant for correct path
+            let apiUrl;
+            if (window.pathDetector) {
+                apiUrl = window.pathDetector.buildApiUrl('/api/notifications_api.php?action=list&limit=10');
+            } else if (typeof BASE !== 'undefined') {
+                apiUrl = `${BASE}api/notifications_api.php?action=list&limit=10`;
+            } else {
+                // Fallback
+                apiUrl = `${window.location.origin}/api/notifications_api.php?action=list&limit=10`;
+            }
+            const response = await fetch(apiUrl);
             console.log('API response status:', response.status);
             
             const data = await response.json();
@@ -316,17 +332,23 @@ class NotificationManager {
     
     showBrowserNotification(notification) {
         if ('Notification' in window && Notification.permission === 'granted') {
+            // Use BASE constant for icon paths
+            const iconPath = typeof BASE !== 'undefined' ? `${BASE}images/logo.png` : '/images/logo.png';
+            const badgePath = typeof BASE !== 'undefined' ? `${BASE}images/badge.png` : '/images/badge.png';
+            
             new Notification(notification.title, {
                 body: notification.message,
-                icon: '/marketplace/public/images/logo.png',
-                badge: '/marketplace/public/images/badge.png'
+                icon: iconPath,
+                badge: badgePath
             });
         } else if ('Notification' in window && Notification.permission !== 'denied') {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
+                    const iconPath = typeof BASE !== 'undefined' ? `${BASE}images/logo.png` : '/images/logo.png';
+                    
                     new Notification(notification.title, {
                         body: notification.message,
-                        icon: '/marketplace/public/images/logo.png'
+                        icon: iconPath
                     });
                 }
             });
@@ -381,9 +403,17 @@ class NotificationManager {
             formData.append('action', 'mark_read');
             formData.append('id', notificationId);
             
-            // Use API_BASE_PATH from global config
-            const apiPath = window.API_BASE_PATH || '/marketplace/api';
-            const response = await fetch(`${apiPath}/notifications_api.php`, {
+            // Use PathDetector or BASE constant for correct path
+            let apiUrl;
+            if (window.pathDetector) {
+                apiUrl = window.pathDetector.buildApiUrl('/api/notifications_api.php');
+            } else if (typeof BASE !== 'undefined') {
+                apiUrl = `${BASE}api/notifications_api.php`;
+            } else {
+                // Fallback
+                apiUrl = `${window.location.origin}/api/notifications_api.php`;
+            }
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 body: formData
             });
@@ -406,9 +436,17 @@ class NotificationManager {
             const formData = new FormData();
             formData.append('action', 'mark_all_read');
             
-            // Use API_BASE_PATH from global config
-            const apiPath = window.API_BASE_PATH || '/marketplace/api';
-            const response = await fetch(`${apiPath}/notifications_api.php`, {
+            // Use PathDetector or BASE constant for correct path
+            let apiUrl;
+            if (window.pathDetector) {
+                apiUrl = window.pathDetector.buildApiUrl('/api/notifications_api.php');
+            } else if (typeof BASE !== 'undefined') {
+                apiUrl = `${BASE}api/notifications_api.php`;
+            } else {
+                // Fallback
+                apiUrl = `${window.location.origin}/api/notifications_api.php`;
+            }
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 body: formData
             });

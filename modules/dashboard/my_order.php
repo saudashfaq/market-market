@@ -263,9 +263,9 @@ $pagination = $result['pagination'];
 </section>
 
 <script>
-if (!window.API_BASE_PATH) {
-  const path = window.location.pathname;
-  window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+// Use PathUtils for API base path
+if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
+  window.API_BASE_PATH = BASE + 'api';
 }
 </script>
 <script src="<?= BASE ?>js/polling.js"></script>

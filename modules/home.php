@@ -7,6 +7,7 @@ $pdo = db();
 // Check if user is logged in
 $user_logged_in = isset($_SESSION['user']); // ya is_logged_in() agar helper include hai
 
+// ✅ Only show listings that are approved AND not expired
 if ($user_logged_in) {
     $user_id = $_SESSION['user']['id'];
     $stmt = $pdo->prepare("
@@ -15,6 +16,7 @@ if ($user_logged_in) {
              (SELECT COUNT(*) FROM wishlist WHERE user_id = ? AND listing_id = l.id) AS in_wishlist
       FROM listings l
       WHERE l.status IN ('approved')
+      AND (l.expires_at IS NULL OR l.expires_at > NOW())
       ORDER BY GREATEST(l.created_at, COALESCE(l.updated_at, l.created_at)) DESC
       LIMIT 6
     ");
@@ -26,6 +28,7 @@ if ($user_logged_in) {
              0 AS in_wishlist
       FROM listings l
       WHERE l.status IN ('approved')
+      AND (l.expires_at IS NULL OR l.expires_at > NOW())
       ORDER BY GREATEST(l.created_at, COALESCE(l.updated_at, l.created_at)) DESC
       LIMIT 6
     ");
@@ -304,25 +307,17 @@ if (isset($_GET['debug'])) {
               <?php if ($user_logged_in): ?>
               <?php if ($listing['user_id'] != $user_id): ?>
               <div class="flex gap-2">
-                <!-- Buy Now Button - Most Prominent -->
-                <button type="button" 
-                        data-listing-id="<?= $listing['id'] ?>"
-                        data-listing-name="<?= htmlspecialchars($listing['name']) ?>"
-                        data-asking-price="<?= htmlspecialchars($listing['asking_price']) ?>"
-                        data-seller-id="<?= $listing['user_id'] ?>"
-                        class="buy-now-btn flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-3 rounded-md hover:opacity-90 transition-opacity shadow-md">
+                <!-- Buy Now Button - Opens Chat -->
+                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=buy" 
+                   class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-3 rounded-md hover:opacity-90 transition-opacity shadow-md text-center flex items-center justify-center">
                   <i class="fa-solid fa-shopping-cart mr-2"></i> Buy Now
-                </button>
+                </a>
                 
-                <!-- Make Offer Button -->
-                <button type="button"
-                        data-listing-id="<?= $listing['id'] ?>"
-                        data-listing-name="<?= htmlspecialchars($listing['name']) ?>"
-                        data-asking-price="<?= htmlspecialchars($listing['asking_price']) ?>"
-                        data-seller-id="<?= $listing['user_id'] ?>"
-                        class="make-offer-btn flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-3 rounded-md hover:opacity-90 transition-opacity">
+                <!-- Make Offer Button - Opens Chat -->
+                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=offer" 
+                   class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-3 rounded-md hover:opacity-90 transition-opacity text-center flex items-center justify-center">
                   <i class="fa-solid fa-handshake mr-2"></i> Make Offer
-                </button>
+                </a>
               </div>
               <?php else: ?>
               <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
@@ -890,7 +885,7 @@ function showMakeOfferPopup(listingId, listingName, askingPrice, sellerId) {
   document.getElementById('offerSellerId').value = sellerId;
   
   // Get minimum offer percentage from server (default 70%)
-  fetch('/marketplace/api/get_min_offer_percentage.php')
+  fetch(PathUtils.getApiUrl('get_min_offer_percentage.php'))
     .then(response => response.json())
     .then(data => {
       const minPercentage = data.percentage || 70;
