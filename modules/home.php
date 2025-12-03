@@ -7,7 +7,7 @@ $pdo = db();
 // Check if user is logged in
 $user_logged_in = isset($_SESSION['user']); // ya is_logged_in() agar helper include hai
 
-// ✅ Only show listings that are approved AND not expired
+// ✅ Only show listings that are approved
 if ($user_logged_in) {
     $user_id = $_SESSION['user']['id'];
     $stmt = $pdo->prepare("
@@ -16,7 +16,6 @@ if ($user_logged_in) {
              (SELECT COUNT(*) FROM wishlist WHERE user_id = ? AND listing_id = l.id) AS in_wishlist
       FROM listings l
       WHERE l.status IN ('approved')
-      AND (l.expires_at IS NULL OR l.expires_at > NOW())
       ORDER BY GREATEST(l.created_at, COALESCE(l.updated_at, l.created_at)) DESC
       LIMIT 6
     ");

@@ -36,8 +36,23 @@ require_once __DIR__ . "/popup_helper.php";
       }
   }
   
-  // Get relative path for JS files
-  $jsPath = defined('BASE') ? BASE . 'public/js/' : './public/js/';
+  // Determine correct JS path based on server configuration
+  $documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? '';
+  $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+  
+  // Check if we're in production (Nginx with public as root)
+  if (strpos($documentRoot, '/public') !== false && strpos($documentRoot, '/public') === strlen($documentRoot) - 7) {
+      // Production: Nginx root is /var/www/marketplace/public
+      // JS files are directly accessible at /js/
+      $jsPath = '/js/';
+  } elseif (strpos($scriptName, '/public/') !== false) {
+      // Local: XAMPP with /marketplace/public/ in path
+      $basePath = substr($scriptName, 0, strpos($scriptName, '/public/'));
+      $jsPath = $basePath . '/public/js/';
+  } else {
+      // Fallback: use BASE constant
+      $jsPath = (defined('BASE') ? BASE : '/') . 'js/';
+  }
   ?>
   <script src="<?= $jsPath ?>popup.js"></script>
   <script src="<?= $jsPath ?>path-utils.js"></script>
