@@ -1,6 +1,4 @@
-// ------------------------------------------------------------
-// Begin script execution – wrap everything in a top‑level try/catch
-// ------------------------------------------------------------
+<?php
 try {
 // Existing includes (unchanged)
 require_once __DIR__ . '/../config.php';
