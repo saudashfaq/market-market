@@ -258,7 +258,7 @@
                   <?php renderLocalFlashMessages($flashMessages); ?>
 
                   <!-- Full Name Field -->
-                  <div>
+                  <!-- <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
                     <div class="relative">
                       <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -275,7 +275,7 @@
                         autocomplete="name" />
                     </div>
                     <?php displayFieldError('name', $validationErrors); ?>
-                  </div>
+                  </div> -->
 
                   <!-- Email Field -->
                   <div>

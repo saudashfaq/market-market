@@ -35,7 +35,7 @@
       
       <!-- Website Option -->
       <div class="group w-full lg:w-1/2">
-        <a href="./index.php?p=addWebList" class="w-full h-full flex flex-col items-center text-left border-2 border-gray-200 rounded-2xl p-6 bg-white shadow-lg hover:shadow-2xl hover:border-indigo-500 hover:-translate-y-1 transition-all duration-500">
+        <a href="<?= url('addWebList')?>" class="w-full h-full flex flex-col items-center text-left border-2 border-gray-200 rounded-2xl p-6 bg-white shadow-lg hover:shadow-2xl hover:border-indigo-500 hover:-translate-y-1 transition-all duration-500">
           <div class="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300">
             <i class="fa-solid fa-globe text-2xl"></i>
           </div>
@@ -56,7 +56,7 @@
 
       <!-- YouTube Option -->
       <div class="group w-full lg:w-1/2">
-        <a href="./index.php?p=addYTList" class="w-full h-full flex flex-col items-center text-left border-2 border-gray-200 rounded-2xl p-6 bg-white shadow-lg hover:shadow-2xl hover:border-red-500 hover:-translate-y-1 transition-all duration-500">
+        <a href="<?= url('addYTList')?>" class="w-full h-full flex flex-col items-center text-left border-2 border-gray-200 rounded-2xl p-6 bg-white shadow-lg hover:shadow-2xl hover:border-red-500 hover:-translate-y-1 transition-all duration-500">
           <div class="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-red-500 to-orange-500 text-white shadow-lg mb-4 group-hover:scale-105 transition-transform duration-300">
             <i class="fa-brands fa-youtube text-2xl"></i>
           </div>
