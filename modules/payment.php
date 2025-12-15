@@ -1,67 +1,22 @@
 <?php
-// ============================================
-// PAYMENT FUNCTIONALITY TEMPORARILY DISABLED
-// ============================================
-// This page has been disabled as per client requirements
-// Users can browse, create, update listings but cannot make payments yet
-// To re-enable: Remove this block and uncomment the code below
-
-die("
-<!DOCTYPE html>
-<html lang='en'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Payment Temporarily Unavailable</title>
-    <script src='https://cdn.tailwindcss.com'></script>
-    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'>
-</head>
-<body class='bg-gray-50'>
-    <div class='min-h-screen flex items-center justify-center p-4'>
-        <div class='max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center'>
-            <div class='w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6'>
-                <i class='fas fa-tools text-yellow-600 text-3xl'></i>
-            </div>
-            <h1 class='text-2xl font-bold text-gray-900 mb-4'>Payment Feature Coming Soon</h1>
-            <p class='text-gray-600 mb-6'>
-                Payment functionality is currently under development. You can still browse listings and make offers to sellers.
-            </p>
-            <div class='space-y-3'>
-                <a href='index.php?p=listing' class='block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors'>
-                    <i class='fas fa-list mr-2'></i>Browse Listings
-                </a>
-                <a href='index.php?p=dashboard' class='block w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-4 rounded-lg transition-colors'>
-                    <i class='fas fa-home mr-2'></i>Go to Dashboard
-                </a>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-");
-
-// ORIGINAL CODE - COMMENTED OUT
-/*
 require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../api/escrow_api.php';
 require_once __DIR__ . '/../includes/flash_helper.php';
 require_once __DIR__ . '/../includes/validation_helper.php';
 $user = $_SESSION['user'] ?? null;
 if (!$user) {
-  header("Location: login.php");
+  header("Location: " . url("public/index.php?p=login"));
   exit;
 }
-$error=null;
+$error = null;
 $pdo = db();
-*/
-// END OF COMMENTED CODE - Payment page disabled
 $listing_id = $_GET['id'] ?? null;
 $offer_id_param = $_GET['offer_id'] ?? null;
 // If listing ID is missing but offer ID is present, get listing ID from offer
 if (!$listing_id && $offer_id_param) {
-    $stmt = $pdo->prepare("SELECT listing_id FROM offers WHERE id = ?");
-    $stmt->execute([$offer_id_param]);
-    $listing_id = $stmt->fetchColumn();
+  $stmt = $pdo->prepare("SELECT listing_id FROM offers WHERE id = ?");
+  $stmt->execute([$offer_id_param]);
+  $listing_id = $stmt->fetchColumn();
 }
 
 if (!$listing_id) die("Invalid listing.");
@@ -94,13 +49,13 @@ $acceptedOffer = $offerStmt->fetch(PDO::FETCH_ASSOC);
 // === Price calculations ===
 // Use accepted offer amount if exists, otherwise use asking price
 if ($acceptedOffer) {
-    $amount = (float) $acceptedOffer['amount'];
-    $offer_id = $acceptedOffer['id'];
-    $is_offer_payment = true;
+  $amount = (float) $acceptedOffer['amount'];
+  $offer_id = $acceptedOffer['id'];
+  $is_offer_payment = true;
 } else {
-    $amount = (float) $listing['asking_price'];
-    $offer_id = null;
-    $is_offer_payment = false;
+  $amount = (float) $listing['asking_price'];
+  $offer_id = null;
+  $is_offer_payment = false;
 }
 
 $platformFee = round($amount * 0.05, 2);
@@ -116,13 +71,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Step 1: Partner Authentication
 
 
-// \Precious Tom
-// tomprezine@gmail.com
-// 08021325996
+    // \Precious Tom
+    // tomprezine@gmail.com
+    // 08021325996
 
-  
 
-    
+
+
 
     // Step 3: Get seller payout configuration
     $sellerStmt = $pdo->prepare("
@@ -132,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ");
     $sellerStmt->execute([$seller_id]);
     $sellerPayout = $sellerStmt->fetch(PDO::FETCH_ASSOC);
-    
+
     // Build payout configuration for PandaScrow
     $payoutConfig = null;
     if ($sellerPayout && $sellerPayout['payout_method'] === 'bank_account') {
@@ -149,14 +104,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     // If payout_method is 'wallet' or not set, payoutConfig remains null
     // Funds will go to seller's PandaScrow wallet for manual withdrawal
-    
+
     // Step 4: Prepare buyer and seller details
     $buyerDetails = [
       'name' => $user['name'],
       'email' => $user['email'],
       'phone' => $user['phone'] ?? '+10000000000',
     ];
-    
+
     $sellerDetails = [
       'name' => $listing['seller_name'],
       'email' => $listing['seller_email'],
@@ -185,39 +140,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $payment_url = $escrow_data['payment_url'] ?? null;
     $transaction_ref = $escrow_data['transaction_ref'] ?? null;
     $provider = !empty($escrow_data['provider']) ? $escrow_data['provider'] : 'pandascrow';
-    
+
     if (!$escrow_id || !$payment_url) {
       throw new Exception("Escrow created but payment link not found | Response: " . json_encode($escrow_res));
     }
-    
-        if ($escrow_res['success']){
-          $sellerAmount = $amount - $platformFee;
-    $insert = $pdo->prepare("
+
+    if ($escrow_res['success']) {
+      $sellerAmount = $amount - $platformFee;
+      $insert = $pdo->prepare("
       INSERT INTO transactions 
         (listing_id, buyer_id, seller_id, pandascrow_escrow_id, escrow_transaction_id, amount, platform_fee, seller_amount, status, escrow_provider, created_at)
       VALUES 
         (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     ");
-    $insert->execute([
-      $listing_id,
-      $buyer_id,
-      $seller_id,
-      $escrow_id,
-      $transaction_ref,
-      $amount,
-      $platformFee,
-      $sellerAmount,
-      'pending',
-      $provider
-    ]);
+      $insert->execute([
+        $listing_id,
+        $buyer_id,
+        $seller_id,
+        $escrow_id,
+        $transaction_ref,
+        $amount,
+        $platformFee,
+        $sellerAmount,
+        'pending',
+        $provider
+      ]);
 
-    error_log("Transaction inserted successfully for escrow_id $escrow_id");
-  
-    // Step 6: Redirect
-    header("Location: " . $payment_url);
-    exit;
-  }else{
-    echo 'time out';
+      error_log("Transaction inserted successfully for escrow_id $escrow_id");
+
+      // Step 6: Redirect
+      header("Location: " . $payment_url);
+      exit;
+    } else {
+      echo 'time out';
     }
   } catch (Exception $e) {
     $error = $e->getMessage();
@@ -271,9 +226,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <i class="fa fa-lock mr-2"></i> Proceed to Secure Payment
         </button>
       </form>
-      
-      <a href="index.php?p=dashboard&page=message&seller_id=<?= $seller_id ?>&listing_id=<?= $listing_id ?>" 
-         class="w-full bg-green-100 hover:bg-green-200 text-green-700 py-3 rounded-md font-medium flex items-center justify-center transition-colors">
+
+      <a href="index.php?p=dashboard&page=message&seller_id=<?= $seller_id ?>&listing_id=<?= $listing_id ?>"
+        class="w-full bg-green-100 hover:bg-green-200 text-green-700 py-3 rounded-md font-medium flex items-center justify-center transition-colors">
         <i class="far fa-envelope mr-2"></i>
         Contact Seller
       </a>

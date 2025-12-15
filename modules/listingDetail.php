@@ -18,7 +18,7 @@ $pdo = db();
 // Get current user ID
 $current_user_id = $_SESSION['user_id'] ?? null;
 
-// Fetch listing details - ✅ Allow viewing expired listings via direct URL
+// Fetch listing details
 try {
     $stmt = $pdo->prepare("
         SELECT l.*, u.name as seller_name, u.email as seller_email, u.profile_pic as seller_profile_pic
@@ -28,18 +28,11 @@ try {
     ");
     $stmt->execute([$listing_id]);
     $listing = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if (!$listing) {
         die("Listing not found");
     }
-    
-    // ✅ Check if listing is expired
-    $is_expired = false;
-    if (!empty($listing['expires_at'])) {
-        $expires_at = strtotime($listing['expires_at']);
-        $is_expired = $expires_at < time();
-    }
-    
+
     // Get listing categories
     $categories = [];
     try {
@@ -54,7 +47,7 @@ try {
     } catch (Exception $e) {
         // Tables don't exist, use empty array
     }
-    
+
     // Get listing labels
     $labels = [];
     try {
@@ -69,7 +62,7 @@ try {
     } catch (Exception $e) {
         // Tables don't exist, use empty array
     }
-    
+
     // Get listing answers for additional details
     $answers = [];
     try {
@@ -81,7 +74,7 @@ try {
         ");
         $answersStmt->execute([$listing_id]);
         $answers = $answersStmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Debug: uncomment to see what's being fetched
         // echo "<pre>Answers: "; print_r($answers); echo "</pre>";
     } catch (Exception $e) {
@@ -89,13 +82,13 @@ try {
         // Debug: uncomment to see error
         // echo "Error fetching answers: " . $e->getMessage();
     }
-    
+
     // Convert answers to associative array for easy access
     $listingData = [];
     foreach ($answers as $answer) {
         $listingData[$answer['question']] = $answer['answer'];
     }
-    
+
     // Get listing proofs
     $proofs = [];
     try {
@@ -106,19 +99,18 @@ try {
         ");
         $proofsStmt->execute([$listing_id]);
         $proofs = $proofsStmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Add file info for each proof
         foreach ($proofs as &$proof) {
             $fullPath = __DIR__ . '/../public/' . $proof['file_path'];
             $proof['file_type'] = pathinfo($proof['file_path'], PATHINFO_EXTENSION);
             $proof['file_size'] = file_exists($fullPath) ? filesize($fullPath) : 0;
         }
-        
     } catch (Exception $e) {
         // Table doesn't exist, use empty array
         $proofs = [];
     }
-    
+
     // Calculate metrics
     $monthly_revenue = $listing['monthly_revenue'] ?: 0;
     $asking_price = $listing['asking_price'] ?: 0;
@@ -126,7 +118,6 @@ try {
     $annual_revenue = $monthly_revenue * 12;
     $estimated_profit = $monthly_revenue * 0.8; // Assuming 80% profit margin
     $roi = $asking_price > 0 ? round(($estimated_profit * 12 / $asking_price) * 100, 1) : 0;
-    
 } catch (Exception $e) {
     die("Error loading listing: " . $e->getMessage());
 }
@@ -149,6 +140,7 @@ try {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -180,34 +172,49 @@ try {
         body {
             font-family: 'Inter', sans-serif;
         }
+
         .gradient-bg {
             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         }
+
         .metric-card {
             transition: all 0.3s ease;
         }
+
         .metric-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
+
         .tab-active {
             border-bottom: 2px solid #3b82f6;
             color: #3b82f6;
             font-weight: 600;
         }
+
         .sticky-purchase-card {
             position: sticky;
             top: 2rem;
         }
+
         .fade-in {
             animation: fadeIn 0.5s ease-in-out;
         }
+
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
+
 <body class="bg-gray-50 text-gray-800">
 
 
@@ -220,35 +227,10 @@ try {
             <div class="lg:col-span-2 space-y-8">
                 <!-- Title & Status -->
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                    <?php if ($is_expired): ?>
-                    <!-- ✅ Expired Listing Notice -->
-                    <div class="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <i class="fas fa-exclamation-triangle text-yellow-400 text-xl"></i>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-yellow-800">
-                                    This listing has expired and is no longer available for purchase.
-                                </p>
-                                <p class="text-xs text-yellow-700 mt-1">
-                                    Expired on: <?= date('F j, Y', strtotime($listing['expires_at'])) ?>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                    
                     <div class="flex flex-wrap items-center gap-2 mb-4">
-                        <?php if ($is_expired): ?>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                <i class="fas fa-clock mr-1"></i> Expired
-                            </span>
-                        <?php else: ?>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <i class="fas fa-shield-alt mr-1"></i> <?= ucfirst($listing['status']) ?>
-                            </span>
-                        <?php endif; ?>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-shield-alt mr-1"></i> <?= ucfirst($listing['status']) ?>
+                        </span>
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                             <?= ucfirst($listing['type']) ?>
                         </span>
@@ -263,11 +245,11 @@ try {
                             </span>
                         <?php endforeach; ?>
                     </div>
-                    
+
                     <h1 class="text-3xl font-bold text-gray-900 mb-4"><?= htmlspecialchars($listing['name']) ?></h1>
-                    
+
                     <p class="text-gray-600 mb-6">
-                        <?php 
+                        <?php
                         $description = "A " . $listing['type'] . " business";
                         if ($monthly_revenue > 0) {
                             $description .= " generating $" . number_format($monthly_revenue) . " monthly revenue";
@@ -278,7 +260,7 @@ try {
                         echo $description . ".";
                         ?>
                     </p>
-                    
+
                     <!-- Key Metrics -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div class="metric-card bg-white border border-gray-200 rounded-xl p-4 text-center">
@@ -362,7 +344,7 @@ try {
                             <h2 class="text-xl font-bold text-gray-900 mb-4">Business Overview</h2>
                             <div class="prose max-w-none text-gray-600 mb-6">
                                 <p class="mb-4">
-                                    <?= htmlspecialchars($listing['name']) ?> is a <?= $listing['type'] ?> business 
+                                    <?= htmlspecialchars($listing['name']) ?> is a <?= $listing['type'] ?> business
                                     <?php if ($monthly_revenue > 0): ?>
                                         generating $<?= number_format($monthly_revenue) ?> in monthly revenue
                                     <?php endif; ?>
@@ -371,10 +353,10 @@ try {
                                     <?php endif; ?>
                                     <?php if (!empty($listing['site_age'])): ?>
                                         , established <?= htmlspecialchars($listing['site_age']) ?> ago
-                                    <?php endif; ?>.
-                                    <?php if ($listing['type'] === 'youtube' && !empty($listing['faceless'])): ?>
-                                        This is a <?= $listing['faceless'] ? 'faceless' : 'face-to-camera' ?> channel.
-                                    <?php endif; ?>
+                                        <?php endif; ?>.
+                                        <?php if ($listing['type'] === 'youtube' && !empty($listing['faceless'])): ?>
+                                            This is a <?= $listing['faceless'] ? 'faceless' : 'face-to-camera' ?> channel.
+                                        <?php endif; ?>
                                 </p>
                                 <?php if (!empty($listing['traffic_trend'])): ?>
                                     <p class="mb-4">
@@ -389,7 +371,7 @@ try {
                             <!-- Dynamic Questions and Answers -->
                             <?php if (!empty($answers)): ?>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                    <?php 
+                                    <?php
                                     $half = ceil(count($answers) / 2);
                                     $firstHalf = array_slice($answers, 0, $half);
                                     $secondHalf = array_slice($answers, $half);
@@ -440,12 +422,12 @@ try {
                                             $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
                                             ?>
                                             <?php if ($isImage): ?>
-                                                <div class="rounded-lg overflow-hidden bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity" 
-                                                     onclick="openImageModal('<?= htmlspecialchars($proof['file_path']) ?>')">
-                                                    <img src="<?= htmlspecialchars($proof['file_path']) ?>" 
-                                                         alt="Proof" 
-                                                         class="w-full h-24 object-cover"
-                                                         onerror="this.style.display='none'">
+                                                <div class="rounded-lg overflow-hidden bg-gray-100 cursor-pointer hover:opacity-80 transition-opacity"
+                                                    onclick="openImageModal('<?= htmlspecialchars($proof['file_path']) ?>')">
+                                                    <img src="<?= htmlspecialchars($proof['file_path']) ?>"
+                                                        alt="Proof"
+                                                        class="w-full h-24 object-cover"
+                                                        onerror="this.style.display='none'">
                                                 </div>
                                             <?php endif; ?>
                                         <?php endforeach; ?>
@@ -489,7 +471,7 @@ try {
                         <!-- Financials Tab Content -->
                         <div id="financials-content" class="hidden fade-in">
                             <h2 class="text-xl font-bold text-gray-900 mb-4">Financial Performance</h2>
-                            
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                 <div class="bg-white border border-gray-200 rounded-xl p-5">
                                     <h3 class="font-semibold text-gray-900 mb-3">Revenue Breakdown</h3>
@@ -524,10 +506,10 @@ try {
                                         </div>
                                     </div>
                                 </div>
-                                
+
 
                             </div>
-                            
+
                             <?php if ($monthly_revenue > 0): ?>
                                 <div class="bg-white border border-gray-200 rounded-xl p-5 mb-6">
                                     <h3 class="font-semibold text-gray-900 mb-4">Financial Summary</h3>
@@ -562,7 +544,7 @@ try {
                         <!-- Traffic & Metrics Tab Content -->
                         <div id="traffic-content" class="hidden fade-in">
                             <h2 class="text-xl font-bold text-gray-900 mb-4">Traffic & Metrics</h2>
-                            
+
                             <?php if (!empty($listingData)): ?>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                     <div class="bg-white border border-gray-200 rounded-xl p-5">
@@ -582,7 +564,7 @@ try {
                                                         </div>
                                                     </div>
                                                 <?php endif; ?>
-                                                
+
                                                 <?php if (!empty($listing['videos_count'])): ?>
                                                     <div>
                                                         <div class="flex justify-between mb-1">
@@ -593,7 +575,7 @@ try {
                                                         </div>
                                                     </div>
                                                 <?php endif; ?>
-                                                
+
                                                 <?php if (!empty($listing['faceless'])): ?>
                                                     <div>
                                                         <div class="flex justify-between mb-1">
@@ -618,7 +600,7 @@ try {
                                                         </div>
                                                     </div>
                                                 <?php endif; ?>
-                                                
+
                                                 <?php if (isset($listingData['What is your main traffic source?'])): ?>
                                                     <div>
                                                         <div class="flex justify-between mb-1">
@@ -630,7 +612,7 @@ try {
                                                     </div>
                                                 <?php endif; ?>
                                             <?php endif; ?>
-                                            
+
                                             <?php if (!empty($listing['traffic_trend'])): ?>
                                                 <div>
                                                     <div class="flex justify-between mb-1">
@@ -643,7 +625,7 @@ try {
                                             <?php endif; ?>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="bg-white border border-gray-200 rounded-xl p-5">
                                         <h3 class="font-semibold text-gray-900 mb-3">Business Metrics</h3>
                                         <div class="space-y-4">
@@ -655,7 +637,7 @@ try {
                                                     </div>
                                                 </div>
                                             <?php endif; ?>
-                                            
+
                                             <?php if (!empty($listing['site_age'])): ?>
                                                 <div>
                                                     <div class="flex justify-between mb-1">
@@ -664,7 +646,7 @@ try {
                                                     </div>
                                                 </div>
                                             <?php endif; ?>
-                                            
+
                                             <?php if ($multiple > 0): ?>
                                                 <div>
                                                     <div class="flex justify-between mb-1">
@@ -690,7 +672,7 @@ try {
                         <!-- Proofs Tab Content -->
                         <div id="proofs-content" class="hidden fade-in">
                             <h2 class="text-xl font-bold text-gray-900 mb-4">Proof Documents</h2>
-                            
+
                             <!-- Debug Info -->
                             <?php if (isset($_GET['debug'])): ?>
                                 <div class="bg-yellow-100 border border-yellow-400 rounded p-4 mb-4">
@@ -698,11 +680,12 @@ try {
                                     Listing ID: <?= $listing_id ?><br>
                                     Proofs Count: <?= count($proofs) ?><br>
                                     <?php if (!empty($proofs)): ?>
-                                        Proofs Data: <pre><?= htmlspecialchars(print_r($proofs, true)) ?></pre>
+                                        Proofs Data:
+                                        <pre><?= htmlspecialchars(print_r($proofs, true)) ?></pre>
                                     <?php endif; ?>
                                 </div>
                             <?php endif; ?>
-                            
+
                             <?php if (!empty($proofs)): ?>
                                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                     <?php foreach ($proofs as $proof): ?>
@@ -711,17 +694,17 @@ try {
                                         $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
                                         ?>
                                         <?php if ($isImage): ?>
-                                            <div class="rounded-xl overflow-hidden bg-gray-100 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105" 
-                                                 onclick="openImageModal('<?= htmlspecialchars($proof['file_path']) ?>')">
-                                                <img src="<?= htmlspecialchars($proof['file_path']) ?>" 
-                                                     alt="Proof" 
-                                                     class="w-full h-48 object-cover"
-                                                     onerror="this.style.display='none'">
+                                            <div class="rounded-xl overflow-hidden bg-gray-100 cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
+                                                onclick="openImageModal('<?= htmlspecialchars($proof['file_path']) ?>')">
+                                                <img src="<?= htmlspecialchars($proof['file_path']) ?>"
+                                                    alt="Proof"
+                                                    class="w-full h-48 object-cover"
+                                                    onerror="this.style.display='none'">
                                             </div>
                                         <?php endif; ?>
                                     <?php endforeach; ?>
                                 </div>
-                                
+
                                 <div class="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4">
                                     <div class="flex">
                                         <div class="flex-shrink-0">
@@ -749,7 +732,7 @@ try {
                         <!-- FAQ Tab Content -->
                         <div id="faq-content" class="hidden fade-in">
                             <h2 class="text-xl font-bold text-gray-900 mb-4">Questions & Answers</h2>
-                            
+
                             <?php if (!empty($answers)): ?>
                                 <div class="space-y-4">
                                     <?php foreach ($answers as $answer): ?>
@@ -792,7 +775,7 @@ try {
                                     <div class="text-sm text-gray-500 mt-1"><?= $multiple ?>x monthly revenue</div>
                                 <?php endif; ?>
                             </div>
-                            
+
                             <?php if ($roi > 0): ?>
                                 <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
                                     <div class="text-center">
@@ -802,56 +785,50 @@ try {
                                     </div>
                                 </div>
                             <?php endif; ?>
-                            
+
                             <?php if ($current_user_id && $listing['user_id'] == $current_user_id): ?>
-                            <!-- Owner's View -->
-                            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-4">
-                                <div class="text-center">
-                                    <i class="fas fa-user-check text-blue-600 text-2xl mb-2"></i>
-                                    <p class="text-sm font-semibold text-blue-800">This is Your Listing</p>
-                                    <p class="text-xs text-blue-600 mt-1">You cannot purchase your own listing</p>
+                                <!-- Owner's View -->
+                                <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-4">
+                                    <div class="text-center">
+                                        <i class="fas fa-user-check text-blue-600 text-2xl mb-2"></i>
+                                        <p class="text-sm font-semibold text-blue-800">This is Your Listing</p>
+                                        <p class="text-xs text-blue-600 mt-1">You cannot purchase your own listing</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="space-y-3">
-                                <a href="index.php?p=dashboard&page=my_listing" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center text-decoration-none">
-                                    <i class="fas fa-edit mr-2"></i>
-                                    Manage Listing
-                                </a>
-                            </div>
+                                <div class="space-y-3">
+                                    <a href="index.php?p=dashboard&page=my_listing" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center text-decoration-none">
+                                        <i class="fas fa-edit mr-2"></i>
+                                        Manage Listing
+                                    </a>
+                                </div>
                             <?php else: ?>
-                            <!-- Buyer's View -->
-                            <div class="space-y-3">
-                                <!-- Buy Now Button - Opens Chat -->
-                                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=buy" 
-                                   class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:opacity-90 text-white font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center text-decoration-none shadow-lg">
-                                    <i class="fas fa-shopping-cart mr-2"></i>
-                                    Buy Now
-                                </a>
-                                
-                                <!-- Make Offer Button - Opens Chat -->
-                                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=offer" 
-                                   class="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:opacity-90 text-white font-semibold py-3 px-4 rounded-xl transition-all flex items-center justify-center text-decoration-none">
-                                    <i class="fas fa-handshake mr-2"></i>
-                                    Make Offer
-                                </a>
-                                
-                                <!-- Contact Seller Button -->
-                                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>" 
-                                   class="w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center text-decoration-none">
-                                    <i class="far fa-envelope mr-2"></i>
-                                    Contact Seller
-                                </a>
-                            </div>
+                                <!-- Buyer's View -->
+                                <div class="space-y-3">
+                                    <button onclick="window.location.href='<?= url('index.php?p=dashboard&page=conversation_create&listing_id=' . $listing['id'] . '&seller_id=' . $listing['user_id']) ?>'" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center cursor-pointer">
+                                        <i class="fas fa-comment-dots mr-2"></i>
+                                        Buy Now
+                                    </button>
+
+                                    <button onclick="window.location.href='<?= url('index.php?p=dashboard&page=conversation_create&listing_id=' . $listing['id'] . '&seller_id=' . $listing['user_id']) ?>'" class="w-full border-2 border-primary-600 text-primary-600 hover:bg-primary-600 hover:text-white font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center cursor-pointer">
+                                        <i class="fas fa-comment-dots mr-2"></i>
+                                        Make Offer
+                                    </button>
+
+                                    <a href="<?= url('index.php?p=dashboard&page=message&seller_id=' . $listing['user_id'] . '&listing_id=' . $listing['id']) ?>" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-4 rounded-xl transition-colors flex items-center justify-center text-decoration-none">
+                                        <i class="far fa-envelope mr-2"></i>
+                                        Contact Seller
+                                    </a>
+                                </div>
                             <?php endif; ?>
                         </div>
-                        
+
                         <div class="p-6">
                             <div class="flex items-center mb-4">
-                                <?php 
+                                <?php
                                 // Generate seller profile picture or initials
                                 $seller_name = !empty($listing['seller_name']) ? $listing['seller_name'] : 'Anonymous Seller';
                                 $seller_profile_pic = $listing['seller_profile_pic'] ?? '';
-                                
+
                                 if (!empty($seller_profile_pic) && $seller_profile_pic !== 'null') {
                                     $image_url = strpos($seller_profile_pic, 'http') === 0 ? $seller_profile_pic : url($seller_profile_pic);
                                     echo '<div class="w-12 h-12 rounded-full overflow-hidden mr-4 shadow-lg ring-2 ring-white bg-gradient-to-br from-blue-500 to-purple-600 relative">';
@@ -860,7 +837,7 @@ try {
                                 } else {
                                     echo '<div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg mr-4 shadow-lg ring-2 ring-white">';
                                 }
-                                
+
                                 // Generate initials
                                 $initials = '';
                                 if (!empty($listing['seller_name'])) {
@@ -873,7 +850,7 @@ try {
                                     $initials = 'U';
                                 }
                                 echo $initials;
-                                
+
                                 if (!empty($seller_profile_pic) && $seller_profile_pic !== 'null') {
                                     echo '</div></div>';
                                 } else {
@@ -887,9 +864,9 @@ try {
                                     <div class="text-sm text-gray-500">Seller</div>
                                 </div>
                             </div>
-                            
 
-                            
+
+
                             <div class="mt-6 pt-6 border-t border-gray-200">
                                 <div class="grid grid-cols-3 gap-4 text-center">
                                     <div>
@@ -908,7 +885,7 @@ try {
                             </div>
                         </div>
                     </div>
-                   
+
                 </div>
             </div>
         </div>
@@ -927,25 +904,28 @@ try {
     </div>
 
     <script>
+        // Define BASE constant globally
+        window.BASE = "<?= BASE ?>";
+
         // Image modal functions
         function openImageModal(imageSrc) {
             document.getElementById('modalImage').src = imageSrc;
             document.getElementById('imageModal').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
         }
-        
+
         function closeImageModal() {
             document.getElementById('imageModal').classList.add('hidden');
             document.body.style.overflow = 'auto';
         }
-        
+
         // Close modal when clicking outside the image
         document.getElementById('imageModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeImageModal();
             }
         });
-        
+
         // Close modal with Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -957,49 +937,49 @@ try {
         document.getElementById('overview-tab').addEventListener('click', function() {
             switchTab('overview');
         });
-        
+
         document.getElementById('financials-tab').addEventListener('click', function() {
             switchTab('financials');
         });
-        
+
         document.getElementById('traffic-tab').addEventListener('click', function() {
             switchTab('traffic');
         });
-        
+
         document.getElementById('proofs-tab').addEventListener('click', function() {
             switchTab('proofs');
         });
-        
+
         document.getElementById('faq-tab').addEventListener('click', function() {
             switchTab('faq');
         });
-        
+
         function switchTab(tabName) {
             // Hide all tab contents
             document.querySelectorAll('[id$="-content"]').forEach(function(content) {
                 content.classList.add('hidden');
             });
-            
+
             // Remove active class from all tabs
             document.querySelectorAll('nav button').forEach(function(tab) {
                 tab.classList.remove('tab-active');
                 tab.classList.add('text-gray-500');
             });
-            
+
             // Show selected tab content
             document.getElementById(tabName + '-content').classList.remove('hidden');
-            
+
             // Add active class to selected tab
             document.getElementById(tabName + '-tab').classList.add('tab-active');
             document.getElementById(tabName + '-tab').classList.remove('text-gray-500');
         }
-        
+
         // FAQ accordion functionality
         document.querySelectorAll('.faq-question').forEach(function(question) {
             question.addEventListener('click', function() {
                 const answer = this.nextElementSibling;
                 const icon = this.querySelector('i');
-                
+
                 if (answer.classList.contains('hidden')) {
                     answer.classList.remove('hidden');
                     icon.classList.remove('fa-chevron-down');
@@ -1011,7 +991,7 @@ try {
                 }
             });
         });
-        
+
         // Buy Now and Make Offer Popup Functions
         function showBuyNowPopupDetail(listingId, listingName, askingPrice, sellerId) {
             // Create and show popup
@@ -1060,7 +1040,7 @@ try {
                             <button onclick="closePopupDetail()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                                 Cancel
                             </button>
-                            <button onclick="window.location.href='./index.php?p=payment&id=${listingId}'" class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold">
+                            <button onclick="window.location.href = window.BASE + 'index.php?p=payment&id=' + listingId" class="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold">
                                 Proceed to Payment
                             </button>
                         </div>
@@ -1070,7 +1050,7 @@ try {
             document.body.appendChild(popup);
             document.body.style.overflow = 'hidden';
         }
-        
+
         function showMakeOfferPopupDetail(listingId, listingName, askingPrice, sellerId) {
             const popup = document.createElement('div');
             popup.id = 'makeOfferPopupDetail';
@@ -1103,7 +1083,7 @@ try {
                             <button onclick="closePopupDetail()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                                 Cancel
                             </button>
-                            <button onclick="window.location.href='./index.php?p=makeoffer&id=${listingId}'" class="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold">
+                            <button onclick="window.location.href = window.BASE + 'index.php?p=makeoffer&id=' + listingId" class="flex-1 px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:opacity-90 transition-opacity font-semibold">
                                 Make Offer
                             </button>
                         </div>
@@ -1113,69 +1093,69 @@ try {
             document.body.appendChild(popup);
             document.body.style.overflow = 'hidden';
         }
-        
+
         // Submit offer function for detail page
         function submitOfferDetail(listingId) {
             const offerAmount = document.getElementById('offerAmountDetail').value;
             const offerMessage = document.getElementById('offerMessageDetail').value.trim();
             const submitButton = document.querySelector('#makeOfferPopupDetail button[onclick*="submitOfferDetail"]');
-            
+
             // Validate offer amount
             if (!offerAmount || offerAmount <= 0) {
                 alert('Please enter a valid offer amount');
                 document.getElementById('offerAmountDetail').focus();
                 return;
             }
-            
+
             // Show loading state
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
-            
+
             // Create form data
             const formData = new FormData();
             formData.append('listing_id', listingId);
             formData.append('amount', offerAmount);
             formData.append('message', offerMessage || 'No message provided');
-            
+
             // Submit offer via AJAX
             fetch('index.php?p=submit_offer_ajax', {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.text().then(text => {
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        throw new Error('Invalid JSON response from server');
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                });
-            })
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    alert('Your offer has been submitted successfully!');
-                    closePopupDetail();
-                } else {
-                    alert(data.message || 'Failed to submit offer. Please try again.');
+                    return response.text().then(text => {
+                        try {
+                            return JSON.parse(text);
+                        } catch (e) {
+                            throw new Error('Invalid JSON response from server');
+                        }
+                    });
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        alert('Your offer has been submitted successfully!');
+                        closePopupDetail();
+                    } else {
+                        alert(data.message || 'Failed to submit offer. Please try again.');
+                        // Reset button
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = 'Submit Offer';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Network error: ' + error.message + '. Please try again.');
                     // Reset button
                     submitButton.disabled = false;
                     submitButton.innerHTML = 'Submit Offer';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Network error: ' + error.message + '. Please try again.');
-                // Reset button
-                submitButton.disabled = false;
-                submitButton.innerHTML = 'Submit Offer';
-            });
+                });
         }
-        
+
         function closePopupDetail() {
             const buyPopup = document.getElementById('buyNowPopupDetail');
             const offerPopup = document.getElementById('makeOfferPopupDetail');
@@ -1183,14 +1163,14 @@ try {
             if (offerPopup) offerPopup.remove();
             document.body.style.overflow = 'auto';
         }
-        
+
         // Close popup on outside click
         document.addEventListener('click', function(e) {
             if (e.target.id === 'buyNowPopupDetail' || e.target.id === 'makeOfferPopupDetail') {
                 closePopupDetail();
             }
         });
-        
+
         // Close popup with Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -1199,4 +1179,5 @@ try {
         });
     </script>
 </body>
+
 </html>

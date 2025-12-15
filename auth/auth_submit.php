@@ -12,17 +12,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF check
     if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
         setErrorMessage('Invalid request. Please try again.');
-        header("Location: " . url('index.php?p=login&tab=signup'));
+        header("Location: " . url('public/index.php?p=login&tab=signup'));
         exit;
     }
 
     // Create validator with form data
     $validator = new FormValidator($_POST);
-    
-    
+
+
+    // Validation rules
     $validator
-        ->required('name', 'Full name is required')
-        ->name('name', 'Name can only contain letters, spaces, hyphens and apostrophes')
         ->required('email', 'Email address is required')
         ->email('email', 'Please enter a valid email address')
         ->required('password', 'Password is required')
@@ -37,24 +36,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = :email");
         $stmt->execute([':email' => $email]);
         if ($stmt->fetch()) {
-            $validator->custom('email', function() { return false; }, 'This email address is already registered');
+            $validator->custom('email', function () {
+                return false;
+            }, 'This email address is already registered');
         }
     }
 
     // If validation fails, store errors and redirect
     if ($validator->fails()) {
         $validator->storeErrors();
-        header("Location: " . url('index.php?p=login&tab=signup'));
+        header("Location: " . url('public/index.php?p=login&tab=signup'));
         exit;
     }
 
     // Insert user if validation passes
-    $name = trim($_POST['name']);
     $email = trim($_POST['email']);
+    // Generate default name from email
+    $nameParts = explode('@', $email);
+    // Add 'Pending: ' prefix to identify unverified/default profile names
+    $name = "Pending: " . ucwords(str_replace(['.', '_', '-'], ' ', $nameParts[0]));
+    // Add a flag or specific pattern to identify this as a default name if needed later
+
     $password = $_POST['password'];
-    
+    $password = $_POST['password'];
+
     $hash = password_hash($password, PASSWORD_DEFAULT);
-    
+
     // Check if email_verified column exists
     $pdo = db();
     $columnExists = false;
@@ -64,12 +71,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         $columnExists = false;
     }
-    
+
     if ($columnExists) {
         // Email verification enabled
         $verificationToken = bin2hex(random_bytes(32));
         $verificationExpires = date('Y-m-d H:i:s', strtotime('+24 hours'));
-        
+
         $stmt = $pdo->prepare("
             INSERT INTO users (name, email, password, email_verified, email_verification_token, email_verification_expires_at) 
             VALUES (:n, :e, :p, 0, :token, :expires)
@@ -81,21 +88,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':token' => $verificationToken,
             ':expires' => $verificationExpires
         ]);
-        
+
         $newUserId = $pdo->lastInsertId();
         log_action("User Registered", "New user registered: {$name} ({$email})", "auth", $newUserId);
-        
+
         // Send verification email and notify superadmin
-        register_shutdown_function(function() use ($email, $name, $verificationToken, $newUserId, $pdo) {
+        register_shutdown_function(function () use ($email, $name, $verificationToken, $newUserId, $pdo) {
             if (function_exists('fastcgi_finish_request')) {
                 fastcgi_finish_request();
             }
             require_once __DIR__ . '/../includes/email_helper.php';
-            
+
             try {
                 // Send verification email to user
                 $emailSent = sendEmailVerificationEmail($email, $name, $verificationToken);
-                
+
                 if ($emailSent) {
                     SignupNotificationHelper::setVerificationNotifications($email, $name);
                     log_action("Verification Email Sent", "Verification email sent to {$email}", "auth", $newUserId);
@@ -107,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 SignupNotificationHelper::setEmailFailureNotifications($email, $name);
                 log_action("Email Send Error", "Error sending verification email: " . $e->getMessage(), "auth", $newUserId);
             }
-            
+
             // Notify superadmin about new user
             try {
                 sendSuperAdminNotification(
@@ -121,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'Registration Date' => date('F j, Y \a\t g:i A'),
                         'Status' => 'Email verification pending'
                     ],
-                    url('index.php?p=dashboard&page=userManagement')
+                    url('public/index.php?p=dashboard&page=userManagement')
                 );
             } catch (Exception $e) {
                 log_action("Admin Notification Failed", "Failed to notify admin about new user: " . $e->getMessage(), "auth", $newUserId);
@@ -135,17 +142,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':e' => $email,
             ':p' => $hash
         ]);
-        
+
         $newUserId = $pdo->lastInsertId();
         log_action("User Registered", "New user registered: {$name} ({$email})", "auth", $newUserId);
-        
+
         // Send welcome email and notify superadmin
-        register_shutdown_function(function() use ($email, $name, $newUserId, $pdo) {
+        register_shutdown_function(function () use ($email, $name, $newUserId, $pdo) {
             if (function_exists('fastcgi_finish_request')) {
                 fastcgi_finish_request();
             }
             require_once __DIR__ . '/../includes/email_helper.php';
-            
+
             try {
                 // Send welcome email to user
                 sendWelcomeEmail($email, $name);
@@ -153,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $e) {
                 log_action("Welcome Email Failed", "Failed to send welcome email: " . $e->getMessage(), "auth", $newUserId);
             }
-            
+
             // Notify superadmin about new user
             try {
                 sendSuperAdminNotification(
@@ -167,7 +174,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'Registration Date' => date('F j, Y \a\t g:i A'),
                         'Status' => 'Active (no verification required)'
                     ],
-                    url('index.php?p=dashboard&page=userManagement')
+                    url('public/index.php?p=dashboard&page=userManagement')
                 );
             } catch (Exception $e) {
                 log_action("Admin Notification Failed", "Failed to notify admin about new user: " . $e->getMessage(), "auth", $newUserId);
@@ -180,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Email verification enabled - don't auto-login
         FormValidator::clearOldInput();
         // Note: Notifications will be set by the shutdown function after email sending
-        header("Location: " . url('index.php?p=login&tab=login'));
+        header("Location: " . url('public/index.php?p=login&tab=login'));
         exit;
     } else {
         // Email verification disabled - auto-login
@@ -194,11 +201,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         FormValidator::clearOldInput();
         SignupNotificationHelper::setWelcomeNotifications($name);
-        header("Location: " . url('index.php?p=dashboard&page=userDashboard'));
+        header("Location: " . url('public/index.php?p=dashboard&page=userDashboard'));
         exit;
     }
 }
 
 // If not POST request, redirect to signup
-header("Location: " . url('index.php?p=login&tab=signup'));
+header("Location: " . url('public/index.php?p=login&tab=signup'));
 exit;

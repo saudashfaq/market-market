@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Check Login Status API
  * Returns current user login status and appropriate redirect URL
@@ -12,22 +13,22 @@ header('Content-Type: application/json');
 // Check if user is logged in
 if (is_logged_in()) {
     $role = user_role();
-    
+
     // Determine redirect URL based on role
     $redirectUrl = '';
     switch ($role) {
         case 'superadmin':
         case 'super_admin':
-            $redirectUrl = url("index.php?p=dashboard&page=superAdminDashboard");
+            $redirectUrl = url("public/index.php?p=dashboard&page=superAdminDashboard");
             break;
         case 'admin':
-            $redirectUrl = url("index.php?p=dashboard&page=adminDashboard");
+            $redirectUrl = url("public/index.php?p=dashboard&page=adminDashboard");
             break;
         default:
-            $redirectUrl = url("index.php?p=dashboard&page=userDashboard");
+            $redirectUrl = url("public/index.php?p=dashboard&page=userDashboard");
             break;
     }
-    
+
     echo json_encode([
         'logged_in' => true,
         'role' => $role,
@@ -38,4 +39,3 @@ if (is_logged_in()) {
         'logged_in' => false
     ]);
 }
-?>

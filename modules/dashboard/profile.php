@@ -280,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </label>
             <div class="flex items-center border rounded-lg mt-1 focus-within:ring-2 focus-within:ring-blue-500 <?= isset($validationErrors['name']) ? 'border-red-500' : '' ?>">
               <i class="fas fa-user ml-3 text-gray-400"></i>
-              <input type="text" name="name" value="<?= htmlspecialchars(oldValue('name', $user['name'])) ?>" class="w-full p-2 outline-none text-sm sm:text-base">
+              <input type="text" name="name" value="<?= htmlspecialchars(oldValue('name', str_replace('Pending: ', '', $user['name']))) ?>" class="w-full p-2 outline-none text-sm sm:text-base">
             </div>
             <?php displayFieldError('name', $validationErrors); ?>
           </div>

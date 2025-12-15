@@ -44,6 +44,12 @@ try {
 } catch (Exception $e) {
   $awaitingCredentialsCount = 0;
 }
+
+// Ensure navigation links include public/ directory
+$navBase = defined('BASE') ? BASE : '';
+if ($navBase && strpos($navBase, '/public/') === false) {
+  $navBase = rtrim($navBase, '/') . '/public/';
+}
 ?>
 
 <style>
@@ -76,10 +82,8 @@ try {
   <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50/60 to-white flex items-center gap-4">
     <div class="relative">
       <div class="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-indigo-100 border border-gray-200 flex items-center justify-center shadow-sm">
-        <?php if ($profilePic): ?>
-
-          <img src="<?= BASE . htmlspecialchars($profilePic) ?>" alt="Profile Picture" class="w-full h-full object-cover">
-
+        <?php if ($profilePic && file_exists(__DIR__ . '/../../public/' . $profilePic)): ?>
+          <img src="<?= $navBase . htmlspecialchars($profilePic) ?>" alt="Profile Picture" class="w-full h-full object-cover">
         <?php else: ?>
           <i class="fa-solid fa-user text-blue-400 text-xl"></i>
         <?php endif; ?>
@@ -153,9 +157,26 @@ try {
         <hr class="my-3 border-gray-200">
       <?php else:
         $active = ($currentPage === ($item['page'] ?? ''));
-        $href = isset($item['external'])
-          ? $item['external']
-          : "index.php?p=dashboard&page={$item['page']}";
+
+        if (isset($item['external'])) {
+          // Check if it's an absolute URL
+          if (strpos($item['external'], 'http') === 0) {
+            $href = $item['external'];
+          } else {
+            // Clean up ./ prefix and index.php?p= if present
+            $cleanExternal = $item['external'];
+            if (strpos($cleanExternal, 'index.php?p=') !== false) {
+              $parts = parse_url($cleanExternal);
+              parse_str($parts['query'] ?? '', $query);
+              $cleanExternal = $query['p'] ?? '';
+            }
+            $cleanExternal = ltrim($cleanExternal, './');
+            $href = url($cleanExternal);
+          }
+        } else {
+          // Use SEO/Sematic URL structure
+          $href = url("dashboard/{$item['page']}");
+        }
       ?>
         <a href="<?= $href ?>"
           class="group flex items-center justify-between px-3 py-2.5 mx-1 rounded-lg font-medium transition-all duration-200
@@ -192,7 +213,7 @@ try {
     ?>
 
     <hr class="my-4 border-gray-200">
-    <a href="#" onclick="confirmLogout(event)" class="group flex items-center px-3 py-2.5 mx-1 rounded-lg text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition" title="Logout">
+    <a href="<?= url('index.php?p=auth_logout') ?>" class="group flex items-center px-3 py-2.5 mx-1 rounded-lg text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition" title="Logout">
       <div class="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 text-red-500 group-hover:bg-red-100 group-hover:text-red-600 mr-3 transition">
         <i class="fa fa-sign-out-alt text-sm"></i>
       </div>
@@ -201,52 +222,6 @@ try {
   </nav>
 </aside>
 <script>
-  function confirmLogout(event) {
-    if (event && event.preventDefault) {
-      event.preventDefault();
-    }
-
-    console.log('Sidebar logout confirmation triggered');
-
-    // Wait for popup system to be ready
-    if (typeof showConfirm === 'undefined') {
-      console.error('Popup system not loaded yet');
-      setTimeout(() => confirmLogout(event), 100);
-      return;
-    }
-
-    // Use showConfirm for better promise handling
-    showConfirm('Are you sure you want to logout?', {
-      title: 'Confirm Logout',
-      confirmText: 'Yes, Logout',
-      cancelText: 'Cancel'
-    }).then(function(result) {
-      console.log('Logout confirmation result:', result);
-      if (result === true) {
-        console.log('User confirmed logout - redirecting...');
-
-        // Show loading message
-        showSuccess('Logging out...', {
-          title: 'Please wait',
-          showConfirm: false,
-          autoClose: true,
-          autoCloseTime: 1000
-        });
-
-        // Redirect after short delay
-        setTimeout(function() {
-          window.location.href = './index.php?p=auth_logout';
-        }, 500);
-      } else {
-        console.log('Logout cancelled by user');
-      }
-    }).catch(function(error) {
-      console.error('Logout confirmation error:', error);
-      // Fallback - direct redirect
-      window.location.href = './index.php?p=auth_logout';
-    });
-  }
-
   // Mobile sidebar close functionality
   document.addEventListener('DOMContentLoaded', function() {
     const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');

@@ -35,7 +35,7 @@
                       <i class="fa-solid fa-cloud-arrow-up fa-2x"></i>
                     </div>
                   </div>
-                  <p class="mt-2 text-sm text-gray-600">Click to upload or drag and drop<br/><span class="text-xs text-gray-400">PNG, JPG up to 2MB</span></p>
+                  <p class="mt-2 text-sm text-gray-600">Click to upload or drag and drop<br /><span class="text-xs text-gray-400">PNG, JPG up to 2MB</span></p>
                 </div>
               </label>
               <input id="file-upload" type="file" accept="image/*" class="sr-only" />
@@ -127,7 +127,7 @@
             </div>
           </div>
         </div>
-        
+
         <div class="space-y-6 tab-content hidden" id="bidding">
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <h3 class="font-medium text-blue-900 mb-2">Bidding Control Settings</h3>
@@ -196,7 +196,7 @@
             Save Bidding Settings
           </button>
         </div>
-        
+
         <div class="space-y-6 tab-content hidden" id="notifications">
           <div class="flex items-center justify-between">
             <div>
@@ -242,10 +242,10 @@
 
     tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
-        tabButtons.forEach(b => b.classList.remove('text-gray-800','border-b-2','border-blue-600'));
+        tabButtons.forEach(b => b.classList.remove('text-gray-800', 'border-b-2', 'border-blue-600'));
         tabButtons.forEach(b => b.classList.add('text-gray-500'));
         btn.classList.remove('text-gray-500');
-        btn.classList.add('text-gray-800','border-b-2','border-blue-600');
+        btn.classList.add('text-gray-800', 'border-b-2', 'border-blue-600');
 
         const tab = btn.getAttribute('data-tab');
         tabContents.forEach(content => {
@@ -258,7 +258,7 @@
     const preview = document.getElementById('preview');
     const previewImg = document.getElementById('preview-img');
 
-    if(fileInput){
+    if (fileInput) {
       fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -267,12 +267,12 @@
         preview.classList.remove('hidden');
       });
     }
-    
+
     // Bidding Control Settings Logic
     const bidIncrementType = document.getElementById('bid_increment_type');
     const fixedSection = document.getElementById('fixed_increment_section');
     const percentageSection = document.getElementById('percentage_increment_section');
-    
+
     if (bidIncrementType) {
       bidIncrementType.addEventListener('change', (e) => {
         if (e.target.value === 'fixed') {
@@ -284,13 +284,13 @@
         }
       });
     }
-    
+
     // Load current bidding settings
     async function loadBiddingSettings() {
       try {
         const response = await fetch('/api/enhanced_bidding_api.php?action=get_bidding_settings');
         const data = await response.json();
-        
+
         if (data.success) {
           document.getElementById('bid_increment_type').value = data.settings.bid_increment_type || 'fixed';
           document.getElementById('bid_increment_fixed').value = data.settings.bid_increment_fixed || '10.00';
@@ -299,7 +299,7 @@
           document.getElementById('down_payment_warning_threshold').value = data.settings.down_payment_warning_threshold || '10.00';
           document.getElementById('auction_extension_minutes').value = data.settings.auction_extension_minutes || '2';
           document.getElementById('default_reserved_amount_percentage').value = data.settings.default_reserved_amount_percentage || '0.00';
-          
+
           // Trigger change event to show correct section
           bidIncrementType.dispatchEvent(new Event('change'));
         }
@@ -307,7 +307,7 @@
         console.error('Error loading bidding settings:', error);
       }
     }
-    
+
     // Save bidding settings
     const saveBiddingBtn = document.getElementById('save_bidding_settings');
     if (saveBiddingBtn) {
@@ -321,19 +321,21 @@
           auction_extension_minutes: document.getElementById('auction_extension_minutes').value,
           default_reserved_amount_percentage: document.getElementById('default_reserved_amount_percentage').value
         };
-        
+
         try {
           saveBiddingBtn.disabled = true;
           saveBiddingBtn.textContent = 'Saving...';
-          
+
           const response = await fetch('/api/enhanced_bidding_api.php?action=update_bidding_settings', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json'
+            },
             body: JSON.stringify(settings)
           });
-          
+
           const data = await response.json();
-          
+
           if (data.success) {
             alert('✅ Bidding settings saved successfully!');
           } else {
@@ -347,27 +349,27 @@
         }
       });
     }
-    
+
     // Load settings on page load
     loadBiddingSettings();
-    
+
     // Ensure API_BASE_PATH is set
     // Define BASE constant globally
-    const BASE = "<?php echo BASE; ?>";
+    // const BASE = "<?php echo BASE; ?>"; // Already defined in dashboard.php
     console.log('🔧 BASE constant defined:', BASE);
-    
-    // Use PathUtils for API base path
-    if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
-      window.API_BASE_PATH = BASE + 'api';
+
+    if (!window.API_BASE_PATH) {
+      const path = window.location.pathname;
+      window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
       console.log('🔧 [Settings] API_BASE_PATH:', window.API_BASE_PATH);
     }
-    
+
     // Polling Integration for SuperAdmin Settings
     console.log('🚀 SuperAdmin Settings polling initialization started');
-    
+
     if (typeof startPolling !== 'undefined') {
       console.log('✅ Starting polling for settings page');
-      
+
       try {
         startPolling({
           // Monitor for system-wide changes
@@ -377,7 +379,7 @@
             }
           }
         });
-        
+
         console.log('✅ Polling started successfully for SuperAdmin Settings');
       } catch (error) {
         console.error('❌ Error starting polling:', error);

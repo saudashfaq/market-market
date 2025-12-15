@@ -103,7 +103,7 @@ function resendVerificationEmail(email, button) {
     formData.append('csrf_token', csrfToken);
     
     // Send resend request
-    fetch(getBaseUrl() + 'public/resend-verification.php', {
+    fetch(getBaseUrl() + 'resend-verification', {
         method: 'POST',
         body: formData
     })

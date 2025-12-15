@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Email Helper Functions
  * Procedural functions for sending emails using PHPMailer
@@ -26,7 +27,8 @@ use PHPMailer\PHPMailer\Exception;
  * @param string $resetToken Reset token
  * @return bool True on success, false on failure
  */
-function sendPasswordResetEmail($userEmail, $userName, $resetToken) {
+function sendPasswordResetEmail($userEmail, $userName, $resetToken)
+{
     try {
         // Validate email
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
@@ -35,8 +37,8 @@ function sendPasswordResetEmail($userEmail, $userName, $resetToken) {
         }
 
         // Create reset link
-        $resetLink = url("reset-password.php?token=" . urlencode($resetToken));
-        
+        $resetLink = url("reset-password/" . urlencode($resetToken));
+
         // Prepare template data
         $templateData = [
             'user_name' => $userName,
@@ -48,16 +50,16 @@ function sendPasswordResetEmail($userEmail, $userName, $resetToken) {
 
         // Get email template
         $htmlBody = getEmailTemplate('password_reset', $templateData);
-        
+
         // Initialize PHPMailer
         $mail = new PHPMailer(true);
-        
+
         // Enable verbose debug output (comment out in production)
         // $mail->SMTPDebug = 2;
         // $mail->Debugoutput = function($str, $level) {
         //     error_log("PHPMailer: $str");
         // };
-        
+
         // SMTP Configuration for Gmail
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -66,7 +68,7 @@ function sendPasswordResetEmail($userEmail, $userName, $resetToken) {
         $mail->Password = MAIL_PASSWORD;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = MAIL_PORT;
-        
+
         // Additional Gmail settings
         $mail->SMTPOptions = array(
             'ssl' => array(
@@ -75,10 +77,10 @@ function sendPasswordResetEmail($userEmail, $userName, $resetToken) {
                 'allow_self_signed' => true
             )
         );
-        
+
         // Set charset
         $mail->CharSet = 'UTF-8';
-        
+
         // Email settings
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
@@ -86,16 +88,15 @@ function sendPasswordResetEmail($userEmail, $userName, $resetToken) {
         $mail->Subject = 'Password Reset Request - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         // Send email
         $result = $mail->send();
-        
+
         if ($result) {
             error_log("Password reset email sent successfully to: $userEmail");
         }
-        
+
         return $result;
-        
     } catch (Exception $e) {
         error_log("Email sending failed: " . $e->getMessage());
         return false;
@@ -109,25 +110,26 @@ function sendPasswordResetEmail($userEmail, $userName, $resetToken) {
  * @param array $data Associative array of placeholder => value pairs
  * @return string Processed HTML content
  */
-function getEmailTemplate($templateName, $data = []) {
+function getEmailTemplate($templateName, $data = [])
+{
     $templatePath = __DIR__ . '/../templates/emails/' . $templateName . '.html';
-    
+
     // Check if template exists
     if (!file_exists($templatePath)) {
         error_log("Email template not found: $templatePath");
         // Return basic fallback template
         return getFallbackTemplate($data);
     }
-    
+
     // Load template
     $template = file_get_contents($templatePath);
-    
+
     // Replace placeholders
     foreach ($data as $key => $value) {
         $placeholder = '{{' . $key . '}}';
         $template = str_replace($placeholder, htmlspecialchars($value, ENT_QUOTES, 'UTF-8'), $template);
     }
-    
+
     return $template;
 }
 
@@ -137,11 +139,12 @@ function getEmailTemplate($templateName, $data = []) {
  * @param array $data Template data
  * @return string Basic HTML email
  */
-function getFallbackTemplate($data) {
+function getFallbackTemplate($data)
+{
     $userName = $data['user_name'] ?? 'User';
     $resetLink = $data['reset_link'] ?? '#';
     $siteName = $data['site_name'] ?? 'Marketplace';
-    
+
     return "
     <html>
     <body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>
@@ -171,7 +174,8 @@ function getFallbackTemplate($data) {
  * @param array $listingData Listing information
  * @return bool True on success, false on failure
  */
-function sendListingApprovedEmail($sellerEmail, $sellerName, $listingData) {
+function sendListingApprovedEmail($sellerEmail, $sellerName, $listingData)
+{
     try {
         // Validate email
         if (!filter_var($sellerEmail, FILTER_VALIDATE_EMAIL)) {
@@ -194,10 +198,10 @@ function sendListingApprovedEmail($sellerEmail, $sellerName, $listingData) {
 
         // Get email template
         $htmlBody = getEmailTemplate('listing_approved', $templateData);
-        
+
         // Initialize PHPMailer
         $mail = new PHPMailer(true);
-        
+
         // SMTP Configuration for Gmail
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -206,7 +210,7 @@ function sendListingApprovedEmail($sellerEmail, $sellerName, $listingData) {
         $mail->Password = MAIL_PASSWORD;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = MAIL_PORT;
-        
+
         // Additional Gmail settings
         $mail->SMTPOptions = array(
             'ssl' => array(
@@ -215,10 +219,10 @@ function sendListingApprovedEmail($sellerEmail, $sellerName, $listingData) {
                 'allow_self_signed' => true
             )
         );
-        
+
         // Set charset
         $mail->CharSet = 'UTF-8';
-        
+
         // Email settings
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($sellerEmail, $sellerName);
@@ -226,16 +230,15 @@ function sendListingApprovedEmail($sellerEmail, $sellerName, $listingData) {
         $mail->Subject = '✅ Your Listing Has Been Approved - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         // Send email
         $result = $mail->send();
-        
+
         if ($result) {
             error_log("Listing approved email sent successfully to: $sellerEmail for listing ID: " . ($listingData['id'] ?? 'N/A'));
         }
-        
+
         return $result;
-        
     } catch (Exception $e) {
         error_log("Listing approved email sending failed: " . $e->getMessage());
         return false;
@@ -251,7 +254,8 @@ function sendListingApprovedEmail($sellerEmail, $sellerName, $listingData) {
  * @param string $reason Rejection reason
  * @return bool True on success, false on failure
  */
-function sendListingRejectedEmail($sellerEmail, $sellerName, $listingData, $reason = '') {
+function sendListingRejectedEmail($sellerEmail, $sellerName, $listingData, $reason = '')
+{
     try {
         // Validate email
         if (!filter_var($sellerEmail, FILTER_VALIDATE_EMAIL)) {
@@ -277,10 +281,10 @@ function sendListingRejectedEmail($sellerEmail, $sellerName, $listingData, $reas
 
         // Get email template
         $htmlBody = getEmailTemplate('listing_rejected', $templateData);
-        
+
         // Initialize PHPMailer
         $mail = new PHPMailer(true);
-        
+
         // SMTP Configuration for Gmail
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -289,7 +293,7 @@ function sendListingRejectedEmail($sellerEmail, $sellerName, $listingData, $reas
         $mail->Password = MAIL_PASSWORD;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = MAIL_PORT;
-        
+
         // Additional Gmail settings
         $mail->SMTPOptions = array(
             'ssl' => array(
@@ -298,10 +302,10 @@ function sendListingRejectedEmail($sellerEmail, $sellerName, $listingData, $reas
                 'allow_self_signed' => true
             )
         );
-        
+
         // Set charset
         $mail->CharSet = 'UTF-8';
-        
+
         // Email settings
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($sellerEmail, $sellerName);
@@ -309,16 +313,15 @@ function sendListingRejectedEmail($sellerEmail, $sellerName, $listingData, $reas
         $mail->Subject = '⚠️ Action Required: Update Your Listing - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         // Send email
         $result = $mail->send();
-        
+
         if ($result) {
             error_log("Listing rejected email sent successfully to: $sellerEmail for listing ID: " . ($listingData['id'] ?? 'N/A'));
         }
-        
+
         return $result;
-        
     } catch (Exception $e) {
         error_log("Listing rejected email sending failed: " . $e->getMessage());
         return false;
@@ -333,7 +336,8 @@ function sendListingRejectedEmail($sellerEmail, $sellerName, $listingData, $reas
  * @param string $userName User's name
  * @return bool True on success, false on failure
  */
-function sendWelcomeEmail($userEmail, $userName) {
+function sendWelcomeEmail($userEmail, $userName)
+{
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
             error_log("Invalid user email address: $userEmail");
@@ -348,7 +352,7 @@ function sendWelcomeEmail($userEmail, $userName) {
         ];
 
         $htmlBody = getEmailTemplate('welcome', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -365,7 +369,7 @@ function sendWelcomeEmail($userEmail, $userName) {
         $mail->Subject = '🎉 Welcome to ' . MAIL_FROM_NAME . '!';
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         $result = $mail->send();
         if ($result) {
             error_log("Welcome email sent successfully to: $userEmail");
@@ -381,7 +385,8 @@ function sendWelcomeEmail($userEmail, $userName) {
 /**
  * Send offer received email to seller
  */
-function sendOfferReceivedEmail($sellerEmail, $sellerName, $offerData, $listingData) {
+function sendOfferReceivedEmail($sellerEmail, $sellerName, $offerData, $listingData)
+{
     try {
         if (!filter_var($sellerEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -399,7 +404,7 @@ function sendOfferReceivedEmail($sellerEmail, $sellerName, $offerData, $listingD
         ];
 
         $htmlBody = getEmailTemplate('offer_received', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -416,7 +421,7 @@ function sendOfferReceivedEmail($sellerEmail, $sellerName, $offerData, $listingD
         $mail->Subject = '💰 New Offer on Your Listing - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Offer received email failed: " . $e->getMessage());
@@ -427,7 +432,8 @@ function sendOfferReceivedEmail($sellerEmail, $sellerName, $offerData, $listingD
 /**
  * Send offer accepted email to buyer
  */
-function sendOfferAcceptedEmail($buyerEmail, $buyerName, $offerData, $listingData) {
+function sendOfferAcceptedEmail($buyerEmail, $buyerName, $offerData, $listingData)
+{
     try {
         if (!filter_var($buyerEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -450,7 +456,7 @@ function sendOfferAcceptedEmail($buyerEmail, $buyerName, $offerData, $listingDat
             <hr style='margin: 30px 0;'>
             <p style='color: #666; font-size: 12px;'>© 2024 {$templateData['site_name']}</p>
         </body></html>";
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -467,7 +473,7 @@ function sendOfferAcceptedEmail($buyerEmail, $buyerName, $offerData, $listingDat
         $mail->Subject = '✅ Your Offer Was Accepted! - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Offer accepted email failed: " . $e->getMessage());
@@ -478,7 +484,8 @@ function sendOfferAcceptedEmail($buyerEmail, $buyerName, $offerData, $listingDat
 /**
  * Send offer rejected email to buyer
  */
-function sendOfferRejectedEmail($buyerEmail, $buyerName, $offerData, $listingData, $reason = '') {
+function sendOfferRejectedEmail($buyerEmail, $buyerName, $offerData, $listingData, $reason = '')
+{
     try {
         if (!filter_var($buyerEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -503,7 +510,7 @@ function sendOfferRejectedEmail($buyerEmail, $buyerName, $offerData, $listingDat
             <hr style='margin: 30px 0;'>
             <p style='color: #666; font-size: 12px;'>© 2024 {$templateData['site_name']}</p>
         </body></html>";
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -520,7 +527,7 @@ function sendOfferRejectedEmail($buyerEmail, $buyerName, $offerData, $listingDat
         $mail->Subject = 'Offer Update - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Offer rejected email failed: " . $e->getMessage());
@@ -531,7 +538,8 @@ function sendOfferRejectedEmail($buyerEmail, $buyerName, $offerData, $listingDat
 /**
  * Send payment confirmation email
  */
-function sendPaymentConfirmationEmail($userEmail, $userName, $paymentData, $listingData, $userType = 'buyer') {
+function sendPaymentConfirmationEmail($userEmail, $userName, $paymentData, $listingData, $userType = 'buyer')
+{
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -544,8 +552,8 @@ function sendPaymentConfirmationEmail($userEmail, $userName, $paymentData, $list
             'site_name' => MAIL_FROM_NAME
         ];
 
-        $message = $userType === 'buyer' 
-            ? "Your payment has been processed successfully!" 
+        $message = $userType === 'buyer'
+            ? "Your payment has been processed successfully!"
             : "You've received a payment for your listing!";
 
         $htmlBody = "
@@ -562,7 +570,7 @@ function sendPaymentConfirmationEmail($userEmail, $userName, $paymentData, $list
             <hr style='margin: 30px 0;'>
             <p style='color: #666; font-size: 12px;'>© 2024 {$templateData['site_name']}</p>
         </body></html>";
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -579,7 +587,7 @@ function sendPaymentConfirmationEmail($userEmail, $userName, $paymentData, $list
         $mail->Subject = '✅ Payment Confirmed - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Payment confirmation email failed: " . $e->getMessage());
@@ -590,7 +598,8 @@ function sendPaymentConfirmationEmail($userEmail, $userName, $paymentData, $list
 /**
  * Send new message notification email
  */
-function sendNewMessageEmail($recipientEmail, $recipientName, $senderName, $messagePreview) {
+function sendNewMessageEmail($recipientEmail, $recipientName, $senderName, $messagePreview)
+{
     try {
         if (!filter_var($recipientEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -614,7 +623,7 @@ function sendNewMessageEmail($recipientEmail, $recipientName, $senderName, $mess
             <hr style='margin: 30px 0;'>
             <p style='color: #666; font-size: 12px;'>© 2024 {$templateData['site_name']}</p>
         </body></html>";
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -628,10 +637,10 @@ function sendNewMessageEmail($recipientEmail, $recipientName, $senderName, $mess
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($recipientEmail, $recipientName);
         $mail->isHTML(true);
-        $mail->Subject = '💬 New Message from ' . $senderName . ' - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'New Message from ' . $senderName . ' - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("New message email failed: " . $e->getMessage());
@@ -643,11 +652,12 @@ function sendNewMessageEmail($recipientEmail, $recipientName, $senderName, $mess
 /**
  * Send email verification email
  */
-function sendEmailVerificationEmail($userEmail, $userName, $verificationToken) {
+function sendEmailVerificationEmail($userEmail, $userName, $verificationToken)
+{
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) return false;
 
-        $verificationLink = url("verify-email.php?token=" . urlencode($verificationToken));
+        $verificationLink = url("verify-email/" . urlencode($verificationToken));
         $templateData = [
             'user_name' => $userName,
             'verification_link' => $verificationLink,
@@ -657,7 +667,7 @@ function sendEmailVerificationEmail($userEmail, $userName, $verificationToken) {
         ];
 
         $htmlBody = getEmailTemplate('email_verification', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -671,10 +681,10 @@ function sendEmailVerificationEmail($userEmail, $userName, $verificationToken) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = '📧 Verify Your Email - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Verify Your Email - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Email verification email failed: " . $e->getMessage());
@@ -685,7 +695,8 @@ function sendEmailVerificationEmail($userEmail, $userName, $verificationToken) {
 /**
  * Send password changed confirmation email
  */
-function sendPasswordChangedEmail($userEmail, $userName) {
+function sendPasswordChangedEmail($userEmail, $userName)
+{
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -698,7 +709,7 @@ function sendPasswordChangedEmail($userEmail, $userName) {
         ];
 
         $htmlBody = getEmailTemplate('password_changed', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -712,10 +723,10 @@ function sendPasswordChangedEmail($userEmail, $userName) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = '🔒 Password Changed - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Password Changed - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Password changed email failed: " . $e->getMessage());
@@ -726,7 +737,8 @@ function sendPasswordChangedEmail($userEmail, $userName) {
 /**
  * Send listing sold email to seller
  */
-function sendListingSoldEmail($sellerEmail, $sellerName, $listingData, $buyerName, $soldPrice) {
+function sendListingSoldEmail($sellerEmail, $sellerName, $listingData, $buyerName, $soldPrice)
+{
     try {
         if (!filter_var($sellerEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -742,7 +754,7 @@ function sendListingSoldEmail($sellerEmail, $sellerName, $listingData, $buyerNam
         ];
 
         $htmlBody = getEmailTemplate('listing_sold', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -756,10 +768,10 @@ function sendListingSoldEmail($sellerEmail, $sellerName, $listingData, $buyerNam
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($sellerEmail, $sellerName);
         $mail->isHTML(true);
-        $mail->Subject = '🎉 Your Listing Sold! - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Your Listing Sold! - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Listing sold email failed: " . $e->getMessage());
@@ -770,7 +782,8 @@ function sendListingSoldEmail($sellerEmail, $sellerName, $listingData, $buyerNam
 /**
  * Send listing expiring soon email
  */
-function sendListingExpiringEmail($sellerEmail, $sellerName, $listingData, $daysRemaining) {
+function sendListingExpiringEmail($sellerEmail, $sellerName, $listingData, $daysRemaining)
+{
     try {
         if (!filter_var($sellerEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -791,7 +804,7 @@ function sendListingExpiringEmail($sellerEmail, $sellerName, $listingData, $days
         ];
 
         $htmlBody = getEmailTemplate('listing_expiring', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -805,10 +818,10 @@ function sendListingExpiringEmail($sellerEmail, $sellerName, $listingData, $days
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($sellerEmail, $sellerName);
         $mail->isHTML(true);
-        $mail->Subject = '⏰ Listing Expiring Soon - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Listing Expiring Soon - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Listing expiring email failed: " . $e->getMessage());
@@ -819,7 +832,8 @@ function sendListingExpiringEmail($sellerEmail, $sellerName, $listingData, $days
 /**
  * Send counter offer email to buyer
  */
-function sendCounterOfferEmail($buyerEmail, $buyerName, $offerData, $listingData, $sellerName) {
+function sendCounterOfferEmail($buyerEmail, $buyerName, $offerData, $listingData, $sellerName)
+{
     try {
         if (!filter_var($buyerEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -836,7 +850,7 @@ function sendCounterOfferEmail($buyerEmail, $buyerName, $offerData, $listingData
         ];
 
         $htmlBody = getEmailTemplate('offer_counter', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -850,10 +864,10 @@ function sendCounterOfferEmail($buyerEmail, $buyerName, $offerData, $listingData
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($buyerEmail, $buyerName);
         $mail->isHTML(true);
-        $mail->Subject = '🔄 Counter Offer Received - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Counter Offer Received - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Counter offer email failed: " . $e->getMessage());
@@ -864,7 +878,8 @@ function sendCounterOfferEmail($buyerEmail, $buyerName, $offerData, $listingData
 /**
  * Send payment failed email
  */
-function sendPaymentFailedEmail($userEmail, $userName, $paymentData, $listingData) {
+function sendPaymentFailedEmail($userEmail, $userName, $paymentData, $listingData)
+{
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -880,7 +895,7 @@ function sendPaymentFailedEmail($userEmail, $userName, $paymentData, $listingDat
         ];
 
         $htmlBody = getEmailTemplate('payment_failed', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -894,10 +909,10 @@ function sendPaymentFailedEmail($userEmail, $userName, $paymentData, $listingDat
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = '❌ Payment Failed - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Payment Failed - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Payment failed email failed: " . $e->getMessage());
@@ -908,7 +923,8 @@ function sendPaymentFailedEmail($userEmail, $userName, $paymentData, $listingDat
 /**
  * Send order confirmation email
  */
-function sendOrderConfirmationEmail($userEmail, $userName, $orderData, $listingData, $userType = 'buyer') {
+function sendOrderConfirmationEmail($userEmail, $userName, $orderData, $listingData, $userType = 'buyer')
+{
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -942,7 +958,7 @@ function sendOrderConfirmationEmail($userEmail, $userName, $orderData, $listingD
         ];
 
         $htmlBody = getEmailTemplate('order_confirmation', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -956,10 +972,10 @@ function sendOrderConfirmationEmail($userEmail, $userName, $orderData, $listingD
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = '✅ Order Confirmed - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Order Confirmed - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Order confirmation email failed: " . $e->getMessage());
@@ -970,7 +986,8 @@ function sendOrderConfirmationEmail($userEmail, $userName, $orderData, $listingD
 /**
  * Send order shipped email
  */
-function sendOrderShippedEmail($buyerEmail, $buyerName, $orderData, $listingData) {
+function sendOrderShippedEmail($buyerEmail, $buyerName, $orderData, $listingData)
+{
     try {
         if (!filter_var($buyerEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -987,7 +1004,7 @@ function sendOrderShippedEmail($buyerEmail, $buyerName, $orderData, $listingData
         ];
 
         $htmlBody = getEmailTemplate('order_shipped', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1001,10 +1018,10 @@ function sendOrderShippedEmail($buyerEmail, $buyerName, $orderData, $listingData
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($buyerEmail, $buyerName);
         $mail->isHTML(true);
-        $mail->Subject = '📦 Order Shipped - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Order Shipped - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Order shipped email failed: " . $e->getMessage());
@@ -1015,7 +1032,8 @@ function sendOrderShippedEmail($buyerEmail, $buyerName, $orderData, $listingData
 /**
  * Send order delivered email
  */
-function sendOrderDeliveredEmail($buyerEmail, $buyerName, $orderData, $listingData) {
+function sendOrderDeliveredEmail($buyerEmail, $buyerName, $orderData, $listingData)
+{
     try {
         if (!filter_var($buyerEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -1030,7 +1048,7 @@ function sendOrderDeliveredEmail($buyerEmail, $buyerName, $orderData, $listingDa
         ];
 
         $htmlBody = getEmailTemplate('order_delivered', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1044,10 +1062,10 @@ function sendOrderDeliveredEmail($buyerEmail, $buyerName, $orderData, $listingDa
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($buyerEmail, $buyerName);
         $mail->isHTML(true);
-        $mail->Subject = '🎉 Order Delivered - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Order Delivered - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Order delivered email failed: " . $e->getMessage());
@@ -1058,11 +1076,12 @@ function sendOrderDeliveredEmail($buyerEmail, $buyerName, $orderData, $listingDa
 /**
  * Send order cancelled email
  */
-function sendOrderCancelledEmail($userEmail, $userName, $orderData, $listingData) {
+function sendOrderCancelledEmail($userEmail, $userName, $orderData, $listingData)
+{
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) return false;
 
-        $refundMessage = isset($orderData['refund_amount']) && $orderData['refund_amount'] > 0 
+        $refundMessage = isset($orderData['refund_amount']) && $orderData['refund_amount'] > 0
             ? "A refund of $" . number_format($orderData['refund_amount'], 2) . " will be processed within 5-7 business days."
             : "No payment was processed for this order.";
 
@@ -1079,7 +1098,7 @@ function sendOrderCancelledEmail($userEmail, $userName, $orderData, $listingData
         ];
 
         $htmlBody = getEmailTemplate('order_cancelled', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1093,10 +1112,10 @@ function sendOrderCancelledEmail($userEmail, $userName, $orderData, $listingData
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = '⚠️ Order Cancelled - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Order Cancelled - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Order cancelled email failed: " . $e->getMessage());
@@ -1107,7 +1126,8 @@ function sendOrderCancelledEmail($userEmail, $userName, $orderData, $listingData
 /**
  * Send new listing notification to admin
  */
-function sendAdminNewListingEmail($adminEmail, $listingData, $sellerName) {
+function sendAdminNewListingEmail($adminEmail, $listingData, $sellerName)
+{
     try {
         if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -1123,7 +1143,7 @@ function sendAdminNewListingEmail($adminEmail, $listingData, $sellerName) {
         ];
 
         $htmlBody = getEmailTemplate('admin_new_listing', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1137,10 +1157,10 @@ function sendAdminNewListingEmail($adminEmail, $listingData, $sellerName) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($adminEmail);
         $mail->isHTML(true);
-        $mail->Subject = '📝 New Listing Submitted - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'New Listing Submitted - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Admin new listing email failed: " . $e->getMessage());
@@ -1151,7 +1171,8 @@ function sendAdminNewListingEmail($adminEmail, $listingData, $sellerName) {
 /**
  * Send new user registration notification to admin
  */
-function sendAdminNewUserEmail($adminEmail, $userData) {
+function sendAdminNewUserEmail($adminEmail, $userData)
+{
     try {
         if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -1165,7 +1186,7 @@ function sendAdminNewUserEmail($adminEmail, $userData) {
         ];
 
         $htmlBody = getEmailTemplate('admin_new_user', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1179,10 +1200,10 @@ function sendAdminNewUserEmail($adminEmail, $userData) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($adminEmail);
         $mail->isHTML(true);
-        $mail->Subject = '👤 New User Registered - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'New User Registered - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Admin new user email failed: " . $e->getMessage());
@@ -1193,7 +1214,8 @@ function sendAdminNewUserEmail($adminEmail, $userData) {
 /**
  * Send dispute notification to admin
  */
-function sendAdminDisputeEmail($adminEmail, $disputeData) {
+function sendAdminDisputeEmail($adminEmail, $disputeData)
+{
     try {
         if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -1209,7 +1231,7 @@ function sendAdminDisputeEmail($adminEmail, $disputeData) {
         ];
 
         $htmlBody = getEmailTemplate('admin_dispute', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1223,10 +1245,10 @@ function sendAdminDisputeEmail($adminEmail, $disputeData) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($adminEmail);
         $mail->isHTML(true);
-        $mail->Subject = '⚠️ Dispute Raised - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Dispute Raised - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Admin dispute email failed: " . $e->getMessage());
@@ -1237,7 +1259,8 @@ function sendAdminDisputeEmail($adminEmail, $disputeData) {
 /**
  * Send payment issue notification to admin
  */
-function sendAdminPaymentIssueEmail($adminEmail, $paymentData) {
+function sendAdminPaymentIssueEmail($adminEmail, $paymentData)
+{
     try {
         if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) return false;
 
@@ -1253,7 +1276,7 @@ function sendAdminPaymentIssueEmail($adminEmail, $paymentData) {
         ];
 
         $htmlBody = getEmailTemplate('admin_payment_issue', $templateData);
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1267,10 +1290,10 @@ function sendAdminPaymentIssueEmail($adminEmail, $paymentData) {
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($adminEmail);
         $mail->isHTML(true);
-        $mail->Subject = '💳 Payment Issue - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Payment Issue - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Admin payment issue email failed: " . $e->getMessage());
@@ -1289,10 +1312,11 @@ function sendAdminPaymentIssueEmail($adminEmail, $paymentData) {
  * @param string|null $actionUrl Optional action button URL
  * @return bool True on success, false on failure
  */
-function sendSuperAdminNotification($subject, $title, $message, $details = [], $actionUrl = null) {
+function sendSuperAdminNotification($subject, $title, $message, $details = [], $actionUrl = null)
+{
     try {
         $pdo = db();
-        
+
         // Get all superadmin emails
         $stmt = $pdo->query("
             SELECT email, name 
@@ -1300,12 +1324,12 @@ function sendSuperAdminNotification($subject, $title, $message, $details = [], $
             WHERE role IN ('admin', 'super_admin', 'superAdmin', 'superadmin')
         ");
         $admins = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         if (empty($admins)) {
             error_log("⚠️ No superadmin emails found");
             return false;
         }
-        
+
         // Build details HTML
         $detailsHtml = '';
         foreach ($details as $label => $value) {
@@ -1314,7 +1338,7 @@ function sendSuperAdminNotification($subject, $title, $message, $details = [], $
                 <td style='padding: 8px 12px; border-bottom: 1px solid #e5e7eb; color: #1f2937;'>{$value}</td>
             </tr>";
         }
-        
+
         // Build action button
         $actionButton = '';
         if ($actionUrl) {
@@ -1330,7 +1354,7 @@ function sendSuperAdminNotification($subject, $title, $message, $details = [], $
                 </table>
             ";
         }
-        
+
         // Build HTML email
         $htmlBody = "
         <!DOCTYPE html>
@@ -1389,7 +1413,7 @@ function sendSuperAdminNotification($subject, $title, $message, $details = [], $
         </body>
         </html>
         ";
-        
+
         // Initialize PHPMailer
         $mail = new PHPMailer(true);
         $mail->isSMTP();
@@ -1402,25 +1426,24 @@ function sendSuperAdminNotification($subject, $title, $message, $details = [], $
         $mail->SMTPOptions = array('ssl' => array('verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true));
         $mail->CharSet = 'UTF-8';
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
-        
+
         // Add all admins as recipients
         foreach ($admins as $admin) {
             $mail->addAddress($admin['email'], $admin['name']);
         }
-        
+
         $mail->isHTML(true);
         $mail->Subject = $subject;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         $result = $mail->send();
-        
+
         if ($result) {
             error_log("✅ SuperAdmin notification sent: {$subject} to " . count($admins) . " admin(s)");
         }
-        
+
         return $result;
-        
     } catch (Exception $e) {
         error_log("❌ SuperAdmin notification failed: " . $e->getMessage());
         return false;
@@ -1431,12 +1454,13 @@ function sendSuperAdminNotification($subject, $title, $message, $details = [], $
 /**
  * Send ticket created notification to SuperAdmin
  */
-function sendTicketCreatedEmail($adminEmail, $ticketData, $userData) {
+function sendTicketCreatedEmail($adminEmail, $ticketData, $userData)
+{
     try {
         if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) return false;
 
         $ticketUrl = url('index.php?p=dashboard&page=admin_ticket_view&id=' . $ticketData['id']);
-        
+
         $htmlBody = "
         <html><body style='font-family: Arial; padding: 20px;'>
             <h2 style='color: #170835;'>🎫 New Support Ticket</h2>
@@ -1453,7 +1477,7 @@ function sendTicketCreatedEmail($adminEmail, $ticketData, $userData) {
             <hr style='margin: 30px 0;'>
             <p style='color: #666; font-size: 12px;'>© 2024 " . MAIL_FROM_NAME . "</p>
         </body></html>";
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1470,7 +1494,7 @@ function sendTicketCreatedEmail($adminEmail, $ticketData, $userData) {
         $mail->Subject = '🎫 New Support Ticket #' . $ticketData['id'] . ' - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Ticket created email failed: " . $e->getMessage());
@@ -1481,12 +1505,13 @@ function sendTicketCreatedEmail($adminEmail, $ticketData, $userData) {
 /**
  * Send ticket reply notification to user
  */
-function sendTicketReplyToUser($userEmail, $userName, $ticketData, $replyData) {
+function sendTicketReplyToUser($userEmail, $userName, $ticketData, $replyData)
+{
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) return false;
 
         $ticketUrl = url('index.php?p=dashboard&page=view_ticket&id=' . $ticketData['id']);
-        
+
         $htmlBody = "
         <html><body style='font-family: Arial; padding: 20px;'>
             <h2 style='color: #170835;'>💬 New Reply on Your Ticket</h2>
@@ -1501,7 +1526,7 @@ function sendTicketReplyToUser($userEmail, $userName, $ticketData, $replyData) {
             <hr style='margin: 30px 0;'>
             <p style='color: #666; font-size: 12px;'>© 2024 " . MAIL_FROM_NAME . "</p>
         </body></html>";
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1518,7 +1543,7 @@ function sendTicketReplyToUser($userEmail, $userName, $ticketData, $replyData) {
         $mail->Subject = '💬 New Reply on Ticket #' . $ticketData['id'] . ' - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Ticket reply to user email failed: " . $e->getMessage());
@@ -1529,12 +1554,13 @@ function sendTicketReplyToUser($userEmail, $userName, $ticketData, $replyData) {
 /**
  * Send ticket reply notification to admin
  */
-function sendTicketReplyToAdmin($adminEmail, $ticketData, $userData, $replyData) {
+function sendTicketReplyToAdmin($adminEmail, $ticketData, $userData, $replyData)
+{
     try {
         if (!filter_var($adminEmail, FILTER_VALIDATE_EMAIL)) return false;
 
         $ticketUrl = url('index.php?p=dashboard&page=admin_ticket_view&id=' . $ticketData['id']);
-        
+
         $htmlBody = "
         <html><body style='font-family: Arial; padding: 20px;'>
             <h2 style='color: #170835;'>💬 New Reply on Ticket</h2>
@@ -1550,7 +1576,7 @@ function sendTicketReplyToAdmin($adminEmail, $ticketData, $userData, $replyData)
             <hr style='margin: 30px 0;'>
             <p style='color: #666; font-size: 12px;'>© 2024 " . MAIL_FROM_NAME . "</p>
         </body></html>";
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1567,7 +1593,7 @@ function sendTicketReplyToAdmin($adminEmail, $ticketData, $userData, $replyData)
         $mail->Subject = '💬 New Reply on Ticket #' . $ticketData['id'] . ' - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Ticket reply to admin email failed: " . $e->getMessage());
@@ -1578,12 +1604,13 @@ function sendTicketReplyToAdmin($adminEmail, $ticketData, $userData, $replyData)
 /**
  * Send ticket closed notification to user
  */
-function sendTicketClosedEmail($userEmail, $userName, $ticketData) {
+function sendTicketClosedEmail($userEmail, $userName, $ticketData)
+{
     try {
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) return false;
 
         $ticketUrl = url('index.php?p=dashboard&page=view_ticket&id=' . $ticketData['id']);
-        
+
         $htmlBody = "
         <html><body style='font-family: Arial; padding: 20px;'>
             <h2 style='color: #10b981;'>✅ Ticket Closed</h2>
@@ -1598,7 +1625,7 @@ function sendTicketClosedEmail($userEmail, $userName, $ticketData) {
             <hr style='margin: 30px 0;'>
             <p style='color: #666; font-size: 12px;'>© 2024 " . MAIL_FROM_NAME . "</p>
         </body></html>";
-        
+
         $mail = new PHPMailer(true);
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1615,7 +1642,7 @@ function sendTicketClosedEmail($userEmail, $userName, $ticketData) {
         $mail->Subject = '✅ Ticket #' . $ticketData['id'] . ' Closed - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         return $mail->send();
     } catch (Exception $e) {
         error_log("Ticket closed email failed: " . $e->getMessage());
@@ -1634,7 +1661,8 @@ function sendTicketClosedEmail($userEmail, $userName, $ticketData) {
  * @param string $userRole User's role (user, admin, superadmin)
  * @return bool True on success, false on failure
  */
-function sendNewUserCredentialsEmail($userEmail, $userName, $defaultPassword, $userRole) {
+function sendNewUserCredentialsEmail($userEmail, $userName, $defaultPassword, $userRole)
+{
     try {
         // Validate email address
         if (!filter_var($userEmail, FILTER_VALIDATE_EMAIL)) {
@@ -1644,7 +1672,7 @@ function sendNewUserCredentialsEmail($userEmail, $userName, $defaultPassword, $u
 
         // Create login link
         $loginLink = url("index.php?p=login");
-        
+
         // Prepare template data
         $templateData = [
             'user_name' => $userName,
@@ -1659,10 +1687,10 @@ function sendNewUserCredentialsEmail($userEmail, $userName, $defaultPassword, $u
 
         // Get email template
         $htmlBody = getEmailTemplate('new_user_credentials', $templateData);
-        
+
         // Initialize PHPMailer
         $mail = new PHPMailer(true);
-        
+
         // SMTP Configuration
         $mail->isSMTP();
         $mail->Host = MAIL_HOST;
@@ -1671,7 +1699,7 @@ function sendNewUserCredentialsEmail($userEmail, $userName, $defaultPassword, $u
         $mail->Password = MAIL_PASSWORD;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port = MAIL_PORT;
-        
+
         // Additional SMTP settings
         $mail->SMTPOptions = array(
             'ssl' => array(
@@ -1680,29 +1708,85 @@ function sendNewUserCredentialsEmail($userEmail, $userName, $defaultPassword, $u
                 'allow_self_signed' => true
             )
         );
-        
+
         // Set charset
         $mail->CharSet = 'UTF-8';
-        
+
         // Email settings
         $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
         $mail->addAddress($userEmail, $userName);
         $mail->isHTML(true);
-        $mail->Subject = '🎉 Welcome! Your Account Has Been Created - ' . MAIL_FROM_NAME;
+        $mail->Subject = 'Welcome! Your Account Has Been Created - ' . MAIL_FROM_NAME;
         $mail->Body = $htmlBody;
         $mail->AltBody = strip_tags($htmlBody);
-        
+
         // Send email
         $result = $mail->send();
-        
+
         if ($result) {
             error_log("✅ New user credentials email sent successfully to: $userEmail (Role: $userRole)");
         }
-        
+
         return $result;
-        
     } catch (Exception $e) {
         error_log("❌ New user credentials email sending failed: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Send credentials submitted email to buyer
+ */
+function sendCredentialsSubmittedEmail($buyerEmail, $buyerName, $listingName, $credentialsData)
+{
+    try {
+        if (!filter_var($buyerEmail, FILTER_VALIDATE_EMAIL)) return false;
+
+        $templateData = [
+            'buyer_name' => $buyerName,
+            'listing_title' => $listingName,
+            'credentials_type' => $credentialsData['type'] ?? 'N/A',
+            'submitted_date' => date('F j, Y \a\t g:i A'),
+            'view_url' => url('index.php?p=dashboard&page=my_order'),
+            'site_name' => MAIL_FROM_NAME,
+            'site_url' => rtrim(url(), '/')
+        ];
+
+        if (function_exists('getEmailTemplate')) {
+            $htmlBody = getEmailTemplate('credentials_submitted', $templateData);
+        } else {
+            $htmlBody = "
+            <html><body style='font-family: Arial; padding: 20px;'>
+                <h2 style='color: #10b981;'>Credentials Received</h2>
+                <p>Hi {$buyerName},</p>
+                <p>The seller has submitted the credentials for <strong>{$listingName}</strong>.</p>
+                <p>Please log in to your dashboard to view them and confirm receipt.</p>
+                <p><a href='{$templateData['view_url']}'>View Credentials</a></p>
+                <hr>
+                <p>© " . MAIL_FROM_NAME . "</p>
+            </body></html>";
+        }
+
+        $mail = new PHPMailer(true);
+        $mail->isSMTP();
+        $mail->Host = MAIL_HOST;
+        $mail->SMTPAuth = true;
+        $mail->Username = MAIL_USERNAME;
+        $mail->Password = MAIL_PASSWORD;
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+        $mail->Port = MAIL_PORT;
+        $mail->SMTPOptions = array('ssl' => array('verify_peer' => false, 'verify_peer_name' => false, 'allow_self_signed' => true));
+        $mail->CharSet = 'UTF-8';
+        $mail->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
+        $mail->addAddress($buyerEmail, $buyerName);
+        $mail->isHTML(true);
+        $mail->Subject = 'Credentials Received - ' . MAIL_FROM_NAME;
+        $mail->Body = $htmlBody;
+        $mail->AltBody = strip_tags($htmlBody);
+
+        return $mail->send();
+    } catch (Exception $e) {
+        error_log("Credentials submitted email failed: " . $e->getMessage());
         return false;
     }
 }

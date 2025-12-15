@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../config.php';
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    header("Location: " . url('index.php'));
+    header("Location: " . url('public/index.php'));
     exit;
 }
 $listing_id = $_GET['id'];
@@ -22,7 +22,7 @@ $listing_id = $_GET['id'];
             <!-- Content Section -->
             <div class="px-8 py-8">
 
-                
+
                 <!-- Professional Team Contact Message -->
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg p-6 mb-6">
                     <div class="flex items-start">
@@ -53,22 +53,22 @@ $listing_id = $_GET['id'];
                     </div>
                 </div>
 
-              
+
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="<?= url('index.php?p=dashboard&page=userDashboard') ?>" 
-                       class="flex-1 inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <a href="<?= url('public/index.php?p=dashboard&page=userDashboard') ?>"
+                        class="flex-1 inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                         <i class="fas fa-tachometer-alt mr-3"></i>
                         View Dashboard
                     </a>
-                    <a href="<?= url('index.php') ?>" 
-                       class="flex-1 inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+                    <a href="<?= url('public/index.php') ?>"
+                        class="flex-1 inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-semibold rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
                         <i class="fas fa-home mr-3"></i>
                         Back to Home
                     </a>
                 </div>
-                
-                
+
+
             </div>
         </div>
     </div>

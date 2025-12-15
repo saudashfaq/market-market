@@ -78,58 +78,53 @@
   </div>
 
 
-<script>
-// Ensure API_BASE_PATH is set
-// Use PathUtils for API base path
-if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
-  window.API_BASE_PATH = BASE + 'api';
-  console.log('🔧 API_BASE_PATH:', window.API_BASE_PATH);
-}
-</script>
-<script src="<?= BASE ?>js/polling.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Admin Messages polling initialization started');
-  
-  if (typeof startPolling === 'undefined') {
-    console.error('❌ Polling system not loaded');
-    return;
-  }
-  
-  // Note: Messages table might not be in polling API yet
-  // This is a placeholder for future implementation
-  startPolling({
-    offers: (newOffers) => {
-      console.log('💰 New offers (potential messages):', newOffers.length);
-      if (newOffers.length > 0) {
-        showNotification(`${newOffers.length} new offer(s) - check messages`, 'info');
+  <script>
+  </script>
+  <script src="<?= BASE ?>public/js/path-detector.js"></script>
+  <script src="<?= BASE ?>public/js/polling.js?v=<?= time() ?>"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('🚀 Admin Messages polling initialization started');
+
+      if (typeof startPolling === 'undefined') {
+        console.error('❌ Polling system not loaded');
+        return;
       }
-    }
-  });
-  
-  function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    const colors = {
-      info: 'bg-blue-500',
-      success: 'bg-green-500',
-      warning: 'bg-yellow-500',
-      error: 'bg-red-500'
-    };
-    
-    notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in`;
-    notification.innerHTML = `
+
+      // Note: Messages table might not be in polling API yet
+      // This is a placeholder for future implementation
+      startPolling({
+        offers: (newOffers) => {
+          console.log('💰 New offers (potential messages):', newOffers.length);
+          if (newOffers.length > 0) {
+            showNotification(`${newOffers.length} new offer(s) - check messages`, 'info');
+          }
+        }
+      });
+
+      function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        const colors = {
+          info: 'bg-blue-500',
+          success: 'bg-green-500',
+          warning: 'bg-yellow-500',
+          error: 'bg-red-500'
+        };
+
+        notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in`;
+        notification.innerHTML = `
       <div class="flex items-center gap-2">
         <i class="fas fa-${type === 'success' ? 'check' : 'info'}-circle"></i>
         <span>${message}</span>
       </div>
     `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-  }
-});
-</script>
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          setTimeout(() => notification.remove(), 300);
+        }, 3000);
+      }
+    });
+  </script>

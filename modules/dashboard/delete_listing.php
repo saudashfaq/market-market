@@ -8,7 +8,7 @@ $listing_id = $_GET['id'] ?? null;
 
 if (!$listing_id) {
     setErrorMessage("Invalid request: Listing ID missing.");
-    header("Location: index.php?p=dashboard&page=my_listing");
+    header("Location: " . url("public/index.php?p=dashboard&page=my_listing"));
     exit;
 }
 
@@ -23,7 +23,7 @@ try {
 
     if (!$listing) {
         setErrorMessage("Unauthorized or Listing not found.");
-        header("Location: index.php?p=dashboard&page=my_listing");
+        header("Location: " . url("public/index.php?p=dashboard&page=my_listing"));
         exit;
     }
 
@@ -55,10 +55,9 @@ try {
         'autoClose' => true,
         'autoCloseTime' => 3000
     ]);
-    
-    header("Location: index.php?p=dashboard&page=my_listing");
-    exit;
 
+    header("Location: " . url("public/index.php?p=dashboard&page=my_listing"));
+    exit;
 } catch (Exception $e) {
     // Use popup helper for error message
     require_once __DIR__ . "/../../includes/popup_helper.php";
@@ -66,7 +65,7 @@ try {
         'title' => 'Delete Failed',
         'autoClose' => false
     ]);
-    
-    header("Location: index.php?p=dashboard&page=my_listing");
+
+    header("Location: " . url("public/index.php?p=dashboard&page=my_listing"));
     exit;
 }

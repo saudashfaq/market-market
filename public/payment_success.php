@@ -1,4 +1,5 @@
 <?php
+
 /**
  * webhook.php — Pandascrow Webhook Listener
  * Listens for webhook events like escrow.created, payment.success, etc.
@@ -81,7 +82,7 @@ try {
                 ");
                 $txnStmt->execute([$transaction_ref, $escrow_id]);
                 $transaction = $txnStmt->fetch(PDO::FETCH_ASSOC);
-                
+
                 // Update transaction status
                 $stmt = $pdo->prepare("
                     UPDATE transactions 
@@ -89,7 +90,7 @@ try {
                     WHERE escrow_transaction_id = ? OR pandascrow_escrow_id = ?
                 ");
                 $stmt->execute([$transaction_ref, $transaction_ref, $escrow_id]);
-                
+
                 // Log payment success
                 if ($transaction) {
                     log_action(
@@ -100,23 +101,23 @@ try {
                         "user"
                     );
                 }
-                
+
                 // Create notifications
                 if ($transaction) {
                     require_once __DIR__ . '/../includes/notification_helper.php';
-                    
+
                     // Notify seller
                     if ($transaction['seller_id']) {
                         createNotification(
                             $transaction['seller_id'],
                             'order',
-                            'Payment Received! 💰',
+                            'Payment Received',
                             "Payment received for '{$transaction['listing_name']}'. Funds are in escrow",
                             $transaction['order_id'],
                             'order'
                         );
                     }
-                    
+
                     // Notify buyer
                     if ($transaction['buyer_id']) {
                         createNotification(
@@ -128,7 +129,7 @@ try {
                             'order'
                         );
                     }
-                    
+
                     // Notify all admins/superadmins about payment received
                     notifyAdminsPaymentReceived(
                         $transaction['order_id'],

@@ -46,7 +46,7 @@ $pagination = $result['pagination'];
 
 <section class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <!-- Header -->
         <div class="mb-8">
             <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight mb-2">
@@ -65,8 +65,8 @@ $pagination = $result['pagination'];
                 </div>
                 <h3 class="text-xl font-semibold text-gray-900 mb-2">No purchases yet</h3>
                 <p class="text-gray-600 mb-6">Browse listings and make your first purchase.</p>
-                <a href="index.php?p=home" 
-                   class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 inline-flex items-center">
+                <a href="index.php?p=home"
+                    class="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 inline-flex items-center">
                     <i class="fas fa-search mr-2"></i> Browse Listings
                 </a>
             </div>
@@ -76,7 +76,7 @@ $pagination = $result['pagination'];
                     <?php
                     $hasCredentials = !empty($purchase['credentials_id']);
                     $transferStatus = $purchase['transfer_status'] ?? 'awaiting_credentials';
-                    
+
                     // Calculate verification deadline (7 days from credential submission)
                     $verificationDeadline = null;
                     $daysRemaining = 0;
@@ -85,14 +85,14 @@ $pagination = $result['pagination'];
                         $timeRemaining = strtotime($verificationDeadline) - time();
                         $daysRemaining = max(0, ceil($timeRemaining / 86400));
                     }
-                    
+
                     $statusColors = [
                         'awaiting_credentials' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
                         'credentials_submitted' => 'bg-blue-100 text-blue-800 border-blue-200',
                         'verified' => 'bg-green-100 text-green-800 border-green-200',
                         'disputed' => 'bg-red-100 text-red-800 border-red-200'
                     ];
-                    
+
                     $statusIcons = [
                         'awaiting_credentials' => 'clock',
                         'credentials_submitted' => 'key',
@@ -100,8 +100,8 @@ $pagination = $result['pagination'];
                         'disputed' => 'exclamation-triangle'
                     ];
                     ?>
-                    
-                    <div class="bg-white/80 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-lg overflow-hidden">
+
+                    <div class="bg-white/80 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-lg overflow-hidden" data-transaction-id="<?= $purchase['id'] ?>">
                         <!-- Header -->
                         <div class="p-6 border-b border-gray-100">
                             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -128,7 +128,7 @@ $pagination = $result['pagination'];
                                         </span>
                                     </div>
                                 </div>
-                                
+
                                 <div>
                                     <span class="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium border <?= $statusColors[$transferStatus] ?? 'bg-gray-100 text-gray-800 border-gray-200' ?>">
                                         <i class="fas fa-<?= $statusIcons[$transferStatus] ?? 'question' ?> mr-2"></i>
@@ -176,20 +176,20 @@ $pagination = $result['pagination'];
 
                                     <!-- View Credentials Button -->
                                     <div class="flex gap-3">
-                                        <button onclick="viewCredentials(<?= $purchase['id'] ?>)" 
-                                                class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-2xl transition-all duration-300">
+                                        <button onclick="viewCredentials(<?= $purchase['id'] ?>)"
+                                            class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-2xl transition-all duration-300">
                                             <i class="fas fa-key mr-2"></i>
                                             View Access Credentials
                                         </button>
-                                        
+
                                         <?php if ($transferStatus === 'credentials_submitted'): ?>
-                                            <button onclick="confirmCredentials(<?= $purchase['id'] ?>)" 
-                                                    class="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors">
+                                            <button onclick="confirmCredentials(<?= $purchase['id'] ?>)"
+                                                class="px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors">
                                                 <i class="fas fa-check mr-2"></i>
                                                 Confirm Receipt
                                             </button>
-                                            <button onclick="reportIssue(<?= $purchase['id'] ?>)" 
-                                                    class="px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors">
+                                            <button onclick="reportIssue(<?= $purchase['id'] ?>)"
+                                                class="px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition-colors">
                                                 <i class="fas fa-exclamation-triangle mr-2"></i>
                                                 Report Issue
                                             </button>
@@ -203,8 +203,8 @@ $pagination = $result['pagination'];
                                                 <i class="fas fa-shield-alt text-blue-600 mr-2"></i>
                                                 Encrypted Credentials
                                             </h4>
-                                            <button onclick="hideCredentials(<?= $purchase['id'] ?>)" 
-                                                    class="text-gray-500 hover:text-gray-700">
+                                            <button onclick="hideCredentials(<?= $purchase['id'] ?>)"
+                                                class="text-gray-500 hover:text-gray-700">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </div>
@@ -228,27 +228,27 @@ $pagination = $result['pagination'];
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
                     <div class="flex items-center gap-2">
                         <?php if ($pagination['current_page'] > 1): ?>
-                            <a href="?<?= http_build_query(array_merge($_GET, ['pg' => $pagination['current_page'] - 1])) ?>" 
-                               class="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <a href="?<?= http_build_query(array_merge($_GET, ['pg' => $pagination['current_page'] - 1])) ?>"
+                                class="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-chevron-left mr-1"></i> Previous
                             </a>
                         <?php endif; ?>
-                        
+
                         <?php for ($i = max(1, $pagination['current_page'] - 2); $i <= min($pagination['total_pages'], $pagination['current_page'] + 2); $i++): ?>
-                            <a href="?<?= http_build_query(array_merge($_GET, ['pg' => $i])) ?>" 
-                               class="px-4 py-2 <?= $i === $pagination['current_page'] ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 hover:bg-gray-50' ?> rounded-lg transition-colors">
+                            <a href="?<?= http_build_query(array_merge($_GET, ['pg' => $i])) ?>"
+                                class="px-4 py-2 <?= $i === $pagination['current_page'] ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 hover:bg-gray-50' ?> rounded-lg transition-colors">
                                 <?= $i ?>
                             </a>
                         <?php endfor; ?>
-                        
+
                         <?php if ($pagination['current_page'] < $pagination['total_pages']): ?>
-                            <a href="?<?= http_build_query(array_merge($_GET, ['pg' => $pagination['current_page'] + 1])) ?>" 
-                               class="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                            <a href="?<?= http_build_query(array_merge($_GET, ['pg' => $pagination['current_page'] + 1])) ?>"
+                                class="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
                                 Next <i class="fas fa-chevron-right ml-1"></i>
                             </a>
                         <?php endif; ?>
                     </div>
-                    
+
                     <div class="text-sm text-gray-500">
                         Page <?= $pagination['current_page'] ?> of <?= $pagination['total_pages'] ?>
                     </div>
@@ -260,52 +260,52 @@ $pagination = $result['pagination'];
 </section>
 
 <script>
-// View credentials
-function viewCredentials(transactionId) {
-    const container = document.getElementById('credentials-' + transactionId);
-    const content = document.getElementById('credentials-content-' + transactionId);
-    
-    // Show container
-    container.classList.remove('hidden');
-    
-    // Fetch credentials via AJAX
-    fetch('<?= url('api/view_credentials.php') ?>?transaction_id=' + transactionId)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayCredentials(transactionId, data.credentials);
-            } else {
-                content.innerHTML = `
+    // View credentials
+    function viewCredentials(transactionId) {
+        const container = document.getElementById('credentials-' + transactionId);
+        const content = document.getElementById('credentials-content-' + transactionId);
+
+        // Show container
+        container.classList.remove('hidden');
+
+        // Fetch credentials via AJAX
+        fetch('<?= url('api/view_credentials.php') ?>?transaction_id=' + transactionId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayCredentials(transactionId, data.credentials);
+                } else {
+                    content.innerHTML = `
                     <div class="text-center py-4 text-red-600">
                         <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
                         <p>${data.error || 'Failed to load credentials'}</p>
                     </div>
                 `;
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            content.innerHTML = `
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                content.innerHTML = `
                 <div class="text-center py-4 text-red-600">
                     <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
                     <p>Network error. Please try again.</p>
                 </div>
             `;
-        });
-}
+            });
+    }
 
-// Display credentials
-function displayCredentials(transactionId, credentials) {
-    const content = document.getElementById('credentials-content-' + transactionId);
-    let html = '';
-    
-    for (const [key, value] of Object.entries(credentials)) {
-        if (key === 'category' || key === 'submitted_at' || key === 'submitted_by') continue;
-        
-        const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const fieldId = 'field-' + transactionId + '-' + key;
-        
-        html += `
+    // Display credentials
+    function displayCredentials(transactionId, credentials) {
+        const content = document.getElementById('credentials-content-' + transactionId);
+        let html = '';
+
+        for (const [key, value] of Object.entries(credentials)) {
+            if (key === 'category' || key === 'submitted_at' || key === 'submitted_by') continue;
+
+            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const fieldId = 'field-' + transactionId + '-' + key;
+
+            html += `
             <div class="bg-white p-4 rounded-lg border border-gray-200">
                 <div class="flex items-center justify-between mb-2">
                     <label class="text-sm font-medium text-gray-700">${label}</label>
@@ -318,132 +318,99 @@ function displayCredentials(transactionId, credentials) {
                        class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm font-mono">
             </div>
         `;
-    }
-    
-    content.innerHTML = html;
-}
-
-// Hide credentials
-function hideCredentials(transactionId) {
-    const container = document.getElementById('credentials-' + transactionId);
-    container.classList.add('hidden');
-}
-
-// Copy to clipboard
-function copyToClipboard(fieldId) {
-    const field = document.getElementById(fieldId);
-    field.select();
-    document.execCommand('copy');
-    
-    // Show feedback
-    const btn = event.currentTarget;
-    const originalHTML = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
-    btn.classList.add('text-green-600');
-    
-    setTimeout(() => {
-        btn.innerHTML = originalHTML;
-        btn.classList.remove('text-green-600');
-    }, 2000);
-}
-
-// Confirm credentials
-function confirmCredentials(transactionId) {
-    if (!confirm('Are you sure you want to confirm receipt of these credentials? This will release payment to the seller.')) {
-        return;
-    }
-    
-    fetch('<?= url('api/confirm_credentials.php') ?>', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            transaction_id: transactionId,
-            csrf_token: '<?= $_SESSION['csrf_token'] ?? '' ?>'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('✅ Credentials confirmed! Payment has been released to the seller.');
-            location.reload();
-        } else {
-            alert('❌ Error: ' + (data.error || 'Failed to confirm credentials'));
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('❌ Network error. Please try again.');
-    });
-}
 
-// Report issue
-function reportIssue(transactionId) {
-    const reason = prompt('Please describe the issue with the credentials:');
-    
-    if (!reason || reason.trim() === '') {
-        return;
+        content.innerHTML = html;
     }
-    
-    fetch('<?= url('api/report_credential_issue.php') ?>', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            transaction_id: transactionId,
-            reason: reason,
-            csrf_token: '<?= $_SESSION['csrf_token'] ?? '' ?>'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('✅ Issue reported. The seller and admin have been notified.');
-            location.reload();
-        } else {
-            alert('❌ Error: ' + (data.error || 'Failed to report issue'));
+
+    // Hide credentials
+    function hideCredentials(transactionId) {
+        const container = document.getElementById('credentials-' + transactionId);
+        container.classList.add('hidden');
+    }
+
+    // Copy to clipboard
+    function copyToClipboard(fieldId) {
+        const field = document.getElementById(fieldId);
+        field.select();
+        document.execCommand('copy');
+
+        // Show feedback
+        const btn = event.currentTarget;
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+        btn.classList.add('text-green-600');
+
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+            btn.classList.remove('text-green-600');
+        }, 2000);
+    }
+
+    // Confirm credentials
+    function confirmCredentials(transactionId) {
+        if (!confirm('Are you sure you want to confirm receipt of these credentials? This will release payment to the seller.')) {
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('❌ Network error. Please try again.');
-    });
-}
+
+        fetch('<?= url('api/confirm_credentials.php') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    transaction_id: transactionId,
+                    csrf_token: '<?= $_SESSION['csrf_token'] ?? '' ?>'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Credentials confirmed! Payment has been released to the seller.');
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + (data.error || 'Failed to confirm credentials'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Network error. Please try again.');
+            });
+    }
+
+    // Report issue
+    function reportIssue(transactionId) {
+        const reason = prompt('Please describe the issue with the credentials:');
+
+        if (!reason || reason.trim() === '') {
+            return;
+        }
+
+        fetch('<?= url('api/report_credential_issue.php') ?>', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    transaction_id: transactionId,
+                    reason: reason,
+                    csrf_token: '<?= $_SESSION['csrf_token'] ?? '' ?>'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Issue reported. The seller and admin have been notified.');
+                    location.reload();
+                } else {
+                    alert('❌ Error: ' + (data.error || 'Failed to report issue'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('❌ Network error. Please try again.');
+            });
+    }
 </script>
 
 <!-- Add Transaction Polling -->
-<script>
-// Use PathUtils for API base path
-if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
-  window.API_BASE_PATH = BASE + 'api';
-}
-</script>
-<script src="<?= BASE ?>js/polling.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 Purchases page - initializing transaction polling');
-    
-    if (typeof startPolling === 'undefined') {
-        console.error('❌ startPolling function not found! polling.js not loaded properly.');
-        return;
-    }
-    
-    // Initialize polling for transactions (using 'orders' key from API)
-    startPolling({
-        orders: (newOrders) => {
-            console.log('✅ Orders callback triggered!');
-            console.log('Processing new orders:', newOrders);
-            
-            // Reload page when order status changes
-            if (newOrders.length > 0) {
-                console.log('🔄 Order status updated - reloading page');
-                location.reload();
-            }
-        }
-    });
-    
-    console.log('✅ Transaction polling started for Purchases page');
-});
-</script>

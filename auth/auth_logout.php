@@ -13,7 +13,7 @@ $user = $_SESSION['user'] ?? null;
 
 if ($user) {
     log_action("User Logged Out", "User logged out: {$user['name']} ({$user['email']})", "auth", $user['id']);
-    
+
     // Set popup message before destroying session
     setSuccessPopup("You have been logged out successfully.", [
         'title' => 'Logout Successful',
@@ -38,5 +38,5 @@ header("Cache-Control: no-cache, no-store, must-revalidate");
 header("Pragma: no-cache");
 header("Expires: 0");
 
-header("Location: " . url("index.php?p=home"));
+header("Location: " . url("public/index.php?p=home"));
 exit;

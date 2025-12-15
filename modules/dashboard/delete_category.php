@@ -6,6 +6,5 @@ $pdo = db();
 $id = (int)$_GET['id'];
 $pdo->prepare("DELETE FROM categories WHERE id = ?")->execute([$id]);
 setSuccessMessage("Category deleted successfully!");
-header("Location: index.php?p=dashboard&page=categories");
+header("Location: " . url("public/index.php?p=dashboard&page=categories"));
 exit;
-

@@ -5,7 +5,7 @@ require_once __DIR__ . "/../../includes/flash_helper.php";
 
 // Only superadmin can access
 if (!is_logged_in() || current_user()['role'] !== 'superadmin') {
-    header("Location: " . url("index.php?p=dashboard"));
+    header("Location: " . url("public/index.php?p=dashboard"));
     exit;
 }
 
@@ -14,7 +14,7 @@ $pdo = db();
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $minOfferPercentage = floatval($_POST['min_offer_percentage'] ?? 70);
-    
+
     // Validate percentage (must be between 1% and 100%)
     if ($minOfferPercentage < 1 || $minOfferPercentage > 100) {
         setErrorMessage('Minimum offer percentage must be between 1% and 100%');
@@ -28,11 +28,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 setting_value = VALUES(setting_value),
                 updated_by = VALUES(updated_by)
             ");
-            
+
             $stmt->execute([$minOfferPercentage, current_user()['id']]);
-            
+
             setSuccessMessage('Minimum offer percentage updated successfully to ' . number_format($minOfferPercentage, 1) . '%');
-            
+
             // Log the change
             require_once __DIR__ . "/../../includes/log_helper.php";
             log_action(
@@ -41,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 "system_settings",
                 current_user()['id']
             );
-            
         } catch (Exception $e) {
             setErrorMessage('Error updating setting: ' . $e->getMessage());
         }
@@ -79,23 +78,7 @@ $stats = $stmt->fetch(PDO::FETCH_ASSOC);
         </div>
 
         <!-- Flash Messages -->
-        <?php if (hasSuccessMessage()): ?>
-            <div class="bg-green-50 border-l-4 border-green-400 p-4 m-6">
-                <div class="flex">
-                    <i class="fas fa-check-circle text-green-400 mr-3 mt-0.5"></i>
-                    <p class="text-green-700"><?= getSuccessMessage() ?></p>
-                </div>
-            </div>
-        <?php endif; ?>
 
-        <?php if (hasErrorMessage()): ?>
-            <div class="bg-red-50 border-l-4 border-red-400 p-4 m-6">
-                <div class="flex">
-                    <i class="fas fa-exclamation-triangle text-red-400 mr-3 mt-0.5"></i>
-                    <p class="text-red-700"><?= getErrorMessage() ?></p>
-                </div>
-            </div>
-        <?php endif; ?>
 
         <div class="p-6">
             <!-- Current Statistics -->
@@ -125,23 +108,22 @@ $stats = $stmt->fetch(PDO::FETCH_ASSOC);
                         <i class="fas fa-percentage text-blue-500 mr-2"></i>
                         Minimum Offer Percentage
                     </h3>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Minimum Percentage of Asking Price
                             </label>
                             <div class="relative">
-                                <input 
-                                    type="number" 
-                                    name="min_offer_percentage" 
+                                <input
+                                    type="number"
+                                    name="min_offer_percentage"
                                     value="<?= $currentPercentage ?>"
-                                    min="1" 
-                                    max="100" 
+                                    min="1"
+                                    max="100"
                                     step="0.1"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    required
-                                >
+                                    required>
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                     <span class="text-gray-500 text-lg">%</span>
                                 </div>
@@ -150,7 +132,7 @@ $stats = $stmt->fetch(PDO::FETCH_ASSOC);
                                 Users cannot make offers below this percentage of the listing's asking price
                             </p>
                         </div>
-                        
+
                         <div class="bg-blue-50 rounded-lg p-4">
                             <h4 class="font-medium text-blue-900 mb-2">How it works:</h4>
                             <ul class="text-sm text-blue-800 space-y-1">
@@ -177,12 +159,12 @@ $stats = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 <!-- Action Buttons -->
                 <div class="flex justify-end space-x-4">
-                    <a href="index.php?p=dashboard&page=superAdminSettings" 
-                       class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    <a href="index.php?p=dashboard&page=superAdminSettings"
+                        class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
                         Cancel
                     </a>
-                    <button type="submit" 
-                            class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <button type="submit"
+                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
                         <i class="fas fa-save mr-2"></i>
                         Update Setting
                     </button>
@@ -193,19 +175,19 @@ $stats = $stmt->fetch(PDO::FETCH_ASSOC);
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const percentageInput = document.querySelector('input[name="min_offer_percentage"]');
-    const examplePercentage = document.getElementById('examplePercentage');
-    const exampleAmount = document.getElementById('exampleAmount');
-    
-    function updateExample() {
-        const percentage = parseFloat(percentageInput.value) || 0;
-        const amount = (10000 * percentage) / 100;
-        
-        examplePercentage.textContent = percentage.toFixed(1) + '%';
-        exampleAmount.textContent = '$' + amount.toLocaleString();
-    }
-    
-    percentageInput.addEventListener('input', updateExample);
-});
+    document.addEventListener('DOMContentLoaded', function() {
+        const percentageInput = document.querySelector('input[name="min_offer_percentage"]');
+        const examplePercentage = document.getElementById('examplePercentage');
+        const exampleAmount = document.getElementById('exampleAmount');
+
+        function updateExample() {
+            const percentage = parseFloat(percentageInput.value) || 0;
+            const amount = (10000 * percentage) / 100;
+
+            examplePercentage.textContent = percentage.toFixed(1) + '%';
+            exampleAmount.textContent = '$' + amount.toLocaleString();
+        }
+
+        percentageInput.addEventListener('input', updateExample);
+    });
 </script>

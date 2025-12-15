@@ -1,15 +1,7 @@
 <?php
-// ✅ Clean output buffer to prevent any whitespace/errors before JSON
-ob_start();
-
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../middlewares/auth.php';
 
-// Clear any output from includes and restart buffer
-ob_end_clean();
-ob_start();
-
-// Set JSON header
 header('Content-Type: application/json');
 
 try {
@@ -71,9 +63,6 @@ try {
         }
     }
 
-    // Clear any output that might have been generated
-    ob_clean();
-    
     echo json_encode([
         'success' => true,
         'conversations' => $result
@@ -81,15 +70,9 @@ try {
 
 } catch (Exception $e) {
     error_log("Get conversations error: " . $e->getMessage());
-    
-    // Clear any output that might have been generated
-    ob_clean();
-    
     echo json_encode([
         'success' => false,
         'error' => 'Failed to load conversations: ' . $e->getMessage()
     ]);
 }
-
-ob_end_flush();
 exit;

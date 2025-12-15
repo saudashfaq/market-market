@@ -43,7 +43,7 @@ try {
         // ✅ Update offer as accepted
         $pdo->prepare("UPDATE offers SET status = 'accepted', updated_at = NOW() WHERE id = :id")
             ->execute(['id' => $offer_id]);
-        
+
         // ✅ Automatically reject all other pending offers for the same listing
         $pdo->prepare("UPDATE offers SET status = 'rejected', updated_at = NOW() 
                        WHERE listing_id = :listing_id AND id != :offer_id AND status = 'pending'")
@@ -59,7 +59,7 @@ try {
             WHERE setting_key = 'default_reserved_amount_percentage'
         ");
         $biddingPercentage = $biddingPercentageStmt ? floatval($biddingPercentageStmt->fetchColumn()) : 5.0;
-        
+
         // ✅ Calculate platform fee and total based on super admin's bidding percentage
         $offerAmount = floatval($offer['amount']);
         $platformFee = ($offerAmount * $biddingPercentage) / 100;
@@ -95,34 +95,34 @@ try {
 
 
         // Send emails to buyer and seller in background
-        register_shutdown_function(function() use ($offer, $pdo, $order_id) {
+        register_shutdown_function(function () use ($offer, $pdo, $order_id) {
             if (function_exists('fastcgi_finish_request')) {
                 fastcgi_finish_request();
             }
-            
+
             require_once __DIR__ . '/../../includes/email_helper.php';
-            
+
             // Get buyer details
             $stmt = $pdo->prepare("SELECT email, name FROM users WHERE id = ?");
             $stmt->execute([$offer['user_id']]);
             $buyer = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             // Get seller details
             $stmt = $pdo->prepare("SELECT email, name FROM users WHERE id = ?");
             $stmt->execute([$offer['seller_id']]);
             $seller = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             // Get listing details
             $stmt = $pdo->prepare("SELECT name, asking_price FROM listings WHERE id = ?");
             $stmt->execute([$offer['listing_id']]);
             $listing = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             if ($buyer && $seller && $listing) {
                 // Send offer accepted email to buyer
                 $offerData = ['id' => $offer['id'], 'amount' => $offer['amount']];
                 $listingData = ['title' => $listing['name'], 'price' => $listing['asking_price']];
                 sendOfferAcceptedEmail($buyer['email'], $buyer['name'], $offerData, $listingData);
-                
+
                 // Send order confirmation emails
                 $orderData = [
                     'id' => $order_id,
@@ -130,10 +130,10 @@ try {
                     'other_party_name' => $seller['name']
                 ];
                 sendOrderConfirmationEmail($buyer['email'], $buyer['name'], $orderData, $listingData, 'buyer');
-                
+
                 $orderData['other_party_name'] = $buyer['name'];
                 sendOrderConfirmationEmail($seller['email'], $seller['name'], $orderData, $listingData, 'seller');
-                
+
                 error_log("✅ Offer accepted and order confirmation emails sent for order #$order_id");
             }
         });
@@ -144,7 +144,7 @@ try {
         $listingStmt->execute([$offer['listing_id']]);
         $listingName = $listingStmt->fetchColumn() ?: 'listing';
         notifyOfferAccepted($offer['user_id'], $offer['id'], $listingName);
-        
+
         // Notify all admins/superadmins about accepted offer
         $buyerStmt = $pdo->prepare("SELECT name FROM users WHERE id = ?");
         $buyerStmt->execute([$offer['user_id']]);
@@ -164,7 +164,7 @@ try {
                 WHERE role IN ('admin', 'superadmin') 
                 AND status = 'active'
             ")->fetchAll(PDO::FETCH_COLUMN);
-            
+
             foreach ($admins as $adminId) {
                 createNotification(
                     $adminId,
@@ -187,12 +187,10 @@ try {
             'autoClose' => true,
             'autoCloseTime' => 3000
         ]);
-        
-        header("Location: index.php?p=dashboard&page=offers");
-        exit;
-    }
 
-    elseif ($action === 'reject') {
+        header("Location: " . url("public/index.php?p=dashboard&page=offers"));
+        exit;
+    } elseif ($action === 'reject') {
         // ✅ Update offer as rejected
         $stmt = $pdo->prepare("UPDATE offers SET status = 'rejected', updated_at = NOW() WHERE id = :id");
         $stmt->execute(['id' => $offer_id]);
@@ -208,23 +206,23 @@ try {
 
 
         // Send email to buyer in background
-        register_shutdown_function(function() use ($offer, $pdo) {
+        register_shutdown_function(function () use ($offer, $pdo) {
             if (function_exists('fastcgi_finish_request')) {
                 fastcgi_finish_request();
             }
-            
+
             require_once __DIR__ . '/../../includes/email_helper.php';
-            
+
             // Get buyer details
             $stmt = $pdo->prepare("SELECT email, name FROM users WHERE id = ?");
             $stmt->execute([$offer['user_id']]);
             $buyer = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             // Get listing details
             $stmt = $pdo->prepare("SELECT id, name, asking_price FROM listings WHERE id = ?");
             $stmt->execute([$offer['listing_id']]);
             $listing = $stmt->fetch(PDO::FETCH_ASSOC);
-            
+
             if ($buyer && $listing) {
                 $offerData = ['amount' => $offer['amount']];
                 $listingData = ['id' => $listing['id'], 'title' => $listing['name'], 'price' => $listing['asking_price']];
@@ -247,31 +245,28 @@ try {
             'autoClose' => true,
             'autoCloseTime' => 3000
         ]);
-        
-        header("Location: index.php?p=dashboard&page=offers");
-        exit;
-    }
 
-    else {
+        header("Location: " . url("public/index.php?p=dashboard&page=offers"));
+        exit;
+    } else {
         require_once __DIR__ . "/../../includes/popup_helper.php";
         setErrorPopup("Invalid action specified.", [
             'title' => 'Error',
             'autoClose' => false
         ]);
-        
-        header("Location: index.php?p=dashboard&page=offers");
+
+        header("Location: " . url("public/index.php?p=dashboard&page=offers"));
         exit;
     }
-
 } catch (Exception $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
-    
+
     require_once __DIR__ . "/../../includes/popup_helper.php";
     setErrorPopup("Error processing offer: " . $e->getMessage(), [
         'title' => 'Processing Error',
         'autoClose' => false
     ]);
-    
-    header("Location: index.php?p=dashboard&page=offers");
+
+    header("Location: " . url("public/index.php?p=dashboard&page=offers"));
     exit;
 }

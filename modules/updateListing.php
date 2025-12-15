@@ -46,10 +46,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE id = ? AND user_id = ?
         ");
         $stmt->execute([
-            $name, $email, $url, $traffic_trend,
-            $monthly_revenue, $asking_price, $site_age, $category,
-            $monetization_methods, $subscribers, $videos_count, $faceless,
-            $listing_id, $user_id
+            $name,
+            $email,
+            $url,
+            $traffic_trend,
+            $monthly_revenue,
+            $asking_price,
+            $site_age,
+            $category,
+            $monetization_methods,
+            $subscribers,
+            $videos_count,
+            $faceless,
+            $listing_id,
+            $user_id
         ]);
 
         // 1.5️⃣ Update categories and labels
@@ -101,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 // Delete existing answers
                 $pdo->prepare("DELETE FROM listing_answers WHERE listing_id = ?")->execute([$listing_id]);
-                
+
                 // Insert new answers
                 $stmtAnswer = $pdo->prepare("INSERT INTO listing_answers (listing_id, question_id, answer) VALUES (?, ?, ?)");
                 foreach ($_POST as $key => $value) {
@@ -191,7 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Notify admins about listing update
         require_once __DIR__ . '/../includes/notification_helper.php';
         notifyNewListing($listing_id, $name, $_SESSION['user']['name'] ?? 'User');
-        
+
         // Notify user about successful update
         createNotification(
             $user_id,
@@ -201,15 +211,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $listing_id,
             'listing'
         );
-        
-        setSuccessMessage("Listing updated successfully! Your listing status has been changed to 'Pending' and will be reviewed again by our team.");
-        header("Location: index.php?p=dashboard&page=my_listing");
-        exit;
 
+        setSuccessMessage("Listing updated successfully! Your listing status has been changed to 'Pending' and will be reviewed again by our team.");
+        header("Location: " . url("public/index.php?p=dashboard&page=my_listing"));
+        exit;
     } catch (Exception $e) {
         setErrorMessage("Error updating listing: " . $e->getMessage());
         header("Location: " . $_SERVER['REQUEST_URI']);
         exit;
     }
 }
-?>

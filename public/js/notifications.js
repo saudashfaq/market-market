@@ -67,17 +67,19 @@ class NotificationManager {
     async updateNotificationCount() {
         try {
             console.log('Fetching notification count...');
-            // Use PathDetector or BASE constant for correct path
-            let apiUrl;
-            if (window.pathDetector) {
-                apiUrl = window.pathDetector.buildApiUrl('/api/notifications_api.php?action=count');
-            } else if (typeof BASE !== 'undefined') {
-                apiUrl = `${BASE}api/notifications_api.php?action=count`;
-            } else {
-                // Fallback
-                apiUrl = `${window.location.origin}/api/notifications_api.php?action=count`;
+            // Use configuration from header.php
+            const url = window.NOTIFICATIONS_URL || (window.API_BASE_PATH + '/notifications_api.php');
+            const response = await fetch(`${url}?action=count`);
+            
+            // diagnostic check
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                console.error('❌ Expected JSON but got ' + contentType + ' from ' + response.url);
+                console.error('Response text:', text.substring(0, 500)); // First 500 chars
+                throw new Error("Server returned non-JSON response");
             }
-            const response = await fetch(apiUrl);
+
             const data = await response.json();
             console.log('Notification count response:', data);
             
@@ -174,19 +176,32 @@ class NotificationManager {
     async loadNotifications(listId) {
         try {
             console.log('Loading notifications for list:', listId);
-            // Use PathDetector or BASE constant for correct path
-            let apiUrl;
-            if (window.pathDetector) {
-                apiUrl = window.pathDetector.buildApiUrl('/api/notifications_api.php?action=list&limit=10');
-            } else if (typeof BASE !== 'undefined') {
-                apiUrl = `${BASE}api/notifications_api.php?action=list&limit=10`;
-            } else {
-                // Fallback
-                apiUrl = `${window.location.origin}/api/notifications_api.php?action=list&limit=10`;
-            }
-            const response = await fetch(apiUrl);
+            // Use configuration from header.php
+            const url = window.NOTIFICATIONS_URL || (window.API_BASE_PATH + '/notifications_api.php');
+            const response = await fetch(`${url}?action=list&limit=10`);
             console.log('API response status:', response.status);
             
+            // diagnostic check
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                console.error('❌ Expected JSON but got ' + contentType + ' from ' + response.url);
+                console.error('Response text:', text.substring(0, 500));
+                
+                // Show meaningful error in UI
+                const list = document.getElementById(listId);
+                if (list) {
+                     list.innerHTML = `
+                        <li class="p-8 text-center text-red-500">
+                            <i class="fa-solid fa-bug text-3xl mb-2"></i>
+                            <p class="text-sm">Server Error</p>
+                            <p class="text-xs mt-1 text-gray-400">Received non-JSON response. Check console.</p>
+                        </li>
+                    `;
+                }
+                return;
+            }
+
             const data = await response.json();
             console.log('API response data:', data);
             
@@ -332,23 +347,17 @@ class NotificationManager {
     
     showBrowserNotification(notification) {
         if ('Notification' in window && Notification.permission === 'granted') {
-            // Use BASE constant for icon paths
-            const iconPath = typeof BASE !== 'undefined' ? `${BASE}images/logo.png` : '/images/logo.png';
-            const badgePath = typeof BASE !== 'undefined' ? `${BASE}images/badge.png` : '/images/badge.png';
-            
             new Notification(notification.title, {
                 body: notification.message,
-                icon: iconPath,
-                badge: badgePath
+                // icon: '/marketplace/public/images/logo.png', // Image missing
+                // badge: '/marketplace/public/images/badge.png' // Image missing
             });
         } else if ('Notification' in window && Notification.permission !== 'denied') {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
-                    const iconPath = typeof BASE !== 'undefined' ? `${BASE}images/logo.png` : '/images/logo.png';
-                    
                     new Notification(notification.title, {
-                        body: notification.message,
-                        icon: iconPath
+                        body: notification.message
+                        // icon: '/marketplace/public/images/logo.png' // Image missing
                     });
                 }
             });
@@ -403,17 +412,9 @@ class NotificationManager {
             formData.append('action', 'mark_read');
             formData.append('id', notificationId);
             
-            // Use PathDetector or BASE constant for correct path
-            let apiUrl;
-            if (window.pathDetector) {
-                apiUrl = window.pathDetector.buildApiUrl('/api/notifications_api.php');
-            } else if (typeof BASE !== 'undefined') {
-                apiUrl = `${BASE}api/notifications_api.php`;
-            } else {
-                // Fallback
-                apiUrl = `${window.location.origin}/api/notifications_api.php`;
-            }
-            const response = await fetch(apiUrl, {
+            // Use configuration from header.php
+            const url = window.NOTIFICATIONS_URL || (window.API_BASE_PATH + '/notifications_api.php');
+            const response = await fetch(`${url}`, {
                 method: 'POST',
                 body: formData
             });
@@ -436,17 +437,9 @@ class NotificationManager {
             const formData = new FormData();
             formData.append('action', 'mark_all_read');
             
-            // Use PathDetector or BASE constant for correct path
-            let apiUrl;
-            if (window.pathDetector) {
-                apiUrl = window.pathDetector.buildApiUrl('/api/notifications_api.php');
-            } else if (typeof BASE !== 'undefined') {
-                apiUrl = `${BASE}api/notifications_api.php`;
-            } else {
-                // Fallback
-                apiUrl = `${window.location.origin}/api/notifications_api.php`;
-            }
-            const response = await fetch(apiUrl, {
+            // Use configuration from header.php
+            const url = window.NOTIFICATIONS_URL || (window.API_BASE_PATH + '/notifications_api.php');
+            const response = await fetch(`${url}`, {
                 method: 'POST',
                 body: formData
             });

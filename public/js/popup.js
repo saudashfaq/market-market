@@ -1,24 +1,37 @@
 /**
- * Generic Popup System - Alert ki jagah modern popup
+ * Generic Popup System - Alert replacement
  * Usage: showPopup(message, type, options)
  */
 
 class PopupManager {
     constructor() {
-        this.createPopupContainer();
+        // Try to create container immediately if possible, otherwise wait
+        this.ensureContainer();
         this.injectStyles();
     }
 
-    createPopupContainer() {
+    // Safely get or create the container
+    ensureContainer() {
+        if (!document.body) {
+            // Body not ready yet
+            return false;
+        }
+
         if (!document.getElementById('popup-container')) {
             const container = document.createElement('div');
             container.id = 'popup-container';
             container.className = 'popup-container';
             document.body.appendChild(container);
         }
+        return true;
     }
 
     injectStyles() {
+        // Ensure head exists
+        if (!document.head) {
+             return;
+        }
+
         if (!document.getElementById('popup-styles')) {
             const style = document.createElement('style');
             style.id = 'popup-styles';
@@ -123,6 +136,7 @@ class PopupManager {
                 .popup-btn-primary {
                     background: #007bff;
                     color: white;
+                    font-weight: 600;
                 }
 
                 .popup-btn-primary:hover {
@@ -171,6 +185,12 @@ class PopupManager {
     }
 
     show(message, type = 'info', options = {}) {
+        // Make sure container exists before trying to show
+        if (!this.ensureContainer()) {
+            console.error('PopupManager: Cannot show popup, document.body not ready');
+            return Promise.reject('Document body not ready');
+        }
+
         const defaults = {
             title: this.getDefaultTitle(type),
             showConfirm: true,
@@ -191,6 +211,8 @@ class PopupManager {
             
             // Add modal to overlay first
             overlay.appendChild(modal);
+            
+            // Now we know container exists because of ensureContainer() check
             document.getElementById('popup-container').appendChild(overlay);
 
             // Attach event listeners after DOM insertion
@@ -244,12 +266,9 @@ class PopupManager {
         const confirmBtn = modal.querySelector('.popup-confirm');
         const cancelBtn = modal.querySelector('.popup-cancel');
 
-        console.log('Attaching event listeners:', { closeBtn, confirmBtn, cancelBtn });
-
         // Close button
         if (closeBtn) {
             closeBtn.addEventListener('click', (e) => {
-                console.log('Close button clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 this.close(overlay, resolve, false);
@@ -259,19 +278,16 @@ class PopupManager {
         // Confirm button
         if (confirmBtn) {
             confirmBtn.addEventListener('click', (e) => {
-                console.log('Confirm button clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 
                 // Execute callback first
                 if (config.onConfirm) {
-                    console.log('Executing onConfirm callback');
                     try {
                         const result = config.onConfirm();
                         
                         // If callback returns false, don't close popup
                         if (result === false) {
-                            console.log('Callback returned false, keeping popup open');
                             return;
                         }
                     } catch (error) {
@@ -287,13 +303,11 @@ class PopupManager {
         // Cancel button
         if (cancelBtn) {
             cancelBtn.addEventListener('click', (e) => {
-                console.log('Cancel button clicked');
                 e.preventDefault();
                 e.stopPropagation();
                 
                 // Execute callback first
                 if (config.onCancel) {
-                    console.log('Executing onCancel callback');
                     config.onCancel();
                 }
                 
@@ -305,14 +319,12 @@ class PopupManager {
         // Close on overlay click
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) {
-                console.log('Overlay clicked');
                 this.close(overlay, resolve, false);
             }
         });
     }
 
     close(overlay, resolve, result) {
-        console.log('Closing popup with result:', result);
         const modal = overlay.querySelector('.popup-modal');
         
         overlay.classList.remove('show');
@@ -320,7 +332,6 @@ class PopupManager {
 
         setTimeout(() => {
             overlay.remove();
-            console.log('Resolving popup with result:', result);
             resolve(result);
         }, 300);
     }
@@ -346,12 +357,30 @@ class PopupManager {
     }
 }
 
-// Global instance
-const popupManager = new PopupManager();
+// Ensure global window instance to avoid ReferenceErrors
+if (!window.popupManager) {
+    window.popupManager = null;
+}
 
-// Global functions - Alert ki jagah use karein
+// Initialization function
+function initPopupSystem() {
+    if (!window.popupManager) {
+        window.popupManager = new PopupManager();
+        console.log('✅ PopupManager initialized');
+    }
+}
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPopupSystem);
+} else {
+    initPopupSystem();
+}
+
+// Global functions
 function showPopup(message, type = 'info', options = {}) {
-    return popupManager.show(message, type, options);
+    if (!window.popupManager) initPopupSystem();
+    return window.popupManager.show(message, type, options);
 }
 
 function showAlert(message, options = {}) {
@@ -377,17 +406,16 @@ function showConfirm(message, options = {}) {
     });
 }
 
-// Replace native alert function
+// Attach to window
+window.showPopup = showPopup;
+window.showAlert = showAlert;
+window.showSuccess = showSuccess;
+window.showError = showError;
+window.showWarning = showWarning;
+window.showConfirm = showConfirm;
+
+// Override native alert
 window.originalAlert = window.alert;
 window.alert = function(message) {
     showAlert(message);
 };
-
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        new PopupManager();
-    });
-} else {
-    new PopupManager();
-}
