@@ -164,6 +164,11 @@ $isApiRequest = in_array($path, $apiPages);
 // Breakdown path by slashes
 $pathParts = explode('/', $path);
 
+
+if ($path === 'logout') {
+    $path = 'auth_logout';
+}
+
 // 1. Listings
 // /listings -> listing
 // /listing/123 -> listingDetail, id=123

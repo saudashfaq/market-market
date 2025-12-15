@@ -213,12 +213,12 @@ if ($navBase && strpos($navBase, '/public/') === false) {
     ?>
 
     <hr class="my-4 border-gray-200">
-    <a href="<?= url('index.php?p=auth_logout') ?>" class="group flex items-center px-3 py-2.5 mx-1 rounded-lg text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition" title="Logout">
+      <a href="<?= url('logout') ?>" class="group flex items-center px-3 py-2.5 mx-1 rounded-lg text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 transition" title="Logout">
       <div class="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-50 text-red-500 group-hover:bg-red-100 group-hover:text-red-600 mr-3 transition">
         <i class="fa fa-sign-out-alt text-sm"></i>
       </div>
-      Logout
-    </a>
+      Logout
+</a>
   </nav>
 </aside>
 <script>
