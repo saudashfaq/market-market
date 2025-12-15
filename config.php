@@ -11,7 +11,7 @@ if (file_exists(__DIR__ . '/.env')) {
 
 // Set defaults if .env variables not defined
 if (!defined('DB_HOST')) define('DB_HOST', 'localhost');
-if (!defined('DB_NAME')) define('DB_NAME', 'website_seller');
+if (!defined('DB_NAME')) define('DB_NAME', 'marketplace');
 if (!defined('DB_USER')) define('DB_USER', 'root');
 if (!defined('DB_PASS')) define('DB_PASS', '');
 
