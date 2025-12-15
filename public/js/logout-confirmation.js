@@ -30,22 +30,29 @@ function confirmLogout(event) {
             
             setTimeout(() => {
                 console.log('Redirecting to logout...');
-                window.location.href = './index.php?p=auth_logout';
+                if (window.BASE) {
+                    window.location.href = window.BASE + 'logout';
+                } else {
+                    window.location.href = 'logout';
+}
             }, 500);
         } else {
             console.log('Logout cancelled by user');
         }
     }).catch(error => {
         console.error('Logout confirmation error:', error);
-        // Fallback - still logout on error
-        window.location.href = './index.php?p=auth_logout';
+        if (window.BASE) {
+            window.location.href = window.BASE + 'logout';
+        } else {
+            window.location.href = 'logout';
+        }
     });
 }
 
 // Auto-attach to all logout links
 document.addEventListener('DOMContentLoaded', function() {
     // Find all logout links and add confirmation
-    const logoutLinks = document.querySelectorAll('a[href*="auth_logout"]');
+    const logoutLinks = document.querySelectorAll('a[href*="auth_logout"], a[href*="logout"]');
     
     logoutLinks.forEach(link => {
         link.addEventListener('click', confirmLogout);
