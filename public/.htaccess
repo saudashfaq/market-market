@@ -1,0 +1,11 @@
+Options -MultiViews
+RewriteEngine On
+
+# Adjust this if your project is in a different folder
+# For c:\xampp\xampp\htdocs\marketplace\public, the base is /marketplace/public/
+RewriteBase /marketplace/public/
+
+# Send clean URLs to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [L,QSA]

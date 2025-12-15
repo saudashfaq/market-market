@@ -53,47 +53,20 @@ function checkForNewOffers() {
 
   console.log('🔍 Checking for new offers...');
 
-  // Build API URL using centralized PathDetector
+  // Build API URL using centralized configuration
   let apiUrl;
   
-  if (window.pathDetector) {
+  if (window.POLLING_URL) {
+    apiUrl = window.POLLING_URL;
+    console.log('📡 Using POLLING_URL from config:', apiUrl);
+  } else if (window.pathDetector) {
     // Use PathDetector for consistent path detection
     apiUrl = window.pathDetector.buildApiUrl('/api/polling_integration.php');
-    const detectionInfo = window.pathDetector.getDetectionInfo();
-    
-    console.log('📡 Using PathDetector for URL construction');
-    console.log('📡 Detection info:', detectionInfo);
+    console.log('📡 Using PathDetector URL:', apiUrl);
   } else {
-    // Fallback to improved manual detection if PathDetector not available
-    console.warn('⚠️ PathDetector not available, using fallback logic');
-    const currentPath = window.location.pathname;
-    let basePath = '';
-
-    if (currentPath.includes('/public/')) {
-      basePath = currentPath.substring(0, currentPath.indexOf('/public/'));
-    } else if (currentPath.includes('/modules/')) {
-      basePath = currentPath.substring(0, currentPath.indexOf('/modules/'));
-    } else if (currentPath.includes('/index.php')) {
-      basePath = currentPath.substring(0, currentPath.indexOf('/index.php'));
-    } else {
-      // Improved fallback logic for different environments
-      const hostname = window.location.hostname;
-      const ipPattern = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-      
-      if (ipPattern.test(hostname)) {
-        // Production server with IP address - use empty base path
-        basePath = '';
-      } else if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.includes('local')) {
-        // Development environment - use /marketplace
-        basePath = '/marketplace';
-      } else {
-        // Default fallback
-        basePath = '/marketplace';
-      }
-    }
-
-    apiUrl = window.location.origin + basePath + '/api/polling_integration.php';
-    console.log('📡 Fallback base path detected:', basePath);
+    // Fallback to manual detection
+    console.warn('⚠️ No config or PathDetector, using minimal fallback');
+    apiUrl = window.location.origin + '/marketplace/api/polling_integration.php';
   }
   const payload = {
     offers: POLLING_CONFIG.lastCheck

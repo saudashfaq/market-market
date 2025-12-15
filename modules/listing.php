@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/pagination_helper.php';
 
 // Start session if not started
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+  session_start();
 }
 
 $pdo = db();
@@ -17,38 +17,34 @@ $current_user_id = $user_logged_in ? $_SESSION['user']['id'] : null;
 $page = getCurrentPage('pg');
 $perPage = 12; // 12 listings per page (4x3 grid)
 // Base SQL
-// ✅ Only show listings that are approved AND not expired
 $sql = "SELECT l.*, 
                (SELECT file_path FROM listing_proofs WHERE listing_id = l.id LIMIT 1) AS proof_image
         FROM listings l
-        WHERE l.status = 'approved' 
-        AND (l.expires_at IS NULL OR l.expires_at > NOW())";
+        WHERE l.status = 'approved'";
 
-$countSql = "SELECT COUNT(*) as total FROM listings l 
-             WHERE l.status = 'approved' 
-             AND (l.expires_at IS NULL OR l.expires_at > NOW())";
+$countSql = "SELECT COUNT(*) as total FROM listings l WHERE l.status = 'approved'";
 
 $params = [];
 
 // Filters
 if (!empty($_GET['category']) && $_GET['category'] != 'All') {
-    if (in_array($_GET['category'], ['website', 'youtube', 'app'])) {
-        // Filter by type for main categories
-        $sql .= " AND l.type = :type";
-        $countSql .= " AND l.type = :type";
-        $params[':type'] = $_GET['category'];
-    } else {
-        // Filter by category for other filters
-        $sql .= " AND l.category = :category";
-        $countSql .= " AND l.category = :category";
-        $params[':category'] = $_GET['category'];
-    }
+  if (in_array($_GET['category'], ['website', 'youtube', 'app'])) {
+    // Filter by type for main categories
+    $sql .= " AND l.type = :type";
+    $countSql .= " AND l.type = :type";
+    $params[':type'] = $_GET['category'];
+  } else {
+    // Filter by category for other filters
+    $sql .= " AND l.category = :category";
+    $countSql .= " AND l.category = :category";
+    $params[':category'] = $_GET['category'];
+  }
 }
 
 if (!empty($_GET['search'])) {
-    $sql .= " AND (l.name LIKE :search OR l.category LIKE :search OR l.url LIKE :search OR l.type LIKE :search OR l.monetization_methods LIKE :search)";
-    $countSql .= " AND (l.name LIKE :search OR l.category LIKE :search OR l.url LIKE :search OR l.type LIKE :search OR l.monetization_methods LIKE :search)";
-    $params[':search'] = '%' . $_GET['search'] . '%';
+  $sql .= " AND (l.name LIKE :search OR l.category LIKE :search OR l.url LIKE :search OR l.type LIKE :search OR l.monetization_methods LIKE :search)";
+  $countSql .= " AND (l.name LIKE :search OR l.category LIKE :search OR l.url LIKE :search OR l.type LIKE :search OR l.monetization_methods LIKE :search)";
+  $params[':search'] = '%' . $_GET['search'] . '%';
 }
 
 $sql .= " ORDER BY l.id DESC";
@@ -65,17 +61,17 @@ $categories = ['All', 'Website', 'YouTube'];
 ?>
 
 <style>
-/* Enhanced blur effect for non-logged-in users */
-.blur-content {
-  filter: blur(6px);
-  user-select: none;
-  pointer-events: none;
-}
+  /* Enhanced blur effect for non-logged-in users */
+  .blur-content {
+    filter: blur(6px);
+    user-select: none;
+    pointer-events: none;
+  }
 
-/* Smooth transitions */
-.listing-card {
-  transition: all 0.3s ease;
-}
+  /* Smooth transitions */
+  .listing-card {
+    transition: all 0.3s ease;
+  }
 </style>
 
 
@@ -89,18 +85,18 @@ $categories = ['All', 'Website', 'YouTube'];
       <?php if ($user_logged_in): ?>
         <form method="GET">
           <input type="hidden" name="p" value="listing">
-          
+
           <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
             <i class="fas fa-sliders-h mr-2 text-purple-600"></i> Filters
           </h3>
-   
+
           <!-- Search Input -->
           <div class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <div class="relative">
-              <input type="text" name="search" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" 
-                     placeholder="Search listings..." 
-                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <input type="text" name="search" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>"
+                placeholder="Search listings..."
+                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
             </div>
           </div>
@@ -119,7 +115,7 @@ $categories = ['All', 'Website', 'YouTube'];
           <button type="submit" class="w-full rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity flex items-center justify-center mb-3">
             <i class="fas fa-search mr-2"></i> Search
           </button>
-          
+
           <a href="<?= url('index.php?p=listing') ?>" class="w-full block text-center rounded-lg border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
             <i class="fas fa-times mr-2"></i> Clear Filters
           </a>
@@ -130,17 +126,17 @@ $categories = ['All', 'Website', 'YouTube'];
           <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center justify-center">
             <i class="fas fa-sliders-h mr-2 text-purple-600"></i> Filters
           </h3>
-          
+
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
             <i class="fas fa-lock text-blue-600 text-2xl mb-2"></i>
             <p class="text-sm font-medium text-gray-900 mb-2">Login Required</p>
             <p class="text-xs text-gray-600 mb-3">Sign in to search and filter listings</p>
           </div>
-          
+
           <a href="<?= url('index.php?p=login') ?>" class="w-full block text-center rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity mb-3">
             <i class="fas fa-right-to-bracket mr-2"></i> Login to Search
           </a>
-          
+
           <div class="text-xs text-gray-500">
             <p>Browse all listings below or login for advanced search and filtering options.</p>
           </div>
@@ -149,23 +145,28 @@ $categories = ['All', 'Website', 'YouTube'];
     </aside>
 
     <?php if ($user_logged_in): ?>
-    <script>
-      // Auto-submit form when Enter is pressed in search input
-      const searchInput = document.querySelector('input[name="search"]');
-      if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
-          if (e.key === 'Enter') {
-            this.form.submit();
-          }
-        });
-      }
-    </script>
+      <script>
+        // Auto-submit form when Enter is pressed in search input
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput) {
+          searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+              this.form.submit();
+            }
+          });
+        }
+      </script>
     <?php endif; ?>
 
     <!-- Listings -->
     <div class="lg:col-span-3">
       <div class="mb-8">
-        <h1 class="text-xl font-bold text-gray-900">Digital Assets Marketplace</h1>
+        <h1 class="text-xl font-bold text-gray-900 flex items-center">
+          Digital Assets Marketplace
+          <span class="ml-3 px-3 py-1 bg-green-100 text-green-700 text-sm font-bold rounded-full border border-green-200 shadow-sm animate-pulse">
+            It's Free
+          </span>
+        </h1>
         <?php if (!$user_logged_in): ?>
           <p class="text-sm text-gray-600 mt-2">
             <i class="fas fa-info-circle mr-1"></i>
@@ -212,112 +213,110 @@ $categories = ['All', 'Website', 'YouTube'];
           <?php foreach ($listings as $listing): ?>
             <div class="group listing-card relative rounded-2xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-500 overflow-hidden hover:-translate-y-2 animate-fade-in bg-white">
 
-            <!-- Image -->
-            <div class="relative h-56 overflow-hidden bg-gray-100">
-              <?php if (!empty($listing['proof_image'])): ?>
-                <img src="<?= htmlspecialchars($listing['proof_image']) ?>" alt="<?= htmlspecialchars($listing['name']) ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-              <?php else: ?>
-                <div class="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm">No Image</div>
-              <?php endif; ?>
+              <!-- Image -->
+              <div class="relative h-56 overflow-hidden bg-gray-100">
+                <?php if (!empty($listing['proof_image'])): ?>
+                  <img src="<?= htmlspecialchars($listing['proof_image']) ?>" alt="<?= htmlspecialchars($listing['name']) ?>" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <?php else: ?>
+                  <div class="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm">No Image</div>
+                <?php endif; ?>
 
-              <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-              <span class="absolute top-4 left-4 bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
-                <i class="fa-solid fa-check-circle mr-1"></i> Verified
-              </span>
-            </div>
+                <span class="absolute top-4 left-4 bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow-lg">
+                  <i class="fa-solid fa-check-circle mr-1"></i> Verified
+                </span>
+              </div>
 
-            <div class="p-6">
-              <!-- Blur content for non-logged-in users -->
-              <div class="<?= !$user_logged_in ? 'blur-content' : '' ?>">
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="border border-blue-500 text-blue-500 text-xs px-2 py-1 rounded-full">
-                    <i class="fa-solid fa-tag mr-1 text-xs"></i> <?= htmlspecialchars($listing['type']) ?>
-                  </span>
-                  <span class="text-xs text-gray-500"><?= htmlspecialchars($listing['category']) ?></span>
-                </div>
-
-                <h3 class="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors duration-300">
-                  <?= htmlspecialchars($listing['name']) ?>
-                </h3>
-
-                <div class="flex items-center justify-between bg-green-50 rounded-lg p-3 mb-4 border border-green-200">
-                  <div class="flex items-center gap-2 text-sm text-gray-600">
-                    <i class="fa-solid fa-chart-line text-green-600"></i>
-                    <span>Monthly Revenue</span>
+              <div class="p-6">
+                <!-- Blur content for non-logged-in users -->
+                <div class="<?= !$user_logged_in ? 'blur-content' : '' ?>">
+                  <div class="flex items-center gap-2 mb-3">
+                    <span class="border border-blue-500 text-blue-500 text-xs px-2 py-1 rounded-full">
+                      <i class="fa-solid fa-tag mr-1 text-xs"></i> <?= htmlspecialchars($listing['type']) ?>
+                    </span>
+                    <span class="text-xs text-gray-500"><?= htmlspecialchars($listing['category']) ?></span>
                   </div>
-                  <span class="font-bold text-green-600">
-                    <i class="fa-solid fa-dollar-sign text-xs"></i> <?= htmlspecialchars($listing['monthly_revenue']) ?>/mo
-                  </span>
-                </div>
 
-                <div class="mb-5">
-                  <div class="flex items-baseline gap-2">
-                    <i class="fa-solid fa-dollar-sign text-blue-600 text-lg"></i>
-                    <span class="text-3xl font-bold text-gray-900"><?= htmlspecialchars($listing['asking_price']) ?></span>
+                  <h3 class="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors duration-300">
+                    <?= htmlspecialchars($listing['name']) ?>
+                  </h3>
+
+                  <div class="flex items-center justify-between bg-green-50 rounded-lg p-3 mb-4 border border-green-200">
+                    <div class="flex items-center gap-2 text-sm text-gray-600">
+                      <i class="fa-solid fa-chart-line text-green-600"></i>
+                      <span>Monthly Revenue</span>
+                    </div>
+                    <span class="font-bold text-green-600">
+                      <i class="fa-solid fa-dollar-sign text-xs"></i> <?= htmlspecialchars($listing['monthly_revenue']) ?>/mo
+                    </span>
                   </div>
-                  <p class="text-xs text-gray-500 mt-1">Asking Price</p>
+
+                  <div class="mb-5">
+                    <div class="flex items-baseline gap-2">
+                      <i class="fa-solid fa-dollar-sign text-blue-600 text-lg"></i>
+                      <span class="text-3xl font-bold text-gray-900"><?= htmlspecialchars($listing['asking_price']) ?></span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Asking Price</p>
+                  </div>
                 </div>
+
+                <?php if ($current_user_id && $listing['user_id'] == $current_user_id): ?>
+                  <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center mb-3">
+                    <p class="text-sm text-blue-700 font-medium">
+                      <i class="fa-solid fa-user-check mr-1"></i> Your Listing
+                    </p>
+                  </div>
+                  <a href="<?= url('index.php?p=listingDetail&id=' . $listing['id']) ?>" class="block w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-semibold py-2 text-center rounded-md hover:opacity-90 transition-opacity">
+                    <i class="fa-solid fa-eye mr-2"></i> View Details
+                  </a>
+                <?php elseif ($user_logged_in): ?>
+                  <div class="flex gap-2 mb-2">
+                    <!-- Buy Now Button -->
+                    <button onclick="window.location.href='<?= url('index.php?p=dashboard&page=conversation_create&listing_id=' . $listing['id'] . '&seller_id=' . $listing['user_id']) ?>'" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-2 rounded-md hover:opacity-90 transition-opacity shadow-md">
+                      <i class="fa-solid fa-comment-dots mr-1"></i> Buy Now
+                    </button>
+
+                    <!-- Make Offer Button -->
+                    <button onclick="window.location.href='<?= url('index.php?p=dashboard&page=conversation_create&listing_id=' . $listing['id'] . '&seller_id=' . $listing['user_id']) ?>'" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-2 rounded-md hover:opacity-90 transition-opacity">
+                      <i class="fa-solid fa-comment-dots mr-1"></i> Make Offer
+                    </button>
+                  </div>
+
+                  <!-- View Details Button -->
+                  <a href="<?= url('index.php?p=listingDetail&id=' . $listing['id']) ?>" class="block w-full text-center border border-gray-300 text-gray-600 text-xs font-medium py-2 rounded-md hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-eye mr-1"></i> View Details
+                  </a>
+                <?php else: ?>
+                  <!-- Login Required Message for Non-Logged In Users -->
+                  <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center mb-3">
+                    <p class="text-sm text-yellow-700 font-medium">
+                      <i class="fa-solid fa-lock mr-1"></i> Login required to view details and make offers
+                    </p>
+                  </div>
+
+                  <div class="flex gap-2 mb-2">
+                    <!-- Login to Buy Button -->
+                    <a href="<?= url('index.php?p=login') ?>" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-2 rounded-md hover:opacity-90 transition-opacity shadow-md text-center">
+                      <i class="fa-solid fa-right-to-bracket mr-1"></i> Login to Buy
+                    </a>
+
+                    <!-- Login to Offer Button -->
+                    <a href="<?= url('index.php?p=login') ?>" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-2 rounded-md hover:opacity-90 transition-opacity text-center">
+                      <i class="fa-solid fa-right-to-bracket mr-1"></i> Login to Offer
+                    </a>
+                  </div>
+
+                  <!-- Login to View Details Button -->
+                  <a href="<?= url('index.php?p=login') ?>" class="block w-full text-center border border-gray-300 text-gray-600 text-xs font-medium py-2 rounded-md hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-right-to-bracket mr-1"></i> Login to View Details
+                  </a>
+                <?php endif; ?>
               </div>
 
-              <?php if ($current_user_id && $listing['user_id'] == $current_user_id): ?>
-              <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center mb-3">
-                <p class="text-sm text-blue-700 font-medium">
-                  <i class="fa-solid fa-user-check mr-1"></i> Your Listing
-                </p>
-              </div>
-              <a href="./index.php?p=listingDetail&id=<?= $listing['id'] ?>" class="block w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-semibold py-2 text-center rounded-md hover:opacity-90 transition-opacity">
-                <i class="fa-solid fa-eye mr-2"></i> View Details
-              </a>
-              <?php elseif ($user_logged_in): ?>
-              <div class="flex gap-2 mb-2">
-                <!-- Buy Now Button - Opens Chat -->
-                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=buy" 
-                   class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-2 rounded-md hover:opacity-90 transition-opacity shadow-md text-center flex items-center justify-center">
-                  <i class="fa-solid fa-shopping-cart mr-1"></i> Buy Now
-                </a>
-                
-                <!-- Make Offer Button - Opens Chat -->
-                <a href="index.php?p=dashboard&page=message&seller_id=<?= $listing['user_id'] ?>&listing_id=<?= $listing['id'] ?>&action=offer" 
-                   class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-2 rounded-md hover:opacity-90 transition-opacity text-center flex items-center justify-center">
-                  <i class="fa-solid fa-handshake mr-1"></i> Make Offer
-                </a>
-              </div>
-              
-              <!-- View Details Button -->
-              <a href="./index.php?p=listingDetail&id=<?= $listing['id'] ?>" class="block w-full text-center border border-gray-300 text-gray-600 text-xs font-medium py-2 rounded-md hover:bg-gray-50 transition-colors">
-                <i class="fa-solid fa-eye mr-1"></i> View Details
-              </a>
-              <?php else: ?>
-              <!-- Login Required Message for Non-Logged In Users -->
-              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-center mb-3">
-                <p class="text-sm text-yellow-700 font-medium">
-                  <i class="fa-solid fa-lock mr-1"></i> Login required to view details and make offers
-                </p>
-              </div>
-              
-              <div class="flex gap-2 mb-2">
-                <!-- Login to Buy -->
-                <a href="<?= url('index.php?p=login') ?>" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-bold py-2 rounded-md hover:opacity-90 transition-opacity text-center flex items-center justify-center">
-                  <i class="fa-solid fa-right-to-bracket mr-1"></i> Login to Buy
-                </a>
-                
-                <!-- Login to Offer -->
-                <a href="<?= url('index.php?p=login') ?>" class="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm font-semibold py-2 rounded-md hover:opacity-90 transition-opacity text-center flex items-center justify-center">
-                  <i class="fa-solid fa-right-to-bracket mr-1"></i> Login to Offer
-                </a>
-              </div>
-              
-              <!-- Login to View Details Button -->
-              <a href="<?= url('index.php?p=login') ?>" class="block w-full text-center border border-gray-300 text-gray-600 text-xs font-medium py-2 rounded-md hover:bg-gray-50 transition-colors">
-                <i class="fa-solid fa-right-to-bracket mr-1"></i> Login to View Details
-              </a>
-              <?php endif; ?>
+
+
             </div>
-
-
-
-          </div>
           <?php endforeach; ?>
         <?php endif; ?>
       </div>
@@ -325,25 +324,26 @@ $categories = ['All', 'Website', 'YouTube'];
   </div>
 </section>
 
-      <!-- Pagination -->
-      <div class="mt-12 flex justify-center">
-        <?php 
-        $extraParams = ['p' => 'listing'];
-        if (!empty($_GET['category']) && $_GET['category'] != 'All') $extraParams['category'] = $_GET['category'];
-        if (!empty($_GET['search'])) $extraParams['search'] = $_GET['search'];
-        if (!empty($_GET['escrow'])) $extraParams['escrow'] = $_GET['escrow'];
-        
-        echo renderPagination($pagination, url('index.php'), $extraParams, 'pg'); 
-        ?>
-      </div>
-    </div>
-  </div>
+<!-- Pagination -->
+<div class="mt-12 flex justify-center">
+  <?php
+  $extraParams = ['p' => 'listing'];
+  if (!empty($_GET['category']) && $_GET['category'] != 'All') $extraParams['category'] = $_GET['category'];
+  if (!empty($_GET['search'])) $extraParams['search'] = $_GET['search'];
+  if (!empty($_GET['escrow'])) $extraParams['escrow'] = $_GET['escrow'];
+
+  echo renderPagination($pagination, url('index.php'), $extraParams, 'pg');
+  ?>
+</div>
+</div>
+</div>
 </section>
 
-<!-- Buy Now Popup - TEMPORARILY DISABLED -->
-<!-- <div id="buyNowPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+<!-- Buy Now Popup -->
+<div id="buyNowPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
     <div class="p-6">
+      <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
@@ -359,6 +359,7 @@ $categories = ['All', 'Website', 'YouTube'];
         </button>
       </div>
 
+      <!-- Listing Info -->
       <div class="bg-gray-50 rounded-lg p-4 mb-6">
         <h4 class="font-semibold text-gray-900 mb-2" id="buyNowListingName">Loading...</h4>
         <div class="flex items-center justify-between">
@@ -367,6 +368,7 @@ $categories = ['All', 'Website', 'YouTube'];
         </div>
       </div>
 
+      <!-- Purchase Details -->
       <div class="space-y-3 mb-6">
         <div class="flex items-center gap-3 text-sm">
           <i class="fas fa-shield-alt text-green-500"></i>
@@ -382,6 +384,7 @@ $categories = ['All', 'Website', 'YouTube'];
         </div>
       </div>
 
+      <!-- Action Buttons -->
       <div class="flex flex-col gap-3">
         <div class="flex gap-3">
           <button onclick="closeBuyNowPopup()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
@@ -400,10 +403,10 @@ $categories = ['All', 'Website', 'YouTube'];
   </div>
   <input type="hidden" id="buyNowListingId" value="">
   <input type="hidden" id="buyNowSellerId" value="">
-</div> -->
+</div>
 
-<!-- Make Offer Popup - REMOVED (Now using direct chat) -->
-<!-- <div id="makeOfferPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+<!-- Make Offer Popup -->
+<div id="makeOfferPopup" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all">
     <div class="p-6">
       <!-- Header -->
@@ -445,12 +448,12 @@ $categories = ['All', 'Website', 'YouTube'];
           <div id="offerAmountError" class="text-red-500 text-sm mt-1 hidden"></div>
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
             <p class="text-xs text-blue-800">
-              <i class="fas fa-info-circle"></i> 
+              <i class="fas fa-info-circle"></i>
               <strong>System Requirement:</strong> Offers must be at least <span id="offerMinPercentage">70</span>% of asking price
             </p>
           </div>
         </div>
-        
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Message (Optional)</label>
           <textarea id="offerMessage" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none resize-none transition-colors" placeholder="Add a message to your offer (optional)..."></textarea>
@@ -494,209 +497,215 @@ $categories = ['All', 'Website', 'YouTube'];
   </div>
   <input type="hidden" id="offerListingId" value="">
   <input type="hidden" id="offerSellerId" value="">
-</div> -->
+</div>
 
 <script>
-// Buy Now Popup Functions - TEMPORARILY DISABLED
-/*
-function showBuyNowPopup(listingId, listingName, askingPrice, sellerId) {
-  document.getElementById('buyNowListingName').textContent = listingName;
-  document.getElementById('buyNowPrice').textContent = '$' + askingPrice;
-  document.getElementById('buyNowListingId').value = listingId;
-  document.getElementById('buyNowSellerId').value = sellerId;
-  document.getElementById('buyNowPopup').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
+  // Define BASE constant globally and set API path
+  window.BASE = "<?php echo BASE; ?>";
 
-function closeBuyNowPopup() {
-  document.getElementById('buyNowPopup').classList.add('hidden');
-  document.body.style.overflow = 'auto';
-}
-
-function proceedToBuy() {
-  const listingId = document.getElementById('buyNowListingId').value;
-  window.location.href = './index.php?p=payment&id=' + listingId;
-}
-*/
-
-function contactSellerFromPopup() {
-  // Get listing ID and seller ID from either popup
-  let listingId = document.getElementById('buyNowListingId').value;
-  let sellerId = document.getElementById('buyNowSellerId').value;
-  
-  if (!listingId) {
-    listingId = document.getElementById('offerListingId').value;
-    sellerId = document.getElementById('offerSellerId').value;
+  if (!window.API_BASE_PATH) {
+    const cleanBase = window.BASE.endsWith('/') ? window.BASE.slice(0, -1) : window.BASE;
+    window.API_BASE_PATH = cleanBase + '/api';
+    console.log('🔧 [Listing] Set API_BASE_PATH:', window.API_BASE_PATH);
   }
-  
-  // Debug log
-  console.log('Contact Seller - Listing ID:', listingId, 'Seller ID:', sellerId);
-  
-  // Validate IDs
-  if (!listingId || !sellerId) {
-    alert('Error: Missing listing or seller information');
-    return;
-  }
-  
-  // Close any open popups
-  closeBuyNowPopup();
-  closeMakeOfferPopup();
-  
-  // Redirect to messages page with seller ID and listing ID
-  window.location.href = './index.php?p=dashboard&page=message&seller_id=' + sellerId + '&listing_id=' + listingId;
-}
 
-// Make Offer Popup Functions - REMOVED (Now using direct chat)
-/*
-function showMakeOfferPopup(listingId, listingName, askingPrice, sellerId) {
-  document.getElementById('offerListingName').textContent = listingName;
-  document.getElementById('offerAskingPrice').textContent = '$' + parseFloat(askingPrice).toLocaleString();
-  document.getElementById('offerListingId').value = listingId;
-  document.getElementById('offerSellerId').value = sellerId;
-  
-  // Get minimum offer percentage from server (default 70%)
-  fetch(PathUtils.getApiUrl('get_min_offer_percentage.php'))
-    .then(response => response.json())
-    .then(data => {
-      const minPercentage = data.percentage || 70;
-      const minAmount = (parseFloat(askingPrice) * minPercentage) / 100;
-      
-      document.getElementById('offerMinPercentage').textContent = minPercentage;
-      document.getElementById('offerMinimumAmount').textContent = '$' + minAmount.toLocaleString();
-      document.getElementById('offerAmount').min = minAmount;
-      
-      // Store for validation
-      window.currentOfferData = {
-        askingPrice: parseFloat(askingPrice),
-        minPercentage: minPercentage,
-        minAmount: minAmount
-      };
-    })
-    .catch(error => {
-      console.error('Error fetching minimum offer percentage:', error);
-      // Fallback to 70%
-      const minPercentage = 70;
-      const minAmount = (parseFloat(askingPrice) * minPercentage) / 100;
-      
-      document.getElementById('offerMinPercentage').textContent = minPercentage;
-      document.getElementById('offerMinimumAmount').textContent = '$' + minAmount.toLocaleString();
-      document.getElementById('offerAmount').min = minAmount;
-      
-      window.currentOfferData = {
-        askingPrice: parseFloat(askingPrice),
-        minPercentage: minPercentage,
-        minAmount: minAmount
-      };
-    });
-  
-  document.getElementById('makeOfferPopup').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-  
-  // Reset form validation states
-  resetOfferFormValidation();
-  
-  // Add real-time validation
-  setupOfferFormValidation();
-}
-
-function closeMakeOfferPopup() {
-  document.getElementById('makeOfferPopup').classList.add('hidden');
-  document.getElementById('offerForm').reset();
-  document.body.style.overflow = 'auto';
-}
-
-function submitOffer() {
-  const listingId = document.getElementById('offerListingId').value;
-  const offerAmount = parseFloat(document.getElementById('offerAmount').value);
-  const offerMessage = document.getElementById('offerMessage').value.trim();
-  const submitButton = document.querySelector('#makeOfferPopup button[onclick="submitOffer()"]');
-  
-  // Validate offer amount
-  if (!offerAmount || offerAmount <= 0) {
-    showOfferNotification('Please enter a valid offer amount', 'error');
-    document.getElementById('offerAmount').focus();
-    return;
+  // Buy Now Popup Functions
+  function showBuyNowPopup(listingId, listingName, askingPrice, sellerId) {
+    document.getElementById('buyNowListingName').textContent = listingName;
+    document.getElementById('buyNowPrice').textContent = '$' + askingPrice;
+    document.getElementById('buyNowListingId').value = listingId;
+    document.getElementById('buyNowSellerId').value = sellerId;
+    document.getElementById('buyNowPopup').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
   }
-  
-  // Check minimum offer requirement
-  if (window.currentOfferData && offerAmount < window.currentOfferData.minAmount) {
-    showOfferNotification(`Your offer must be at least ${window.currentOfferData.minPercentage}% of the asking price ($${window.currentOfferData.minAmount.toLocaleString()})`, 'error');
-    document.getElementById('offerAmount').focus();
-    return;
+
+  function closeBuyNowPopup() {
+    document.getElementById('buyNowPopup').classList.add('hidden');
+    document.body.style.overflow = 'auto';
   }
-  
-  // Message is optional - no validation needed
-  
-  // Show loading state
-  submitButton.disabled = true;
-  submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
-  
-  // Create form data
-  const formData = new FormData();
-  formData.append('listing_id', listingId);
-  formData.append('amount', offerAmount);
-  formData.append('message', offerMessage);
-  
-  // Submit offer via AJAX
-  fetch('index.php?p=submit_offer_ajax', {
-    method: 'POST',
-    body: formData,
-    credentials: 'same-origin'
-  })
-  .then(response => {
-    console.log('Response status:', response.status);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+
+  function proceedToBuy() {
+    const listingId = document.getElementById('buyNowListingId').value;
+    window.location.href = window.BASE + 'index.php?p=payment&id=' + listingId;
+  }
+
+  function contactSellerFromPopup() {
+    // Get listing ID and seller ID from either popup
+    let listingId = document.getElementById('buyNowListingId').value;
+    let sellerId = document.getElementById('buyNowSellerId').value;
+
+    if (!listingId) {
+      listingId = document.getElementById('offerListingId').value;
+      sellerId = document.getElementById('offerSellerId').value;
     }
-    return response.text().then(text => {
-      console.log('Raw response:', text);
-      try {
-        return JSON.parse(text);
-      } catch (e) {
-        console.error('JSON parse error:', e);
-        console.error('Response text:', text);
-        throw new Error('Invalid JSON response from server');
-      }
-    });
-  })
-  .then(data => {
-    if (data.success) {
-      showOfferNotification('Your offer has been submitted successfully!', 'success');
-      closeMakeOfferPopup();
-    } else {
-      showOfferNotification(data.message || 'Failed to submit offer. Please try again.', 'error');
-    }
-  })
-  .catch(error => {
-    console.error('Error:', error);
-    console.error('Error details:', error.message);
-    showOfferNotification('Network error: ' + error.message + '. Please try again.', 'error');
-  })
-  .finally(() => {
-    // Reset button state
-    submitButton.disabled = false;
-    submitButton.innerHTML = 'Submit Offer';
-  });
-}
 
-// Show notification function
-function showOfferNotification(message, type) {
-  // Remove existing notifications
-  const existingNotification = document.getElementById('offerNotification');
-  if (existingNotification) {
-    existingNotification.remove();
+    // Debug log
+    console.log('Contact Seller - Listing ID:', listingId, 'Seller ID:', sellerId);
+
+    // Validate IDs
+    if (!listingId || !sellerId) {
+      alert('Error: Missing listing or seller information');
+      return;
+    }
+
+    // Close any open popups
+    closeBuyNowPopup();
+    closeMakeOfferPopup();
+
+    // Redirect to messages page with seller ID and listing ID
+    window.location.href = window.BASE + 'index.php?p=dashboard&page=message&seller_id=' + sellerId + '&listing_id=' + listingId;
   }
-  
-  // Create notification
-  const notification = document.createElement('div');
-  notification.id = 'offerNotification';
-  notification.className = `fixed top-4 right-4 z-[60] px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 ${
+
+  // Make Offer Popup Functions
+  function showMakeOfferPopup(listingId, listingName, askingPrice, sellerId) {
+    document.getElementById('offerListingName').textContent = listingName;
+    document.getElementById('offerAskingPrice').textContent = '$' + parseFloat(askingPrice).toLocaleString();
+    document.getElementById('offerListingId').value = listingId;
+    document.getElementById('offerSellerId').value = sellerId;
+
+    // Get minimum offer percentage from server (default 70%)
+    fetch('/marketplace/api/get_min_offer_percentage.php')
+      .then(response => response.json())
+      .then(data => {
+        const minPercentage = data.percentage || 70;
+        const minAmount = (parseFloat(askingPrice) * minPercentage) / 100;
+
+        document.getElementById('offerMinPercentage').textContent = minPercentage;
+        document.getElementById('offerMinimumAmount').textContent = '$' + minAmount.toLocaleString();
+        document.getElementById('offerAmount').min = minAmount;
+
+        // Store for validation
+        window.currentOfferData = {
+          askingPrice: parseFloat(askingPrice),
+          minPercentage: minPercentage,
+          minAmount: minAmount
+        };
+      })
+      .catch(error => {
+        console.error('Error fetching minimum offer percentage:', error);
+        // Fallback to 70%
+        const minPercentage = 70;
+        const minAmount = (parseFloat(askingPrice) * minPercentage) / 100;
+
+        document.getElementById('offerMinPercentage').textContent = minPercentage;
+        document.getElementById('offerMinimumAmount').textContent = '$' + minAmount.toLocaleString();
+        document.getElementById('offerAmount').min = minAmount;
+
+        window.currentOfferData = {
+          askingPrice: parseFloat(askingPrice),
+          minPercentage: minPercentage,
+          minAmount: minAmount
+        };
+      });
+
+    document.getElementById('makeOfferPopup').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // Reset form validation states
+    resetOfferFormValidation();
+
+    // Add real-time validation
+    setupOfferFormValidation();
+  }
+
+  function closeMakeOfferPopup() {
+    document.getElementById('makeOfferPopup').classList.add('hidden');
+    document.getElementById('offerForm').reset();
+    document.body.style.overflow = 'auto';
+  }
+
+  function submitOffer() {
+    const listingId = document.getElementById('offerListingId').value;
+    const offerAmount = parseFloat(document.getElementById('offerAmount').value);
+    const offerMessage = document.getElementById('offerMessage').value.trim();
+    const submitButton = document.querySelector('#makeOfferPopup button[onclick="submitOffer()"]');
+
+    // Validate offer amount
+    if (!offerAmount || offerAmount <= 0) {
+      showOfferNotification('Please enter a valid offer amount', 'error');
+      document.getElementById('offerAmount').focus();
+      return;
+    }
+
+    // Check minimum offer requirement
+    if (window.currentOfferData && offerAmount < window.currentOfferData.minAmount) {
+      showOfferNotification(`Your offer must be at least ${window.currentOfferData.minPercentage}% of the asking price ($${window.currentOfferData.minAmount.toLocaleString()})`, 'error');
+      document.getElementById('offerAmount').focus();
+      return;
+    }
+
+    // Message is optional - no validation needed
+
+    // Show loading state
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+
+    // Create form data
+    const formData = new FormData();
+    formData.append('listing_id', listingId);
+    formData.append('amount', offerAmount);
+    formData.append('message', offerMessage);
+
+    // Submit offer via AJAX
+    fetch(window.BASE + 'index.php?p=submit_offer_ajax', {
+        method: 'POST',
+        body: formData,
+        credentials: 'same-origin'
+      })
+      .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text().then(text => {
+          console.log('Raw response:', text);
+          try {
+            return JSON.parse(text);
+          } catch (e) {
+            console.error('JSON parse error:', e);
+            console.error('Response text:', text);
+            throw new Error('Invalid JSON response from server');
+          }
+        });
+      })
+      .then(data => {
+        if (data.success) {
+          showOfferNotification('Your offer has been submitted successfully!', 'success');
+          closeMakeOfferPopup();
+        } else {
+          showOfferNotification(data.message || 'Failed to submit offer. Please try again.', 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        console.error('Error details:', error.message);
+        showOfferNotification('Network error: ' + error.message + '. Please try again.', 'error');
+      })
+      .finally(() => {
+        // Reset button state
+        submitButton.disabled = false;
+        submitButton.innerHTML = 'Submit Offer';
+      });
+  }
+
+  // Show notification function
+  function showOfferNotification(message, type) {
+    // Remove existing notifications
+    const existingNotification = document.getElementById('offerNotification');
+    if (existingNotification) {
+      existingNotification.remove();
+    }
+
+    // Create notification
+    const notification = document.createElement('div');
+    notification.id = 'offerNotification';
+    notification.className = `fixed top-4 right-4 z-[60] px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 ${
     type === 'success' 
       ? 'bg-green-500 text-white' 
       : 'bg-red-500 text-white'
   }`;
-  
-  notification.innerHTML = `
+
+    notification.innerHTML = `
     <div class="flex items-center gap-3">
       <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
       <span>${message}</span>
@@ -705,208 +714,139 @@ function showOfferNotification(message, type) {
       </button>
     </div>
   `;
-  
-  document.body.appendChild(notification);
-  
-  // Auto remove after 5 seconds
-  setTimeout(() => {
-    if (notification && notification.parentNode) {
-      notification.remove();
+
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (notification && notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+
+  // Offer form validation functions
+  function resetOfferFormValidation() {
+    const amountField = document.getElementById('offerAmount');
+    const messageField = document.getElementById('offerMessage');
+    const charCount = document.getElementById('messageCharCount');
+
+    // Reset field styles
+    amountField.classList.remove('border-red-500', 'focus:border-red-500');
+    messageField.classList.remove('border-red-500', 'focus:border-red-500');
+
+    // Reset character count
+    if (charCount) {
+      charCount.textContent = '0';
+      charCount.parentElement.classList.remove('text-red-500', 'text-green-500');
     }
-  }, 5000);
-}
-
-// Offer form validation functions
-function resetOfferFormValidation() {
-  const amountField = document.getElementById('offerAmount');
-  const messageField = document.getElementById('offerMessage');
-  const charCount = document.getElementById('messageCharCount');
-  
-  // Reset field styles
-  amountField.classList.remove('border-red-500', 'focus:border-red-500');
-  messageField.classList.remove('border-red-500', 'focus:border-red-500');
-  
-  // Reset character count
-  if (charCount) {
-    charCount.textContent = '0';
-    charCount.parentElement.classList.remove('text-red-500', 'text-green-500');
   }
-}
 
-function setupOfferFormValidation() {
-  const messageField = document.getElementById('offerMessage');
-  const charCount = document.getElementById('messageCharCount');
-  
-  // Real-time character counting and validation
-  messageField.addEventListener('input', function() {
-    const length = this.value.trim().length;
-    charCount.textContent = length;
-    
-    const charCountContainer = charCount.parentElement;
-    
-    if (length === 0) {
-      charCountContainer.classList.remove('text-red-500', 'text-green-500');
-      charCountContainer.classList.add('text-gray-500');
-      this.classList.remove('border-red-500', 'border-green-500');
-    } else if (length < 10) {
-      charCountContainer.classList.remove('text-gray-500', 'text-green-500');
-      charCountContainer.classList.add('text-red-500');
-      this.classList.remove('border-green-500');
-      this.classList.add('border-red-500');
-    } else {
-      charCountContainer.classList.remove('text-gray-500', 'text-red-500');
-      charCountContainer.classList.add('text-green-500');
-      this.classList.remove('border-red-500');
-      this.classList.add('border-green-500');
-    }
-  });
-  
-  // Amount field validation
-  const amountField = document.getElementById('offerAmount');
-  amountField.addEventListener('input', function() {
-    const value = parseFloat(this.value);
-    if (this.value && (isNaN(value) || value <= 0)) {
-      this.classList.add('border-red-500');
-    } else {
-      this.classList.remove('border-red-500');
-    }
-  });
-}
+  function setupOfferFormValidation() {
+    const messageField = document.getElementById('offerMessage');
+    const charCount = document.getElementById('messageCharCount');
 
-// Close popups when clicking outside
-document.addEventListener('click', function(e) {
-  if (e.target.id === 'buyNowPopup') {
-    closeBuyNowPopup();
-  }
-  if (e.target.id === 'makeOfferPopup') {
-    closeMakeOfferPopup();
-  }
-});
+    // Real-time character counting and validation
+    messageField.addEventListener('input', function() {
+      const length = this.value.trim().length;
+      charCount.textContent = length;
 
-// Close popups with Escape key
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    closeBuyNowPopup();
-    closeMakeOfferPopup();
-  }
-});
+      const charCountContainer = charCount.parentElement;
 
-// Ensure API_BASE_PATH is set for listing page
-// Define BASE constant globally
-const BASE = "<?php echo BASE; ?>";
-console.log('🔧 BASE constant defined:', BASE);
-
-// Use PathUtils for API base path
-if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
-  window.API_BASE_PATH = BASE + 'api';
-  console.log('🔧 [Listing] API_BASE_PATH:', window.API_BASE_PATH);
-}
-
-// WORKING POLLING SYSTEM for listing page
-console.log('🚀 LISTING PAGE: Starting real-time polling system');
-console.log('🚀 API_BASE_PATH available:', window.API_BASE_PATH);
-
-const pollingScript = document.createElement('script');
-pollingScript.src = BASE + 'js/polling.js';
-
-pollingScript.onload = function() {
-  console.log('✅ Polling system loaded for listing page');
-  console.log('✅ API_BASE_PATH:', win
-  
-  if (typeof startPolling !== 'undefined') {
-    console.log('🎯 Starting listing polling...');
-    
-    startPolling({
-      listings: (newListings) => {
-        console.log('🔥 NEW LISTINGS on listing page!');
-        console.log('📊 Count:', newListings.length);
-        
-        if (newListings.length > 0) {
-          // Simple notification
-          const notification = document.createElement('div');
-          notification.style.cssText = `
-            position: fixed; top: 20px; right: 20px; z-index: 9999;
-            background: #17a2b8; color: white; padding: 15px 20px;
-            border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            font-family: Arial, sans-serif; font-weight: bold;
-          `;
-          notification.innerHTML = `📋 ${newListings.length} new listing(s)! Refreshing...`;
-          document.body.appendChild(notification);
-          
-          setTimeout(() => location.reload(), 2000);
-        }
+      if (length === 0) {
+        charCountContainer.classList.remove('text-red-500', 'text-green-500');
+        charCountContainer.classList.add('text-gray-500');
+        this.classList.remove('border-red-500', 'border-green-500');
+      } else if (length < 10) {
+        charCountContainer.classList.remove('text-gray-500', 'text-green-500');
+        charCountContainer.classList.add('text-red-500');
+        this.classList.remove('border-green-500');
+        this.classList.add('border-red-500');
+      } else {
+        charCountContainer.classList.remove('text-gray-500', 'text-red-500');
+        charCountContainer.classList.add('text-green-500');
+        this.classList.remove('border-red-500');
+        this.classList.add('border-green-500');
       }
     });
-    
-    console.log('✅ Listing page polling active');
-  } else {
-    console.error('❌ startPolling not available');
+
+    // Amount field validation
+    const amountField = document.getElementById('offerAmount');
+    amountField.addEventListener('input', function() {
+      const value = parseFloat(this.value);
+      if (this.value && (isNaN(value) || value <= 0)) {
+        this.classList.add('border-red-500');
+      } else {
+        this.classList.remove('border-red-500');
+      }
+    });
   }
-};
 
-pollingScript.onerror = function() {
-  console.error('❌ Polling.js failed to load');
-  
-  // Fallback
-  setInterval(function() {
-    fetch('<?= BASE ?>api/check_new_listings.php?since=<?= date('Y-m-d H:i:s', strtotime('-1 minute')) ?>')
-      .then(r => r.json())
-      .then(d => {
-        if (d.has_new) {
-          console.log('🔄 Fallback: New listings detected, reloading...');
-          location.reload();
-        }
-      })
-      .catch(e => console.error('❌ Fallback error:', e));
-  }, 15000);
-};
+  // Close popups when clicking outside
+  document.addEventListener('click', function(e) {
+    if (e.target.id === 'buyNowPopup') {
+      closeBuyNowPopup();
+    }
+    if (e.target.id === 'makeOfferPopup') {
+      closeMakeOfferPopup();
+    }
+  });
 
-document.head.appendChild(pollingScript);
+  // Close popups with Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeBuyNowPopup();
+      closeMakeOfferPopup();
+    }
+  });
 
-// Offer form validation functions
-function resetOfferFormValidation() {
-  const amountInput = document.getElementById('offerAmount');
-  const errorDiv = document.getElementById('offerAmountError');
-  
-  if (amountInput) {
-    amountInput.style.borderColor = '';
-    amountInput.style.backgroundColor = '';
-  }
-  
-  if (errorDiv) {
-    errorDiv.classList.add('hidden');
-    errorDiv.textContent = '';
-  }
-}
 
-function setupOfferFormValidation() {
-  const amountInput = document.getElementById('offerAmount');
-  
-  if (amountInput) {
-    amountInput.addEventListener('input', function(e) {
-      const amount = parseFloat(e.target.value) || 0;
-      const errorDiv = document.getElementById('offerAmountError');
-      
-      // Clear previous styling
-      e.target.style.borderColor = '';
-      e.target.style.backgroundColor = '';
+
+  // Offer form validation functions
+  function resetOfferFormValidation() {
+    const amountInput = document.getElementById('offerAmount');
+    const errorDiv = document.getElementById('offerAmountError');
+
+    if (amountInput) {
+      amountInput.style.borderColor = '';
+      amountInput.style.backgroundColor = '';
+    }
+
+    if (errorDiv) {
       errorDiv.classList.add('hidden');
-      
-      if (amount > 0 && window.currentOfferData) {
-        if (amount < window.currentOfferData.minAmount) {
-          e.target.style.borderColor = '#ef4444';
-          e.target.style.backgroundColor = '#fef2f2';
-          errorDiv.textContent = `Offer must be at least ${window.currentOfferData.minPercentage}% of asking price ($${window.currentOfferData.minAmount.toLocaleString()})`;
-          errorDiv.classList.remove('hidden');
-        } else {
-          e.target.style.borderColor = '#10b981';
-          e.target.style.backgroundColor = '#f0fdf4';
-        }
-      }
-    });
+      errorDiv.textContent = '';
+    }
   }
-}
-*/
-// END OF COMMENTED OFFER FUNCTIONS
 
+  function setupOfferFormValidation() {
+    const amountInput = document.getElementById('offerAmount');
+
+    if (amountInput) {
+      amountInput.addEventListener('input', function(e) {
+        const amount = parseFloat(e.target.value) || 0;
+        const errorDiv = document.getElementById('offerAmountError');
+
+        // Clear previous styling
+        e.target.style.borderColor = '';
+        e.target.style.backgroundColor = '';
+        errorDiv.classList.add('hidden');
+
+        if (amount > 0 && window.currentOfferData) {
+          if (amount < window.currentOfferData.minAmount) {
+            e.target.style.borderColor = '#ef4444';
+            e.target.style.backgroundColor = '#fef2f2';
+            errorDiv.textContent = `Offer must be at least ${window.currentOfferData.minPercentage}% of asking price ($${window.currentOfferData.minAmount.toLocaleString()})`;
+            errorDiv.classList.remove('hidden');
+          } else {
+            e.target.style.borderColor = '#10b981';
+            e.target.style.backgroundColor = '#f0fdf4';
+          }
+        }
+      });
+    }
+  }
 </script>
+<!-- Polling Integration -->
+<script src="<?= BASE ?>public/js/path-detector.js"></script>
+<script src="<?= BASE ?>public/js/polling.js?v=<?= time() ?>"></script>
+<script src="<?= BASE ?>public/js/polling-init.js"></script>

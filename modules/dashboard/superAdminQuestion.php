@@ -50,13 +50,13 @@ $status = $_GET['status'] ?? '';
 
 $conditions = [];
 if ($search) {
-    $conditions['question'] = ['like' => $search];
+  $conditions['question'] = ['like' => $search];
 }
 if ($listing_type) {
-    $conditions['listing_type'] = $listing_type;
+  $conditions['listing_type'] = $listing_type;
 }
 if ($status) {
-    $conditions['status'] = $status;
+  $conditions['status'] = $status;
 }
 
 // Get paginated questions
@@ -86,16 +86,16 @@ $pagination = $result['pagination'];
       <form method="GET" class="flex flex-wrap gap-4 items-end">
         <input type="hidden" name="p" value="dashboard">
         <input type="hidden" name="page" value="superAdminQuestion">
-        
+
         <div class="flex-1 min-w-[200px]">
           <label class="block text-sm font-medium text-gray-700 mb-2">
             <i class="fa fa-search mr-1"></i>Search Questions
           </label>
-          <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" 
-                 placeholder="Search by question text..." 
-                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
+            placeholder="Search by question text..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
         </div>
-        
+
         <div class="min-w-[150px]">
           <label class="block text-sm font-medium text-gray-700 mb-2">
             <i class="fa fa-tag mr-1"></i>Listing Type
@@ -107,13 +107,13 @@ $pagination = $result['pagination'];
             $typesStmt = $pdo->query("SELECT DISTINCT listing_type FROM listing_questions WHERE listing_type IS NOT NULL ORDER BY listing_type");
             $types = $typesStmt->fetchAll(PDO::FETCH_COLUMN);
             foreach ($types as $type) {
-                $selected = ($listing_type === $type) ? 'selected' : '';
-                echo '<option value="' . htmlspecialchars($type) . '" ' . $selected . '>' . htmlspecialchars($type) . '</option>';
+              $selected = ($listing_type === $type) ? 'selected' : '';
+              echo '<option value="' . htmlspecialchars($type) . '" ' . $selected . '>' . htmlspecialchars($type) . '</option>';
             }
             ?>
           </select>
         </div>
-        
+
         <div class="min-w-[150px]">
           <label class="block text-sm font-medium text-gray-700 mb-2">
             <i class="fa fa-toggle-on mr-1"></i>Status
@@ -124,7 +124,7 @@ $pagination = $result['pagination'];
             <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Inactive</option>
           </select>
         </div>
-        
+
         <div class="flex gap-2">
           <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
             <i class="fa fa-search mr-2"></i>Filter
@@ -135,10 +135,10 @@ $pagination = $result['pagination'];
         </div>
       </form>
     </div>
-    
+
     <div>
     </div>
-    
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
       <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
@@ -154,7 +154,7 @@ $pagination = $result['pagination'];
           </div>
         </div>
       </div>
-      
+
       <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
         <div class="flex items-center">
           <div class="rounded-full bg-green-100 p-3 mr-4">
@@ -164,11 +164,13 @@ $pagination = $result['pagination'];
           </div>
           <div>
             <p class="text-sm font-medium text-gray-600">Active Questions</p>
-            <p class="text-2xl font-bold text-gray-900"><?= count(array_filter($questions, function($q) { return $q['status'] === 'active'; })) ?></p>
+            <p class="text-2xl font-bold text-gray-900"><?= count(array_filter($questions, function ($q) {
+                                                          return $q['status'] === 'active';
+                                                        })) ?></p>
           </div>
         </div>
       </div>
-      
+
       <div class="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
         <div class="flex items-center">
           <div class="rounded-full bg-purple-100 p-3 mr-4">
@@ -213,79 +215,78 @@ $pagination = $result['pagination'];
                 </div>
               </td>
             </tr>
-          <?php else: foreach ($questions as $q): ?>
-            <tr class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= $q['id'] ?></td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  <?= htmlspecialchars($q['listing_type']) ?>
-                </span>
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate"><?= htmlspecialchars($q['question']) ?></td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  <?= htmlspecialchars($q['type']) ?>
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <?php if ($q['is_required']): ?>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    Required
+            <?php else: foreach ($questions as $q): ?>
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"><?= $q['id'] ?></td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <?= htmlspecialchars($q['listing_type']) ?>
                   </span>
-                <?php else: ?>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Optional
-                  </span>
-                <?php endif; ?>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <?php if ($q['status'] === 'active'): ?>
-                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Active
-                  </span>
-                <?php else: ?>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate"><?= htmlspecialchars($q['question']) ?></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    Inactive
+                    <?= htmlspecialchars($q['type']) ?>
                   </span>
-                <?php endif; ?>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div class="flex justify-end space-x-2">
-                  <button 
-                    onclick="openEditModal(<?= $q['id'] ?>, '<?= addslashes($q['listing_type']) ?>', '<?= addslashes($q['question']) ?>', '<?= $q['type'] ?>', '<?= addslashes($q['options']) ?>', <?= $q['is_required'] ?>, '<?= $q['status'] ?>')" 
-                    class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit
-                  </button>
-                  <button 
-                    onclick="openDeleteModal(<?= $q['id'] ?>)" 
-                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
-          <?php endforeach; endif; ?>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <?php if ($q['is_required']): ?>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                      Required
+                    </span>
+                  <?php else: ?>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Optional
+                    </span>
+                  <?php endif; ?>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <?php if ($q['status'] === 'active'): ?>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Active
+                    </span>
+                  <?php else: ?>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Inactive
+                    </span>
+                  <?php endif; ?>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div class="flex justify-end space-x-2">
+                    <button
+                      onclick="openEditModal(<?= $q['id'] ?>, '<?= addslashes($q['listing_type']) ?>', '<?= addslashes($q['question']) ?>', '<?= $q['type'] ?>', '<?= addslashes($q['options']) ?>', <?= $q['is_required'] ?>, '<?= $q['status'] ?>')"
+                      class="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      onclick="openDeleteModal(<?= $q['id'] ?>)"
+                      class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+          <?php endforeach;
+          endif; ?>
         </tbody>
       </table>
     </div>
-    
+
     <!-- Pagination -->
     <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
-      <?php 
+      <?php
       $extraParams = ['p' => 'dashboard', 'page' => 'superAdminQuestion'];
       if ($search) $extraParams['search'] = $search;
       if ($listing_type) $extraParams['listing_type'] = $listing_type;
       if ($status) $extraParams['status'] = $status;
-      
-      echo renderPagination($pagination, url('index.php'), $extraParams, 'pg'); 
+
+      echo renderPagination($pagination, url('index.php'), $extraParams, 'pg');
       ?>
     </div>
   </div>
@@ -444,100 +445,100 @@ $pagination = $result['pagination'];
 </div>
 
 <script>
-function openAddModal() { 
-  document.getElementById('addModal').classList.remove('hidden'); 
-  document.body.classList.add('overflow-hidden');
-}
-
-function closeAddModal() { 
-  document.getElementById('addModal').classList.add('hidden'); 
-  document.body.classList.remove('overflow-hidden');
-}
-
-function openEditModal(id, listingType, question, inputType, options, required, status) {
-  document.getElementById('editId').value = id;
-  document.getElementById('editListingType').value = listingType;
-  document.getElementById('editQuestion').value = question;
-  document.getElementById('editInputType').value = inputType;
-  document.getElementById('editOptionsInput').value = options || '';
-  document.getElementById('editRequired').checked = required == 1;
-  document.getElementById('editStatus').value = status;
-  toggleOptions(document.getElementById('editInputType'), 'editOptions');
-  document.getElementById('editModal').classList.remove('hidden');
-  document.body.classList.add('overflow-hidden');
-}
-
-function closeEditModal() { 
-  document.getElementById('editModal').classList.add('hidden'); 
-  document.body.classList.remove('overflow-hidden');
-}
-
-function openDeleteModal(id) {
-  document.getElementById('deleteId').value = id;
-  document.getElementById('deleteModal').classList.remove('hidden');
-  document.body.classList.add('overflow-hidden');
-}
-
-function closeDeleteModal() { 
-  document.getElementById('deleteModal').classList.add('hidden'); 
-  document.body.classList.remove('overflow-hidden');
-}
-
-function toggleOptions(select, id) {
-  const val = select.value;
-  const box = document.getElementById(id);
-  if (['select','radio','checkbox'].includes(val)) {
-    box.classList.remove('hidden');
-  } else {
-    box.classList.add('hidden');
+  function openAddModal() {
+    document.getElementById('addModal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
   }
-}
 
-// Close modals when clicking outside
-document.addEventListener('click', function(event) {
-  const addModal = document.getElementById('addModal');
-  const editModal = document.getElementById('editModal');
-  const deleteModal = document.getElementById('deleteModal');
-  
-  if (event.target === addModal) closeAddModal();
-  if (event.target === editModal) closeEditModal();
-  if (event.target === deleteModal) closeDeleteModal();
-});
-
-// Polling Integration for SuperAdmin Questions
-window.addEventListener('load', function() {
-  // Define BASE constant globally
-  const BASE = "<?php echo BASE; ?>";
-  console.log('🔧 BASE constant defined:', BASE);
-  
-  // Ensure API_BASE_PATH is set
-  // Use PathUtils for API base path
-  if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
-    window.API_BASE_PATH = BASE + 'api';
-    console.log('🔧 [Questions] API_BASE_PATH:', window.API_BASE_PATH);
+  function closeAddModal() {
+    document.getElementById('addModal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
   }
-  
-  console.log('🚀 SuperAdmin Questions polling initialization started');
-  
-  if (typeof startPolling !== 'undefined') {
-    console.log('✅ Starting polling for questions');
-    
-    try {
-      startPolling({
-        // Monitor for any new activity that might affect questions
-        listings: (newListings) => {
-          if (newListings.length > 0) {
-            console.log('📋 New listings detected, questions page may need refresh');
-          }
-        }
-      });
-      
-      console.log('✅ Polling started successfully for SuperAdmin Questions');
-    } catch (error) {
-      console.error('❌ Error starting polling:', error);
+
+  function openEditModal(id, listingType, question, inputType, options, required, status) {
+    document.getElementById('editId').value = id;
+    document.getElementById('editListingType').value = listingType;
+    document.getElementById('editQuestion').value = question;
+    document.getElementById('editInputType').value = inputType;
+    document.getElementById('editOptionsInput').value = options || '';
+    document.getElementById('editRequired').checked = required == 1;
+    document.getElementById('editStatus').value = status;
+    toggleOptions(document.getElementById('editInputType'), 'editOptions');
+    document.getElementById('editModal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  }
+
+  function openDeleteModal(id) {
+    document.getElementById('deleteId').value = id;
+    document.getElementById('deleteModal').classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+  }
+
+  function toggleOptions(select, id) {
+    const val = select.value;
+    const box = document.getElementById(id);
+    if (['select', 'radio', 'checkbox'].includes(val)) {
+      box.classList.remove('hidden');
+    } else {
+      box.classList.add('hidden');
     }
-  } else {
-    console.warn('⚠️ startPolling function not found - polling.js may not be loaded');
   }
-});
+
+  // Close modals when clicking outside
+  document.addEventListener('click', function(event) {
+    const addModal = document.getElementById('addModal');
+    const editModal = document.getElementById('editModal');
+    const deleteModal = document.getElementById('deleteModal');
+
+    if (event.target === addModal) closeAddModal();
+    if (event.target === editModal) closeEditModal();
+    if (event.target === deleteModal) closeDeleteModal();
+  });
+
+  // Polling Integration for SuperAdmin Questions
+  window.addEventListener('load', function() {
+    // Define BASE constant globally
+    // const BASE = "<?php echo BASE; ?>"; // Already defined in dashboard.php
+    console.log('🔧 BASE constant defined:', BASE);
+
+    // Ensure API_BASE_PATH is set
+    if (!window.API_BASE_PATH) {
+      const path = window.location.pathname;
+      window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+      console.log('🔧 [Questions] API_BASE_PATH:', window.API_BASE_PATH);
+    }
+
+    console.log('🚀 SuperAdmin Questions polling initialization started');
+
+    if (typeof startPolling !== 'undefined') {
+      console.log('✅ Starting polling for questions');
+
+      try {
+        startPolling({
+          // Monitor for any new activity that might affect questions
+          listings: (newListings) => {
+            if (newListings.length > 0) {
+              console.log('📋 New listings detected, questions page may need refresh');
+            }
+          }
+        });
+
+        console.log('✅ Polling started successfully for SuperAdmin Questions');
+      } catch (error) {
+        console.error('❌ Error starting polling:', error);
+      }
+    } else {
+      console.warn('⚠️ startPolling function not found - polling.js may not be loaded');
+    }
+  });
 </script>

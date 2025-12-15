@@ -20,7 +20,7 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
   if ($userId === $seller_id) {
     // Redirect to listing detail page with error message
     $_SESSION['error_message'] = "You cannot message yourself about your own listing.";
-    header("Location: ./index.php?p=listingDetail&id=" . $listing_id);
+    header("Location: " . url("public/index.php?p=listingDetail&id=" . $listing_id));
     exit;
   }
 
@@ -67,14 +67,7 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
   }
 
   error_log("Redirecting to conversation ID: $conversation_id");
-  
-  // ✅ Add debug output before redirect
-  error_log("=== REDIRECT DEBUG ===");
-  error_log("From: " . $_SERVER['REQUEST_URI']);
-  error_log("To: ./index.php?p=dashboard&page=message&conversation_id=" . $conversation_id);
-  error_log("User ID: $userId, Seller ID: $seller_id, Listing ID: $listing_id");
-  
-  header("Location: ./index.php?p=dashboard&page=message&conversation_id=" . $conversation_id);
+  header("Location: " . url("public/index.php?p=dashboard&page=message&conversation_id=" . $conversation_id));
   exit;
 }
 ?>
@@ -240,142 +233,167 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
     <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">😢</button>
     <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">😭</button>
     <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">😡</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">🤯</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">😴</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">🤗</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">🤝</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">👍</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">👎</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">👏</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">🙏</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">💪</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">❤️</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">💯</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">🔥</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">⭐</button>
+    <button type="button" class="emoji-btn p-2 hover:bg-gray-100 rounded text-lg cursor-pointer transition-colors">✅</button>
+  </div>
+</div>
+
+<!-- Image Modal -->
+<div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+  <div class="relative max-w-4xl max-h-full">
+    <img id="modalImage" src="" alt="Full size image" class="max-w-full max-h-full object-contain rounded-lg">
+    <button onclick="closeImageModal()" class="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-colors">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+      </svg>
+    </button>
   </div>
 </div>
 
 <script>
-    // ✅ BASE constant already defined in header.php
-    console.log('✅ Using BASE constant:', BASE);
-    
-    // Global variables
-    const userId = <?= $userId ?>; // Current user ID from PHP
-    let currentConversation = null;
-    let currentListingId = null;
-    let selectedImages = [];
-    let emojiPickerVisible = false;
+  // BASE constant is defined in dashboard.php
+  const userId = <?php echo (int)$userId; ?>;
+  let currentConversation = null;
+  let selectedImages = [];
+  let currentListingId = null;
+
+  // Enhanced Emoji Picker Management
+  let emojiPickerVisible = false;
+
+  function showEmojiPicker() {
+    const emojiPicker = document.getElementById('emojiPicker');
+    const emojiButton = document.getElementById('emojiButton');
+
+    if (!emojiPicker || !emojiButton) return;
+
+    const buttonRect = emojiButton.getBoundingClientRect();
+    emojiPicker.style.top = `${buttonRect.top - 320}px`;
+    emojiPicker.style.left = `${buttonRect.left}px`;
+
+    emojiPicker.classList.remove('hidden');
+    emojiPickerVisible = true;
+  }
+
+  function hideEmojiPicker() {
+    const emojiPicker = document.getElementById('emojiPicker');
+    if (emojiPicker) {
+      emojiPicker.classList.add('hidden');
+      emojiPickerVisible = false;
+    }
+  }
+
+  // Enhanced Image Upload Functions
+  function validateImage(file) {
     const maxSize = 5 * 1024 * 1024; // 5MB
-    
-    // Image validation
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    
-    function validateImage(file) {
 
-      if (!allowedTypes.includes(file.type)) {
-        showNotification('Please select a valid image file (JPEG, PNG, GIF, WebP)', 'error');
-        return false;
-      }
-
-      if (file.size > maxSize) {
-        showNotification('Image size must be less than 5MB', 'error');
-        return false;
-      }
-
-      return true;
+    if (!allowedTypes.includes(file.type)) {
+      showNotification('Please select a valid image file (JPEG, PNG, GIF, WebP)', 'error');
+      return false;
     }
 
-    function handleImageSelection(files) {
+    if (file.size > maxSize) {
+      showNotification('Image size must be less than 5MB', 'error');
+      return false;
+    }
+
+    return true;
+  }
+
+  function handleImageSelection(files) {
     Array.from(files).forEach(file => {
-    if (!validateImage(file)) return;
+      if (!validateImage(file)) return;
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-    selectedImages.push({
-    file: file,
-    dataUrl: e.target.result,
-    name: file.name,
-    size: file.size
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        selectedImages.push({
+          file: file,
+          dataUrl: e.target.result,
+          name: file.name,
+          size: file.size
+        });
+        updateImagePreview();
+      };
+      reader.readAsDataURL(file);
     });
-    updateImagePreview();
-    };
-    reader.readAsDataURL(file);
-    });
-    }
+  }
 
-    function updateImagePreview() {
+  function updateImagePreview() {
     const previewArea = document.getElementById('imagePreview');
     const container = document.getElementById('imagePreviewContainer');
 
     if (selectedImages.length === 0) {
-    previewArea.classList.add('hidden');
-    return;
+      previewArea.classList.add('hidden');
+      return;
     }
 
     previewArea.classList.remove('hidden');
     container.innerHTML = '';
 
     selectedImages.forEach((imageData, index) => {
-    const imageDiv = document.createElement('div');
-    imageDiv.className = 'relative group';
-    imageDiv.innerHTML = `
-    <div class="relative">
-      <img src="${imageData.dataUrl}" alt="Preview"
-        class="w-20 h-20 object-cover rounded-lg border border-gray-200">
-      <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
-        ${(imageData.size / 1024).toFixed(1)}KB
+      const imageDiv = document.createElement('div');
+      imageDiv.className = 'relative group';
+      imageDiv.innerHTML = `
+      <div class="relative">
+        <img src="${imageData.dataUrl}" alt="Preview" 
+             class="w-20 h-20 object-cover rounded-lg border border-gray-200">
+        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
+          ${(imageData.size / 1024).toFixed(1)}KB
+        </div>
+        <button type="button" onclick="removeImage(${index})" 
+                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-colors flex items-center justify-center">
+          ×
+        </button>
       </div>
-      <button type="button" onclick="removeImage(${index})"
-        class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600 transition-colors flex items-center justify-center">
-        ×
-      </button>
-    </div>
     `;
-    container.appendChild(imageDiv);
+      container.appendChild(imageDiv);
     });
-    }
+  }
 
-    function removeImage(index) {
+  function removeImage(index) {
     selectedImages.splice(index, 1);
     updateImagePreview();
-    }
+  }
 
-    // Enhanced Message Sending
-    async function sendMessage(formData) {
+  // Enhanced Message Sending
+  async function sendMessage(formData) {
     try {
-    const url = `${BASE}index.php?p=send_message`;
-    console.log('🔗 Sending message to:', url);
-    console.log('🔗 BASE constant:', BASE);
-    
-    const res = await fetch(url, {
-    method: 'POST',
-    body: formData
-    });
+      const res = await fetch(`${BASE}index.php?p=send_message`, {
+        method: 'POST',
+        body: formData
+      });
 
-    console.log('📡 Response status:', res.status);
-    console.log('📡 Response headers:', [...res.headers.entries()]);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
 
-    if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
+      const result = await res.json();
 
-    // Get raw text first to debug
-    const text = await res.text();
-    console.log('🔍 Raw response from send_message:', text);
-    console.log('🔍 Response length:', text.length);
-    console.log('🔍 First 100 chars:', text.substring(0, 100));
-    console.log('🔍 Last 100 chars:', text.substring(text.length - 100));
-
-    let result;
-    try {
-      result = JSON.parse(text);
-    } catch (e) {
-      console.error('❌ JSON parse error:', e);
-      console.error('❌ Full response text:', text);
-      throw new Error('Invalid JSON response: ' + text.substring(0, 100));
-    }
-
-    if (result.success) {
-    return result;
-    } else {
-    throw new Error(result.error || 'Failed to send message');
-    }
+      if (result.success) {
+        return result;
+      } else {
+        throw new Error(result.error || 'Failed to send message');
+      }
     } catch (error) {
-    console.error('Send message error:', error);
-    throw error;
+      console.error('Send message error:', error);
+      throw error;
     }
-    }
+  }
 
-    // Enhanced Conversation Management
-    async function openConversation(id, name, profilePic = null, listingId = null) {
+  // Enhanced Conversation Management
+  async function openConversation(id, name, profilePic = null, listingId = null) {
     currentConversation = id;
     currentListingId = listingId;
 
@@ -384,78 +402,78 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
       document.getElementById('conversationsSidebar').classList.add('hidden');
       document.getElementById('chatBox').classList.remove('hidden');
       document.getElementById('chatBox').classList.add('flex');
-      }
+    }
 
-      // Immediately remove unread badge from UI
-      const conversationEl=document.querySelector(`[data-conversation-id="${id}" ]`);
-      if (conversationEl) {
-      const unreadBadge=conversationEl.querySelector('.bg-red-500');
+    // Immediately remove unread badge from UI
+    const conversationEl = document.querySelector(`[data-conversation-id="${id}"]`);
+    if (conversationEl) {
+      const unreadBadge = conversationEl.querySelector('.bg-red-500');
       if (unreadBadge) {
-      unreadBadge.remove();
+        unreadBadge.remove();
       }
 
       // Remove bold styling from last message
-      const lastMessage=conversationEl.querySelector('.font-semibold');
+      const lastMessage = conversationEl.querySelector('.font-semibold');
       if (lastMessage && lastMessage.classList.contains('text-gray-900')) {
-      lastMessage.classList.remove('text-gray-900', 'font-semibold' );
-      lastMessage.classList.add('text-gray-600');
+        lastMessage.classList.remove('text-gray-900', 'font-semibold');
+        lastMessage.classList.add('text-gray-600');
       }
-      }
+    }
 
-      // Set current conversation FIRST
-      currentConversation=id;
-      console.log('Current conversation set to:', currentConversation);
+    // Set current conversation FIRST
+    currentConversation = id;
+    console.log('Current conversation set to:', currentConversation);
 
-      // Update UI
-      updateChatHeader(name, profilePic, listingId);
-      showChatInterface();
-      updateActiveConversation(id);
+    // Update UI
+    updateChatHeader(name, profilePic, listingId);
+    showChatInterface();
+    updateActiveConversation(id);
 
-      // Load messages
-      await loadMessages(id);
+    // Load messages
+    await loadMessages(id);
 
-      // Mark messages as read in background (non-blocking)
-      markConversationAsRead(id).catch(error=> {
+    // Mark messages as read in background (non-blocking)
+    markConversationAsRead(id).catch(error => {
       console.error('Failed to mark conversation as read:', error);
-      });
-      }
+    });
+  }
 
-      function updateChatHeader(name, profilePic, listingId) {
-      const chatAvatar = document.getElementById('chatAvatar');
+  function updateChatHeader(name, profilePic, listingId) {
+    const chatAvatar = document.getElementById('chatAvatar');
 
-      // Update avatar with profile photo
-      if (profilePic && profilePic.trim() !== '' && profilePic !== 'null' && profilePic !== 'undefined') {
+    // Update avatar with profile photo
+    if (profilePic && profilePic.trim() !== '' && profilePic !== 'null' && profilePic !== 'undefined') {
       const imageUrl = profilePic.startsWith('http') ? profilePic : `${BASE}${profilePic}`;
       chatAvatar.innerHTML = `
-      <img src="${imageUrl}"
-        alt="${name || 'User'}"
-        class="w-full h-full object-cover"
-        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+      <img src="${imageUrl}" 
+           alt="${name || 'User'}" 
+           class="w-full h-full object-cover"
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
       <span class="text-white font-bold text-sm hidden">${name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?'}</span>
-      `;
-      } else {
+    `;
+    } else {
       // Fallback to initials
       const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
       chatAvatar.innerHTML = `<span class="text-white font-bold text-sm">${initials}</span>`;
-      }
+    }
 
-      document.getElementById('chatName').textContent = name;
+    document.getElementById('chatName').textContent = name;
 
-      // Clear status when chat is active - no status text needed
-      const chatStatus = document.getElementById('chatStatus');
-      chatStatus.innerHTML = ``;
-      }
+    // Clear status when chat is active - no status text needed
+    const chatStatus = document.getElementById('chatStatus');
+    chatStatus.innerHTML = ``;
+  }
 
-      function showChatInterface() {
-      document.getElementById('noChat').style.display = 'none';
-      document.getElementById('sendMessageForm').classList.remove('hidden');
-      }
+  function showChatInterface() {
+    document.getElementById('noChat').style.display = 'none';
+    document.getElementById('sendMessageForm').classList.remove('hidden');
+  }
 
-      function updateActiveConversation(conversationId) {
-      console.log('Updating active conversation to:', conversationId);
+  function updateActiveConversation(conversationId) {
+    console.log('Updating active conversation to:', conversationId);
 
-      // Update all conversations
-      document.querySelectorAll('#conversationList > div').forEach(el => {
+    // Update all conversations
+    document.querySelectorAll('#conversationList > div').forEach(el => {
       const isActive = el.getAttribute('data-conversation-id') == conversationId;
       const convId = el.getAttribute('data-conversation-id');
 
@@ -463,290 +481,265 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
 
       // Reset all classes first
       el.className = `p-5 cursor-pointer transition-all duration-300 border-l-4 ${
-      isActive
-      ? 'bg-blue-50 border-blue-500 shadow-md'
-      : 'bg-white border-transparent hover:border-blue-200 hover:shadow-sm hover:bg-gray-50'
-      }`;
+      isActive 
+        ? 'bg-blue-50 border-blue-500 shadow-md' 
+        : 'bg-white border-transparent hover:border-blue-200 hover:shadow-sm hover:bg-gray-50'
+    }`;
 
       // Clear unread count badge for active conversation
       if (isActive) {
-      const unreadBadge = el.querySelector('.bg-red-500');
-      if (unreadBadge) {
-      unreadBadge.remove();
-      console.log('Unread badge removed for conversation:', conversationId);
-      }
+        const unreadBadge = el.querySelector('.bg-red-500');
+        if (unreadBadge) {
+          unreadBadge.remove();
+          console.log('Unread badge removed for conversation:', conversationId);
+        }
 
-      // Remove bold styling from last message
-      const lastMessage = el.querySelector('.font-semibold');
-      if (lastMessage && lastMessage.classList.contains('text-gray-900')) {
-      lastMessage.classList.remove('text-gray-900', 'font-semibold');
-      lastMessage.classList.add('text-gray-600');
+        // Remove bold styling from last message
+        const lastMessage = el.querySelector('.font-semibold');
+        if (lastMessage && lastMessage.classList.contains('text-gray-900')) {
+          lastMessage.classList.remove('text-gray-900', 'font-semibold');
+          lastMessage.classList.add('text-gray-600');
+        }
       }
-      }
-      });
-      }
+    });
+  }
 
-      // Mark conversation as read (background server update)
-      async function markConversationAsRead(conversationId) {
-      try {
+  // Mark conversation as read (background server update)
+  async function markConversationAsRead(conversationId) {
+    try {
       const response = await fetch(`${BASE}index.php?p=mark_read`, {
-      method: 'POST',
-      headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `conversation_id=${conversationId}`
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `conversation_id=${conversationId}`
       });
 
       if (response.ok) {
-      const result = await response.json();
-      if (result.success) {
-      console.log('Conversation marked as read on server:', conversationId, 'Messages marked:', result.marked_count);
+        const result = await response.json();
+        if (result.success) {
+          console.log('Conversation marked as read on server:', conversationId, 'Messages marked:', result.marked_count);
 
-      // Update sidebar badge
-      if (typeof updateSidebarMessageBadge === 'function') {
-      updateSidebarMessageBadge();
-      }
+          // Update sidebar badge
+          if (typeof updateSidebarMessageBadge === 'function') {
+            updateSidebarMessageBadge();
+          }
+        } else {
+          console.error('Failed to mark conversation as read:', result.error);
+        }
       } else {
-      console.error('Failed to mark conversation as read:', result.error);
+        console.error('Failed to mark conversation as read on server, status:', response.status);
       }
-      } else {
-      console.error('Failed to mark conversation as read on server, status:', response.status);
-      }
-      } catch (error) {
+    } catch (error) {
       console.error('Error marking conversation as read:', error);
-      }
-      }
+    }
+  }
 
-      // Enhanced Message Display with Professional Styling
-      function createMessageElement(msg, isOwn) {
-      const time = formatTime(msg.created_at);
-      const {
+  // Enhanced Message Display with Professional Styling
+  function createMessageElement(msg, isOwn) {
+    const time = formatTime(msg.created_at);
+    const {
       messageText,
       images
-      } = parseMessageContent(msg.message);
+    } = parseMessageContent(msg.message);
 
-      const senderProfileHtml = !isOwn ? getProfilePicHtml(msg.sender_profile_pic, msg.sender_name, 'w-10 h-10') : '';
+    const senderProfileHtml = !isOwn ? getProfilePicHtml(msg.sender_profile_pic, msg.sender_name, 'w-10 h-10') : '';
 
-      return `
-      <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4">
-        <div class="flex ${isOwn ? 'flex-row-reverse' : 'flex-row'} items-end space-x-3 max-w-xs lg:max-w-lg">
-          ${senderProfileHtml}
-          <div class="group">
-            <div class="${isOwn 
+    return `
+    <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4">
+      <div class="flex ${isOwn ? 'flex-row-reverse' : 'flex-row'} items-end space-x-3 max-w-xs lg:max-w-lg">
+        ${senderProfileHtml}
+        <div class="group">
+          <div class="${isOwn 
             ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl rounded-br-md shadow-lg' 
             : 'bg-white text-gray-800 rounded-2xl rounded-bl-md shadow-lg border border-gray-100'
           } px-5 py-3 break-words transform transition-all duration-200 hover:scale-105">
-              ${messageText ? `<p class="text-sm leading-relaxed font-medium">${messageText}</p>` : ''}
-              ${images.length > 0 ? createImagesHtml(images) : ''}
-            </div>
-            <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} mt-2 opacity-0 group-hover:opacity-100 transition-all duration-200">
-              <span class="text-xs ${isOwn ? 'text-blue-300' : 'text-gray-500'} font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">${time}</span>
-            </div>
+            ${messageText ? `<p class="text-sm leading-relaxed font-medium">${messageText}</p>` : ''}
+            ${images.length > 0 ? createImagesHtml(images) : ''}
+          </div>
+          <div class="flex ${isOwn ? 'justify-end' : 'justify-start'} mt-2 opacity-0 group-hover:opacity-100 transition-all duration-200">
+            <span class="text-xs ${isOwn ? 'text-blue-300' : 'text-gray-500'} font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">${time}</span>
           </div>
         </div>
       </div>
-      `;
-      }
+    </div>
+  `;
+  }
 
-      function parseMessageContent(message) {
-      let messageText = message;
-      let images = [];
+  function parseMessageContent(message) {
+    let messageText = message;
+    let images = [];
 
-      if (message && message.includes('[IMAGES]')) {
+    if (message && message.includes('[IMAGES]')) {
       const parts = message.split('[IMAGES]');
       messageText = parts[0].trim();
       if (parts[1]) {
-      try {
-      images = JSON.parse(parts[1]);
-      } catch (e) {
-      console.error('Error parsing images:', e);
+        try {
+          images = JSON.parse(parts[1]);
+        } catch (e) {
+          console.error('Error parsing images:', e);
+        }
       }
-      }
-      }
+    }
 
-      return {
+    return {
       messageText,
       images
-      };
-      }
+    };
+  }
 
-      function createImagesHtml(images) {
-      return `
-      <div class="mt-2 space-y-2">
-        ${images.map(img => {
+  function createImagesHtml(images) {
+    return `
+    <div class="mt-2 space-y-2">
+      ${images.map(img => {
         const fullImageUrl = BASE + '../' + img;
         return `
-        <div class="image-container">
-          <img src="${fullImageUrl}" alt="Image"
-            class="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-64 object-contain"
-            onclick="openImageModal('${fullImageUrl}')"
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
-            onload="console.log('Image loaded:', '${fullImageUrl}')">
-          <div style="display:none;" class="p-3 bg-gray-100 rounded-lg text-sm text-gray-600 border border-gray-300">
-            <div class="flex items-center gap-2">
-              <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-              </svg>
-              <span class="font-medium">Image not available</span>
+          <div class="image-container">
+            <img src="${fullImageUrl}" alt="Image" 
+                 class="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity max-h-64 object-contain"
+                 onclick="openImageModal('${fullImageUrl}')"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+                 onload="console.log('Image loaded:', '${fullImageUrl}')">
+            <div style="display:none;" class="p-3 bg-gray-100 rounded-lg text-sm text-gray-600 border border-gray-300">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span class="font-medium">Image not available</span>
+              </div>
             </div>
           </div>
-        </div>
         `;
-        }).join('')}
-      </div>
-      `;
-      }
+      }).join('')}
+    </div>
+  `;
+  }
 
-      // Event Listeners
-      document.addEventListener('DOMContentLoaded', function() {
-      initializeEventListeners();
-      loadConversations();
+  // Event Listeners
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeEventListeners();
+    loadConversations();
 
-      // Check if conversation_id is in URL and open it
-      const urlParams = new URLSearchParams(window.location.search);
-      const conversationId = urlParams.get('conversation_id');
-      
-      console.log('=== CONVERSATION AUTO-OPEN DEBUG ===');
-      console.log('Current URL:', window.location.href);
-      console.log('URL Parameters:', urlParams.toString());
-      console.log('conversation_id from URL:', conversationId);
-      
-      if (conversationId) {
-        console.log('🔵 Opening conversation from URL:', conversationId);
-        // Store the conversation ID to open after conversations load
-        window.pendingConversationId = conversationId;
-        console.log('✅ Stored in window.pendingConversationId');
-      } else {
-        console.log('❌ No conversation_id in URL');
-      }
-      });
-
-      function initializeEventListeners() {
-      // Mobile: Back to conversations button
-      const backBtn = document.getElementById('backToConversations');
-      if (backBtn) {
-      backBtn.addEventListener('click', () => {
-      document.getElementById('conversationsSidebar').classList.remove('hidden');
-      document.getElementById('chatBox').classList.add('hidden', 'md:flex');
-      });
-      }
-
-      // Message form submission
-      const sendForm = document.getElementById('sendMessageForm');
-      if (sendForm) {
-        sendForm.addEventListener('submit', handleMessageSubmit);
-      }
-
-      // Image upload
-      const imageButton = document.getElementById('imageButton');
-      if (imageButton) {
-        imageButton.addEventListener('click', () => {
-          document.getElementById('imageInput').click();
-        });
-      }
-
-      const imageInput = document.getElementById('imageInput');
-      if (imageInput) {
-        imageInput.addEventListener('change', (e) => {
-          handleImageSelection(e.target.files);
-          e.target.value = ''; // Reset input
-        });
-      }
-
-      // Emoji picker
-      const emojiButton = document.getElementById('emojiButton');
-      if (emojiButton) {
-        emojiButton.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (emojiPickerVisible) {
-            hideEmojiPicker();
-          } else {
-            showEmojiPicker();
-          }
-        });
-      }
-
-      // Emoji selection
-      document.querySelectorAll('.emoji-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-      const emoji = e.target.textContent;
-      const messageInput = document.getElementById('messageInput');
-      const cursorPos = messageInput.selectionStart;
-      const textBefore = messageInput.value.substring(0, cursorPos);
-      const textAfter = messageInput.value.substring(messageInput.selectionEnd);
-
-      messageInput.value = textBefore + emoji + textAfter;
-      messageInput.focus();
-      messageInput.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
-
-      hideEmojiPicker();
-      });
-      });
-
-      // Clear images
-      const clearImages = document.getElementById('clearImages');
-      if (clearImages) {
-        clearImages.addEventListener('click', () => {
-          selectedImages = [];
-          updateImagePreview();
-        });
-      }
-
-      // Close emoji picker when clicking outside
-      document.addEventListener('click', (e) => {
-        if (emojiPickerVisible && !e.target.closest('#emojiPicker') && !e.target.closest('#emojiButton')) {
-          hideEmojiPicker();
+    // Check if conversation_id is in URL and open it
+    const urlParams = new URLSearchParams(window.location.search);
+    const conversationId = urlParams.get('conversation_id');
+    if (conversationId) {
+      console.log('Opening conversation from URL:', conversationId);
+      // Wait for conversations to load first
+      setTimeout(() => {
+        const convElement = document.querySelector(`[data-conversation-id="${conversationId}"]`);
+        if (convElement) {
+          convElement.click();
         }
+      }, 500);
+    }
+  });
+
+  function initializeEventListeners() {
+    // Mobile: Back to conversations button
+    const backBtn = document.getElementById('backToConversations');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        document.getElementById('conversationsSidebar').classList.remove('hidden');
+        document.getElementById('chatBox').classList.add('hidden', 'md:flex');
       });
+    }
 
-      // Auto-resize textarea
-      const messageInput = document.getElementById('messageInput');
-      if (messageInput) {
-        messageInput.addEventListener('input', function() {
-          this.style.height = 'auto';
-          this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-        });
+    // Message form submission
+    document.getElementById('sendMessageForm').addEventListener('submit', handleMessageSubmit);
 
-        // Send message on Enter (but not Shift+Enter)
-        messageInput.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            const form = document.getElementById('sendMessageForm');
-            if (form) {
-              form.dispatchEvent(new Event('submit'));
-            }
-          }
-        });
-      }
+    // Image upload
+    document.getElementById('imageButton').addEventListener('click', () => {
+      document.getElementById('imageInput').click();
+    });
 
-      // Search functionality removed - no search input in header
-      }
+    document.getElementById('imageInput').addEventListener('change', (e) => {
+      handleImageSelection(e.target.files);
+      e.target.value = ''; // Reset input
+    });
 
-      async function handleMessageSubmit(e) {
+    // Emoji picker
+    document.getElementById('emojiButton').addEventListener('click', (e) => {
       e.preventDefault();
+      e.stopPropagation();
+      if (emojiPickerVisible) {
+        hideEmojiPicker();
+      } else {
+        showEmojiPicker();
+      }
+    });
 
-      const input = document.getElementById('messageInput');
-      const sendButton = document.getElementById('sendButton');
-      const message = input.value.trim();
+    // Emoji selection
+    document.querySelectorAll('.emoji-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const emoji = e.target.textContent;
+        const messageInput = document.getElementById('messageInput');
+        const cursorPos = messageInput.selectionStart;
+        const textBefore = messageInput.value.substring(0, cursorPos);
+        const textAfter = messageInput.value.substring(messageInput.selectionEnd);
 
-      if ((!message && selectedImages.length === 0) || !currentConversation) {
+        messageInput.value = textBefore + emoji + textAfter;
+        messageInput.focus();
+        messageInput.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+
+        hideEmojiPicker();
+      });
+    });
+
+    // Clear images
+    document.getElementById('clearImages').addEventListener('click', () => {
+      selectedImages = [];
+      updateImagePreview();
+    });
+
+    // Close emoji picker when clicking outside
+    document.addEventListener('click', (e) => {
+      if (emojiPickerVisible && !e.target.closest('#emojiPicker') && !e.target.closest('#emojiButton')) {
+        hideEmojiPicker();
+      }
+    });
+
+    // Auto-resize textarea
+    document.getElementById('messageInput').addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Send message on Enter (but not Shift+Enter)
+    document.getElementById('messageInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('sendMessageForm').dispatchEvent(new Event('submit'));
+      }
+    });
+
+    // Search functionality removed - no search input in header
+  }
+
+  async function handleMessageSubmit(e) {
+    e.preventDefault();
+
+    const input = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const message = input.value.trim();
+
+    if ((!message && selectedImages.length === 0) || !currentConversation) {
       showNotification('Please enter a message or select an image', 'warning');
       return;
-      }
+    }
 
-      // Disable send button and show loading
-      sendButton.disabled = true;
-      sendButton.innerHTML = createLoadingSpinner();
+    // Disable send button and show loading
+    sendButton.disabled = true;
+    sendButton.innerHTML = createLoadingSpinner();
 
-      try {
+    try {
       const formData = new FormData();
       formData.append('conversation_id', currentConversation);
       formData.append('message', message);
 
       // Add images to form data
       selectedImages.forEach((imageData, index) => {
-      formData.append(`images[${index}]`, imageData.file);
+        formData.append(`images[${index}]`, imageData.file);
       });
 
       const result = await sendMessage(formData);
@@ -763,61 +756,61 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
 
       showNotification('Message sent successfully', 'success');
 
-      } catch (error) {
+    } catch (error) {
       console.error('Message send error:', error);
       showNotification('Failed to send message: ' + error.message, 'error');
-      } finally {
+    } finally {
       // Re-enable send button
       sendButton.disabled = false;
       sendButton.innerHTML = `
       <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
       </svg>
-      `;
-      }
-      }
+    `;
+    }
+  }
 
-      // Utility Functions
-      function createLoadingSpinner() {
-      return `
-      <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      `;
-      }
+  // Utility Functions
+  function createLoadingSpinner() {
+    return `
+    <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+  `;
+  }
 
-      function showNotification(message, type = 'info') {
-      // Remove existing notifications
-      document.querySelectorAll('.notification').forEach(el => el.remove());
+  function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    document.querySelectorAll('.notification').forEach(el => el.remove());
 
-      const notification = document.createElement('div');
-      const bgColor = type === 'error' ? 'bg-red-500' :
+    const notification = document.createElement('div');
+    const bgColor = type === 'error' ? 'bg-red-500' :
       type === 'success' ? 'bg-green-500' :
       type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500';
 
-      notification.className = `notification fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 text-white ${bgColor}`;
-      notification.textContent = message;
+    notification.className = `notification fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 text-white ${bgColor}`;
+    notification.textContent = message;
 
-      document.body.appendChild(notification);
+    document.body.appendChild(notification);
 
-      setTimeout(() => {
+    setTimeout(() => {
       notification.remove();
-      }, 4000);
-      }
+    }, 4000);
+  }
 
-      // Load conversations from server
-      async function loadConversations() {
-      const loadingEl = document.getElementById('loadingConversations');
-      const listEl = document.getElementById('conversationList');
+  // Load conversations from server
+  async function loadConversations() {
+    const loadingEl = document.getElementById('loadingConversations');
+    const listEl = document.getElementById('conversationList');
 
-      try {
+    try {
       loadingEl.classList.remove('hidden');
 
       const response = await fetch(`${BASE}index.php?p=get_conversations`);
 
       if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const text = await response.text();
@@ -825,51 +818,20 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
 
       let data;
       try {
-      data = JSON.parse(text);
+        data = JSON.parse(text);
       } catch (e) {
-      console.error('JSON parse error:', e);
-      console.error('Response text:', text);
-      throw new Error('Invalid JSON response from server');
+        console.error('JSON parse error:', e);
+        console.error('Response text:', text);
+        throw new Error('Invalid JSON response from server');
       }
 
       if (data.success) {
-      console.log('✅ Conversations loaded successfully:', data.conversations.length);
-      displayConversations(data.conversations);
-      document.getElementById('conversationCount').textContent = data.conversations.length;
-      
-      // ✅ Auto-open conversation if conversation_id is in URL
-      if (window.pendingConversationId) {
-        console.log('🔵 Checking for pending conversation:', window.pendingConversationId);
-        console.log('🔍 Looking for element with data-conversation-id:', window.pendingConversationId);
-        
-        const convElement = document.querySelector(`[data-conversation-id="${window.pendingConversationId}"]`);
-        console.log('🔍 Found element:', convElement);
-        
-        if (convElement) {
-          console.log('✅ Found conversation element, clicking...');
-          convElement.click();
-          console.log('✅ Click triggered');
-          window.pendingConversationId = null; // Clear after opening
-        } else {
-          console.error('❌ Conversation element not found for ID:', window.pendingConversationId);
-          console.log('Available conversations:', data.conversations.map(c => c.id));
-          
-          // Try to find the conversation in the data
-          const conv = data.conversations.find(c => c.id == window.pendingConversationId);
-          if (conv) {
-            console.log('✅ Conversation exists in data:', conv);
-            console.log('❌ But element not found in DOM');
-          } else {
-            console.error('❌ Conversation not in loaded data');
-          }
-        }
+        displayConversations(data.conversations);
+        document.getElementById('conversationCount').textContent = data.conversations.length;
       } else {
-        console.log('ℹ️ No pending conversation to open');
+        throw new Error(data.error || 'Failed to load conversations');
       }
-      } else {
-      throw new Error(data.error || 'Failed to load conversations');
-      }
-      } catch (error) {
+    } catch (error) {
       console.error('Load conversations error:', error);
       listEl.innerHTML = `
       <div class="p-6 text-center text-gray-500">
@@ -882,17 +844,17 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
           <i class="fas fa-redo mr-2"></i>Retry
         </button>
       </div>
-      `;
-      } finally {
+    `;
+    } finally {
       loadingEl.classList.add('hidden');
-      }
-      }
+    }
+  }
 
-      // Display conversations in the sidebar with enhanced UI and unread counts
-      function displayConversations(conversations) {
-      const listEl = document.getElementById('conversationList');
+  // Display conversations in the sidebar with enhanced UI and unread counts
+  function displayConversations(conversations) {
+    const listEl = document.getElementById('conversationList');
 
-      if (conversations.length === 0) {
+    if (conversations.length === 0) {
       listEl.innerHTML = `
       <div class="p-8 text-center text-gray-500">
         <div class="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
@@ -903,11 +865,11 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
         <p class="font-semibold mb-2 text-gray-700">No conversations yet</p>
         <p class="text-sm text-gray-500">Start messaging by browsing listings</p>
       </div>
-      `;
+    `;
       return;
-      }
+    }
 
-      listEl.innerHTML = conversations.map(conv => {
+    listEl.innerHTML = conversations.map(conv => {
       const isActive = currentConversation == conv.id;
       const otherUser = conv.other_user_name;
       const otherUserPic = conv.other_user_profile_pic;
@@ -918,9 +880,9 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
         isActive 
           ? 'bg-blue-50 border-blue-500 shadow-md' 
           : 'bg-white border-transparent hover:border-blue-200 hover:shadow-sm hover:bg-gray-50'
-      }"
-        data-conversation-id="${conv.id}"
-        onclick="openConversation(${conv.id}, '${otherUser.replace(/'/g, "\\'")}', '${otherUserPic || ''}', ${conv.listing_id || 'null'})">
+      }" 
+           data-conversation-id="${conv.id}"
+           onclick="openConversation(${conv.id}, '${otherUser}', '${otherUserPic || ''}', ${conv.listing_id || 'null'})">
         <div class="flex items-center space-x-4">
           <div class="relative">
             ${getProfilePicHtml(otherUserPic, otherUser, 'w-14 h-14')}
@@ -938,26 +900,26 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
           </div>
         </div>
       </div>
-      `;
-      }).join('');
-      }
+    `;
+    }).join('');
+  }
 
-      // Load messages for a conversation
-      async function loadMessages(conversationId) {
-      const messagesEl = document.getElementById('chatMessages');
+  // Load messages for a conversation
+  async function loadMessages(conversationId) {
+    const messagesEl = document.getElementById('chatMessages');
 
-      try {
+    try {
       const response = await fetch(`${BASE}index.php?p=get_messages&conversation_id=${conversationId}`);
       if (!response.ok) throw new Error('Failed to load messages');
 
       const data = await response.json();
 
       if (data.success) {
-      displayMessages(data.messages);
+        displayMessages(data.messages);
       } else {
-      throw new Error(data.error || 'Failed to load messages');
+        throw new Error(data.error || 'Failed to load messages');
       }
-      } catch (error) {
+    } catch (error) {
       console.error('Load messages error:', error);
       messagesEl.innerHTML = `
       <div class="flex items-center justify-center h-full">
@@ -966,15 +928,15 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
           <button onclick="loadMessages(${conversationId})" class="mt-2 text-blue-600 hover:text-blue-800">Retry</button>
         </div>
       </div>
-      `;
-      }
-      }
+    `;
+    }
+  }
 
-      // Display messages in chat area
-      function displayMessages(messages) {
-      const messagesEl = document.getElementById('chatMessages');
+  // Display messages in chat area
+  function displayMessages(messages) {
+    const messagesEl = document.getElementById('chatMessages');
 
-      if (messages.length === 0) {
+    if (messages.length === 0) {
       messagesEl.innerHTML = `
       <div class="flex items-center justify-center h-full">
         <div class="text-center text-gray-500">
@@ -987,176 +949,176 @@ if (isset($_GET['seller_id']) && isset($_GET['listing_id'])) {
           <p class="text-sm mt-1">Start the conversation!</p>
         </div>
       </div>
-      `;
+    `;
       return;
-      }
+    }
 
-      messagesEl.innerHTML = messages.map(msg => {
+    messagesEl.innerHTML = messages.map(msg => {
       const isOwn = msg.sender_id == userId;
       return createMessageElement(msg, isOwn);
-      }).join('');
+    }).join('');
 
-      // Scroll to bottom
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-      }
+    // Scroll to bottom
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
 
-      // Generate enhanced profile picture HTML with actual image support
-      function getProfilePicHtml(profilePic, name, sizeClass = 'w-8 h-8') {
-      const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
+  // Generate enhanced profile picture HTML with actual image support
+  function getProfilePicHtml(profilePic, name, sizeClass = 'w-8 h-8') {
+    const initials = name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
 
-      // Check if profile picture exists and is valid
-      if (profilePic && profilePic.trim() !== '' && profilePic !== 'null' && profilePic !== 'undefined') {
+    // Check if profile picture exists and is valid
+    if (profilePic && profilePic.trim() !== '' && profilePic !== 'null' && profilePic !== 'undefined') {
       // Handle both relative and absolute URLs
       const imageUrl = profilePic.startsWith('http') ? profilePic : `${BASE}${profilePic}`;
 
       return `
       <div class="${sizeClass} rounded-full overflow-hidden flex-shrink-0 shadow-lg ring-2 ring-white bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 relative">
-        <img src="${imageUrl}"
-          alt="${name || 'User'}"
-          class="w-full h-full object-cover absolute inset-0"
-          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-          onload="this.nextElementSibling.style.display='none';">
+        <img src="${imageUrl}" 
+             alt="${name || 'User'}" 
+             class="w-full h-full object-cover absolute inset-0"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+             onload="this.nextElementSibling.style.display='none';">
         <div class="w-full h-full flex items-center justify-center absolute inset-0">
           <span class="text-white font-bold text-sm">${initials}</span>
         </div>
       </div>
-      `;
-      }
+    `;
+    }
 
-      // Fallback to initials when no profile picture
-      return `
-      <div class="${sizeClass} bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ring-2 ring-white">
-        <span class="text-white font-bold text-sm">${initials}</span>
-      </div>
-      `;
-      }
+    // Fallback to initials when no profile picture
+    return `
+    <div class="${sizeClass} bg-gradient-to-br from-blue-500 via-purple-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg ring-2 ring-white">
+      <span class="text-white font-bold text-sm">${initials}</span>
+    </div>
+  `;
+  }
 
-      // Format time (e.g., "2:30 PM")
-      function formatTime(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleTimeString('en-US', {
+  // Format time (e.g., "2:30 PM")
+  function formatTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true
-      });
-      }
+    });
+  }
 
-      // Format relative time (e.g., "2 hours ago")
-      function formatTimeAgo(dateString) {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
+  // Format relative time (e.g., "2 hours ago")
+  function formatTimeAgo(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
-      if (diffMins < 1) return 'Just now' ;
-        if (diffMins < 60) return `${diffMins}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
 
-        return formatDate(dateString);
-        }
+    return formatDate(dateString);
+  }
 
-        // Format date (e.g., "Jan 15" )
-        function formatDate(dateString) {
-        const date=new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-        month: 'short' ,
-        day: 'numeric'
-        });
-        }
+  // Format date (e.g., "Jan 15")
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  }
 
-        // Auto refresh every 10 seconds
-        setInterval(()=> {
-        if (currentConversation) {
-        loadMessages(currentConversation);
-        // Don't refresh conversations list while user is actively chatting
-        // to prevent unread badges from reappearing
-        } else {
-        // Only refresh conversations list when no conversation is active
-        loadConversations();
-        }
-        }, 10000);
+  // Auto refresh every 10 seconds
+  setInterval(() => {
+    if (currentConversation) {
+      loadMessages(currentConversation);
+      // Don't refresh conversations list while user is actively chatting
+      // to prevent unread badges from reappearing
+    } else {
+      // Only refresh conversations list when no conversation is active
+      loadConversations();
+    }
+  }, 10000);
 
-        // Function to update parent window sidebar (if in dashboard)
-        function updateParentSidebar() {
-        try {
-        // Try to call parent window function if it exists
-        if (window.parent && window.parent.updateSidebarMessageBadge) {
+  // Function to update parent window sidebar (if in dashboard)
+  function updateParentSidebar() {
+    try {
+      // Try to call parent window function if it exists
+      if (window.parent && window.parent.updateSidebarMessageBadge) {
         window.parent.updateSidebarMessageBadge();
-        }
-        // Also try direct function call if on same page
-        if (typeof updateSidebarMessageBadge === 'function') {
+      }
+      // Also try direct function call if on same page
+      if (typeof updateSidebarMessageBadge === 'function') {
         updateSidebarMessageBadge();
-        }
-        } catch (error) {
-        console.log('Could not update parent sidebar:', error);
-        }
-        }
+      }
+    } catch (error) {
+      console.log('Could not update parent sidebar:', error);
+    }
+  }
 
-        // Image modal functions (keep existing)
-        function openImageModal(imageSrc) {
-        document.getElementById('modalImage').src = imageSrc;
-        document.getElementById('imageModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        }
+  // Image modal functions (keep existing)
+  function openImageModal(imageSrc) {
+    document.getElementById('modalImage').src = imageSrc;
+    document.getElementById('imageModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
 
-        function closeImageModal() {
-        document.getElementById('imageModal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-        }
+  function closeImageModal() {
+    document.getElementById('imageModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  }
 
-        // Close modal on click outside or Escape key
-        document.getElementById('imageModal').addEventListener('click', function(e) {
-        if (e.target === this) closeImageModal();
-        });
+  // Close modal on click outside or Escape key
+  document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) closeImageModal();
+  });
 
-        document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeImageModal();
-        });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeImageModal();
+  });
 
-        // Message page sidebar toggle functionality
-        function toggleMessageSidebar() {
-        // Dispatch the same event that the navbar toggle uses
-        const toggleEvent = new CustomEvent('toggleSidebar', {
-        detail: {
+  // Message page sidebar toggle functionality
+  function toggleMessageSidebar() {
+    // Dispatch the same event that the navbar toggle uses
+    const toggleEvent = new CustomEvent('toggleSidebar', {
+      detail: {
         source: 'message-page'
-        }
-        });
-        window.dispatchEvent(toggleEvent);
-        console.log('🔘 Message page sidebar toggle clicked');
-        }
+      }
+    });
+    window.dispatchEvent(toggleEvent);
+    console.log('🔘 Message page sidebar toggle clicked');
+  }
 
-        // Hide the message page toggle button when sidebar is open on mobile
-        function updateMessageToggleVisibility() {
-        const messageToggle = document.getElementById('messageSidebarToggle');
-        const sidebar = document.getElementById('sidebar');
+  // Hide the message page toggle button when sidebar is open on mobile
+  function updateMessageToggleVisibility() {
+    const messageToggle = document.getElementById('messageSidebarToggle');
+    const sidebar = document.getElementById('sidebar');
 
-        if (messageToggle && sidebar && window.innerWidth < 1024) {
-          if (sidebar.classList.contains('show')) {
-          messageToggle.style.display='none' ;
-          } else {
-          messageToggle.style.display='flex' ;
-          }
-          }
-          }
+    if (messageToggle && sidebar && window.innerWidth < 1024) {
+      if (sidebar.classList.contains('show')) {
+        messageToggle.style.display = 'none';
+      } else {
+        messageToggle.style.display = 'flex';
+      }
+    }
+  }
 
-          // Listen for sidebar state changes
-          window.addEventListener('sidebarStateChanged', updateMessageToggleVisibility);
+  // Listen for sidebar state changes
+  window.addEventListener('sidebarStateChanged', updateMessageToggleVisibility);
 
-          // Check sidebar state on window resize
-          window.addEventListener('resize', ()=> {
-          const messageToggle = document.getElementById('messageSidebarToggle');
-          if (window.innerWidth >= 1024 && messageToggle) {
-          messageToggle.style.display = 'none';
-          } else if (window.innerWidth < 1024 && messageToggle) {
-            updateMessageToggleVisibility();
-            }
-            });
+  // Check sidebar state on window resize
+  window.addEventListener('resize', () => {
+    const messageToggle = document.getElementById('messageSidebarToggle');
+    if (window.innerWidth >= 1024 && messageToggle) {
+      messageToggle.style.display = 'none';
+    } else if (window.innerWidth < 1024 && messageToggle) {
+      updateMessageToggleVisibility();
+    }
+  });
 
-            // Initialize toggle button visibility
-            document.addEventListener('DOMContentLoaded', function() {
-            updateMessageToggleVisibility();
-            });
-            </script>
+  // Initialize toggle button visibility
+  document.addEventListener('DOMContentLoaded', function() {
+    updateMessageToggleVisibility();
+  });
+</script>

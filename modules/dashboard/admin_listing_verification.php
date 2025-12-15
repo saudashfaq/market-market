@@ -66,7 +66,7 @@ if ($status === 'approved') {
     createNotification(
         $listing['user_id'],
         'listing',
-        'Listing Approved! 🎉',
+        'Listing Approved',
         "Your listing '{$listing['name']}' has been approved and is now live",
         $id,
         'listing'
@@ -89,7 +89,7 @@ notifyAdminsListingStatus($id, $listing['name'], $status, $listing['seller_name'
 if ($isAjax) {
     // Clear any buffered output
     ob_clean();
-    
+
     // Send JSON response IMMEDIATELY
     $statusText = ($status === 'approved') ? 'approved and is now live' : 'rejected';
     $response = [
@@ -99,28 +99,28 @@ if ($isAjax) {
         'status' => $status,
         'message' => "Listing '{$listing['name']}' has been {$statusText}."
     ];
-    
+
     header('Content-Type: application/json');
     header('Content-Length: ' . strlen(json_encode($response)));
     header('Connection: close');
     echo json_encode($response);
-    
+
     // Flush and close connection
     if (ob_get_level() > 0) {
         ob_end_flush();
     }
     flush();
-    
+
     // Close session
     if (session_status() === PHP_SESSION_ACTIVE) {
         session_write_close();
     }
-    
+
     // Now send email in background after response is sent
     if (function_exists('fastcgi_finish_request')) {
         fastcgi_finish_request();
     }
-    
+
     // Email sending (this happens after response is sent to browser)
     try {
         if ($status === 'approved') {
@@ -143,7 +143,7 @@ if ($isAjax) {
     } catch (Exception $e) {
         error_log("Email sending failed: " . $e->getMessage());
     }
-    
+
     exit;
 } else {
     // Store success message in session

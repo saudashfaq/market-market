@@ -27,11 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = $result['message'];
         $messageType = $result['success'] ? 'success' : 'error';
     }
-    
+
     if (isset($_POST['update_settings'])) {
         try {
             $pdo->beginTransaction();
-            
+
             $settingsToUpdate = [
                 'bid_increment_type' => $_POST['bid_increment_type'] ?? 'fixed',
                 'bid_increment_fixed' => floatval($_POST['bid_increment_fixed'] ?? 10.00),
@@ -43,27 +43,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'down_payment_warning_threshold' => floatval($_POST['down_payment_warning_threshold'] ?? 10.00),
                 'default_reserved_amount_percentage' => floatval($_POST['default_reserved_amount_percentage'] ?? 0.00)
             ];
-            
+
             $stmt = $pdo->prepare("
                 INSERT INTO system_settings (setting_key, setting_value, updated_by) 
                 VALUES (?, ?, ?)
                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_by = VALUES(updated_by)
             ");
-            
+
             foreach ($settingsToUpdate as $key => $value) {
                 $stmt->execute([$key, $value, $userId]);
             }
-            
+
             log_action('system_settings_updated', 'SuperAdmin updated bidding system settings', 'admin', $userId);
-            
+
             $pdo->commit();
             $message = 'Settings updated successfully!';
             $messageType = 'success';
-            
+
             $stmt = $pdo->prepare("SELECT * FROM system_settings ORDER BY setting_key");
             $stmt->execute();
             $settings = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
         } catch (Exception $e) {
             $pdo->rollBack();
             $message = 'Error: ' . $e->getMessage();
@@ -109,7 +108,7 @@ try {
         $stats['with_reserve'] = $result['with_reserve'];
         $stats['avg_down_payment'] = $result['avg_down_payment'];
     }
-    
+
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM offers");
     $stats['total_offers'] = $stmt->fetchColumn();
 } catch (PDOException $e) {
@@ -143,12 +142,12 @@ foreach ($settings as $setting) {
     </div>
 
     <?php if ($message): ?>
-    <div class="mb-6 p-4 rounded-lg <?= $messageType === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800' ?>">
-        <div class="flex items-center gap-2">
-            <i class="fas fa-<?= $messageType === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
-            <span class="font-medium"><?= htmlspecialchars($message) ?></span>
+        <div class="mb-6 p-4 rounded-lg <?= $messageType === 'success' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800' ?>">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-<?= $messageType === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
+                <span class="font-medium"><?= htmlspecialchars($message) ?></span>
+            </div>
         </div>
-    </div>
     <?php endif; ?>
 
     <!-- Statistics Cards -->
@@ -218,7 +217,7 @@ foreach ($settings as $setting) {
                             <i class="fas fa-arrow-up text-blue-600"></i>
                             Bid Increment Settings
                         </h3>
-                        
+
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Increment Type</label>
@@ -248,7 +247,7 @@ foreach ($settings as $setting) {
                             <i class="fas fa-money-bill-wave text-green-600"></i>
                             Down Payment Settings
                         </h3>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Default (%)</label>
@@ -272,7 +271,7 @@ foreach ($settings as $setting) {
                             <i class="fas fa-clock text-purple-600"></i>
                             Auction Settings
                         </h3>
-                        
+
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Extension Time (min)</label>
@@ -380,81 +379,79 @@ foreach ($settings as $setting) {
 </div>
 
 <script>
-// Toggle increment type sections
-document.getElementById('bid_increment_type').addEventListener('change', function() {
-    const fixedSection = document.getElementById('fixed_increment_section');
-    const percentageSection = document.getElementById('percentage_increment_section');
-    
-    if (this.value === 'fixed') {
-        fixedSection.style.display = 'block';
-        percentageSection.style.display = 'none';
-    } else {
-        fixedSection.style.display = 'none';
-        percentageSection.style.display = 'block';
-    }
-});
+    // Toggle increment type sections
+    document.getElementById('bid_increment_type').addEventListener('change', function() {
+        const fixedSection = document.getElementById('fixed_increment_section');
+        const percentageSection = document.getElementById('percentage_increment_section');
 
-// Polling Integration
-console.log('🚀 Bidding Dashboard polling initialization started');
+        if (this.value === 'fixed') {
+            fixedSection.style.display = 'block';
+            percentageSection.style.display = 'none';
+        } else {
+            fixedSection.style.display = 'none';
+            percentageSection.style.display = 'block';
+        }
+    });
 
-if (typeof startPolling !== 'undefined') {
-    console.log('✅ Starting polling for bidding dashboard');
-    
-    try {
-        startPolling({
-            listings: (newListings) => {
-                if (newListings.length > 0) {
-                    console.log('📊 New listings detected:', newListings.length);
-                    
-                    // Update total listings count
-                    const totalListingsEl = document.getElementById('stat-total-listings');
-                    if (totalListingsEl) {
-                        const currentCount = parseInt(totalListingsEl.textContent.replace(/,/g, ''));
-                        totalListingsEl.textContent = (currentCount + newListings.length).toLocaleString();
-                        
-                        // Animate the update
-                        totalListingsEl.classList.add('animate-pulse');
-                        setTimeout(() => totalListingsEl.classList.remove('animate-pulse'), 1000);
+    // Polling Integration
+    console.log('🚀 Bidding Dashboard polling initialization started');
+
+    if (typeof startPolling !== 'undefined') {
+        console.log('✅ Starting polling for bidding dashboard');
+
+        try {
+            startPolling({
+                listings: (newListings) => {
+                    if (newListings.length > 0) {
+                        console.log('📊 New listings detected:', newListings.length);
+
+                        // Update total listings count
+                        const totalListingsEl = document.getElementById('stat-total-listings');
+                        if (totalListingsEl) {
+                            const currentCount = parseInt(totalListingsEl.textContent.replace(/,/g, ''));
+                            totalListingsEl.textContent = (currentCount + newListings.length).toLocaleString();
+
+                            // Animate the update
+                            totalListingsEl.classList.add('animate-pulse');
+                            setTimeout(() => totalListingsEl.classList.remove('animate-pulse'), 1000);
+                        }
+
+                        // Count listings with reserve
+                        const withReserve = newListings.filter(l => l.reserved_amount && l.reserved_amount > 0).length;
+                        if (withReserve > 0) {
+                            const withReserveEl = document.getElementById('stat-with-reserve');
+                            if (withReserveEl) {
+                                const currentCount = parseInt(withReserveEl.textContent.replace(/,/g, ''));
+                                withReserveEl.textContent = (currentCount + withReserve).toLocaleString();
+                                withReserveEl.classList.add('animate-pulse');
+                                setTimeout(() => withReserveEl.classList.remove('animate-pulse'), 1000);
+                            }
+                        }
                     }
-                    
-                    // Count listings with reserve
-                    const withReserve = newListings.filter(l => l.reserved_amount && l.reserved_amount > 0).length;
-                    if (withReserve > 0) {
-                        const withReserveEl = document.getElementById('stat-with-reserve');
-                        if (withReserveEl) {
-                            const currentCount = parseInt(withReserveEl.textContent.replace(/,/g, ''));
-                            withReserveEl.textContent = (currentCount + withReserve).toLocaleString();
-                            withReserveEl.classList.add('animate-pulse');
-                            setTimeout(() => withReserveEl.classList.remove('animate-pulse'), 1000);
+                },
+                offers: (newOffers) => {
+                    if (newOffers.length > 0) {
+                        console.log('💰 New offers detected:', newOffers.length);
+
+                        // Update total offers count
+                        const totalOffersEl = document.getElementById('stat-total-offers');
+                        if (totalOffersEl) {
+                            const currentCount = parseInt(totalOffersEl.textContent.replace(/,/g, ''));
+                            totalOffersEl.textContent = (currentCount + newOffers.length).toLocaleString();
+
+                            // Animate the update
+                            totalOffersEl.classList.add('animate-pulse');
+                            setTimeout(() => totalOffersEl.classList.remove('animate-pulse'), 1000);
                         }
                     }
                 }
-            },
-            offers: (newOffers) => {
-                if (newOffers.length > 0) {
-                    console.log('💰 New offers detected:', newOffers.length);
-                    
-                    // Update total offers count
-                    const totalOffersEl = document.getElementById('stat-total-offers');
-                    if (totalOffersEl) {
-                        const currentCount = parseInt(totalOffersEl.textContent.replace(/,/g, ''));
-                        totalOffersEl.textContent = (currentCount + newOffers.length).toLocaleString();
-                        
-                        // Animate the update
-                        totalOffersEl.classList.add('animate-pulse');
-                        setTimeout(() => totalOffersEl.classList.remove('animate-pulse'), 1000);
-                    }
-                }
-            }
-        });
-        
-        console.log('✅ Polling started successfully for Bidding Dashboard');
-    } catch (error) {
-        console.error('❌ Error starting polling:', error);
+            });
+
+            console.log('✅ Polling started successfully for Bidding Dashboard');
+        } catch (error) {
+            console.error('❌ Error starting polling:', error);
+        }
+    } else {
+        console.warn('⚠️ startPolling function not found - polling.js may not be loaded');
     }
-} else {
-    console.warn('⚠️ startPolling function not found - polling.js may not be loaded');
-}
-
 </script>
-

@@ -1,38 +1,37 @@
-
 <?php
 // Check for export FIRST - before any output
 if (isset($_GET['export'])) {
-    require_once __DIR__ . '/../../config.php';
-    require_once __DIR__ . '/../../includes/export_helper.php';
-    
-    // Suppress any output
-    ob_start();
-    require_login();
-    ob_end_clean();
-    
-    $pdo = db();
-    
-    $search = $_GET['search'] ?? '';
-    $status = $_GET['status'] ?? '';
-    $type = $_GET['type'] ?? '';
-    
-    $whereClause = 'WHERE 1=1';
-    $params = [];
-    
-    if ($search) {
-        $whereClause .= ' AND (buyer_name LIKE :search OR seller_name LIKE :search OR transaction_id LIKE :search)';
-        $params[':search'] = '%' . $search . '%';
-    }
-    if ($status) {
-        $whereClause .= ' AND status = :status';
-        $params[':status'] = $status;
-    }
-    if ($type) {
-        $whereClause .= ' AND type = :type';
-        $params[':type'] = $type;
-    }
-    
-    $sql = "
+  require_once __DIR__ . '/../../config.php';
+  require_once __DIR__ . '/../../includes/export_helper.php';
+
+  // Suppress any output
+  ob_start();
+  require_login();
+  ob_end_clean();
+
+  $pdo = db();
+
+  $search = $_GET['search'] ?? '';
+  $status = $_GET['status'] ?? '';
+  $type = $_GET['type'] ?? '';
+
+  $whereClause = 'WHERE 1=1';
+  $params = [];
+
+  if ($search) {
+    $whereClause .= ' AND (buyer_name LIKE :search OR seller_name LIKE :search OR transaction_id LIKE :search)';
+    $params[':search'] = '%' . $search . '%';
+  }
+  if ($status) {
+    $whereClause .= ' AND status = :status';
+    $params[':status'] = $status;
+  }
+  if ($type) {
+    $whereClause .= ' AND type = :type';
+    $params[':type'] = $type;
+  }
+
+  $sql = "
         SELECT 
             p.id,
             p.transaction_id,
@@ -49,16 +48,16 @@ if (isset($_GET['export'])) {
         $whereClause
         ORDER BY p.created_at DESC
     ";
-    
-    try {
-        $exportStmt = $pdo->prepare($sql);
-        $exportStmt->execute($params);
-        $exportData = $exportStmt->fetchAll(PDO::FETCH_ASSOC);
-        handleExportRequest($exportData, 'Payments Report');
-    } catch (Exception $e) {
-        die('Export error: ' . $e->getMessage());
-    }
-    exit;
+
+  try {
+    $exportStmt = $pdo->prepare($sql);
+    $exportStmt->execute($params);
+    $exportData = $exportStmt->fetchAll(PDO::FETCH_ASSOC);
+    handleExportRequest($exportData, 'Payments Report');
+  } catch (Exception $e) {
+    die('Export error: ' . $e->getMessage());
+  }
+  exit;
 }
 
 // Normal page load
@@ -93,33 +92,33 @@ if ($status) $filters[] = "Status: {$status}";
 if ($type) $filters[] = "Type: {$type}";
 $filterStr = !empty($filters) ? implode(', ', $filters) : 'No filters';
 log_action(
-    "Admin Payments Accessed",
-    "Filters: {$filterStr}",
-    "payment",
-    $user['id'],
-    $user['role']
+  "Admin Payments Accessed",
+  "Filters: {$filterStr}",
+  "payment",
+  $user['id'],
+  $user['role']
 );
 
 // Try to get real payment data from database
 try {
-    $whereClause = 'WHERE 1=1';
-    $params = [];
+  $whereClause = 'WHERE 1=1';
+  $params = [];
 
-    if ($search) {
-        $whereClause .= ' AND (buyer_name LIKE :search OR seller_name LIKE :search OR transaction_id LIKE :search)';
-        $params[':search'] = '%' . $search . '%';
-    }
-    if ($status) {
-        $whereClause .= ' AND status = :status';
-        $params[':status'] = $status;
-    }
-    if ($type) {
-        $whereClause .= ' AND type = :type';
-        $params[':type'] = $type;
-    }
+  if ($search) {
+    $whereClause .= ' AND (buyer_name LIKE :search OR seller_name LIKE :search OR transaction_id LIKE :search)';
+    $params[':search'] = '%' . $search . '%';
+  }
+  if ($status) {
+    $whereClause .= ' AND status = :status';
+    $params[':status'] = $status;
+  }
+  if ($type) {
+    $whereClause .= ' AND type = :type';
+    $params[':type'] = $type;
+  }
 
-    // Try to get payments data
-    $sql = "
+  // Try to get payments data
+  $sql = "
         SELECT 
             p.id,
             p.transaction_id,
@@ -137,75 +136,63 @@ try {
         ORDER BY p.created_at DESC
     ";
 
-    $countSql = "
+  $countSql = "
         SELECT COUNT(*) as total
         FROM payments p
         LEFT JOIN users b ON p.buyer_id = b.id
         LEFT JOIN users s ON p.seller_id = s.id
         $whereClause
     ";
-    
-    $result = getCustomPaginationData($pdo, $sql, $countSql, $params, $page, $perPage);
-    $payments = $result['data'];
-    $pagination = $result['pagination'];
 
+  $result = getCustomPaginationData($pdo, $sql, $countSql, $params, $page, $perPage);
+  $payments = $result['data'];
+  $pagination = $result['pagination'];
 } catch (Exception $e) {
-    // If payments table doesn't exist, show empty state
-    $payments = [];
-    $pagination = [
-        'current_page' => 1,
-        'per_page' => $perPage,
-        'total_items' => 0,
-        'total_pages' => 0,
-        'has_prev' => false,
-        'has_next' => false,
-        'prev_page' => null,
-        'next_page' => null,
-        'start_item' => 0,
-        'end_item' => 0
-    ];
+  // If payments table doesn't exist, show empty state
+  $payments = [];
+  $pagination = [
+    'current_page' => 1,
+    'per_page' => $perPage,
+    'total_items' => 0,
+    'total_pages' => 0,
+    'has_prev' => false,
+    'has_next' => false,
+    'prev_page' => null,
+    'next_page' => null,
+    'start_item' => 0,
+    'end_item' => 0
+  ];
 }
 ?>
 
+<style>
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payments & Escrow Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    body {
-      font-family: 'Inter', sans-serif;
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .table-container table {
+    min-width: 900px;
+  }
+
+  .hover-row:hover {
+    background-color: #f9fafb;
+  }
+
+  @media (max-width: 768px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
     }
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.375rem 0.75rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 500;
-    }
-    .table-container {
-      overflow-x: auto;
-    }
-    .table-container table {
-      min-width: 900px;
-    }
-    .hover-row:hover {
-      background-color: #f9fafb;
-    }
-    @media (max-width: 768px) {
-      .stats-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-</head>
-<body class="bg-gray-50">
+  }
+</style>
 
 <div class="max-w-7xl mx-auto p-4 md:p-6">
   <!-- Header -->
@@ -227,17 +214,17 @@ try {
   <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
     <form method="GET" class="flex flex-wrap gap-4 items-end">
       <input type="hidden" name="p" value="dashboard">
-      <input type="hidden" name="page" value="adminpayments">
-      
+      <input type="hidden" name="page" value="adminPayments">
+
       <div class="flex-1 min-w-[200px]">
         <label class="block text-sm font-medium text-gray-700 mb-2">
           <i class="fa fa-search mr-1"></i>Search Payments
         </label>
-        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" 
-               placeholder="Search by transaction ID, buyer, or seller..." 
-               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>"
+          placeholder="Search by transaction ID, buyer, or seller..."
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
       </div>
-      
+
       <div class="min-w-[150px]">
         <label class="block text-sm font-medium text-gray-700 mb-2">
           <i class="fa fa-filter mr-1"></i>Status
@@ -251,7 +238,7 @@ try {
           <option value="refunded" <?= $status === 'refunded' ? 'selected' : '' ?>>Refunded</option>
         </select>
       </div>
-      
+
       <div class="min-w-[150px]">
         <label class="block text-sm font-medium text-gray-700 mb-2">
           <i class="fa fa-exchange-alt mr-1"></i>Type
@@ -263,12 +250,12 @@ try {
           <option value="payout" <?= $type === 'payout' ? 'selected' : '' ?>>Payout</option>
         </select>
       </div>
-      
+
       <div class="flex gap-2">
         <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
           <i class="fa fa-search mr-2"></i>Filter
         </button>
-        <a href="?p=dashboard&page=adminpayments" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center">
+        <a href="?p=dashboard&page=adminPayments" class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors flex items-center">
           <i class="fa fa-times mr-2"></i>Clear
         </a>
       </div>
@@ -345,7 +332,7 @@ try {
         </button>
       </div>
     </div>
-    
+
     <div class="table-container">
       <table class="w-full text-sm">
         <thead>
@@ -416,8 +403,8 @@ try {
                   <h3 class="text-lg font-medium text-gray-700 mb-2">No payments found</h3>
                   <?php if ($search || $status || $type): ?>
                     <p class="text-gray-500 mb-4">No payment records match your search criteria.</p>
-                    <a href="?p=dashboard&page=adminpayments" 
-                       class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+                    <a href="?p=dashboard&page=adminPayments"
+                      class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
                       <i class="fas fa-times mr-2"></i> Clear Filters
                     </a>
                   <?php else: ?>
@@ -437,17 +424,17 @@ try {
         </tbody>
       </table>
     </div>
-    
+
 
     <!-- Pagination -->
     <div class="mt-6 pt-4 border-t border-gray-200">
-      <?php 
-      $extraParams = ['p' => 'dashboard', 'page' => 'adminpayments'];
+      <?php
+      $extraParams = ['p' => 'dashboard', 'page' => 'adminPayments'];
       if ($search) $extraParams['search'] = $search;
       if ($status) $extraParams['status'] = $status;
       if ($type) $extraParams['type'] = $type;
-      
-      echo renderPagination($pagination, url('index.php'), $extraParams, 'pg'); 
+
+      echo renderPagination($pagination, url('index.php'), $extraParams, 'pg');
       ?>
 
     </div>
@@ -512,67 +499,3 @@ try {
     </div>
   </div>
 </div>
-
-
-<script>
-// Ensure API_BASE_PATH is set
-// Use PathUtils for API base path
-if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
-  window.API_BASE_PATH = BASE + 'api';
-  console.log('🔧 API_BASE_PATH:', window.API_BASE_PATH);
-}
-</script>
-<script src="<?= BASE ?>js/polling.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Admin Payments polling initialization started');
-  
-  if (typeof startPolling === 'undefined') {
-    console.error('❌ Polling system not loaded');
-    return;
-  }
-  
-  startPolling({
-    orders: (newOrders) => {
-      console.log('💳 New orders detected:', newOrders.length);
-      if (newOrders.length > 0) {
-        // Show notification
-        showNotification(`${newOrders.length} new payment(s) received`, 'success');
-        
-        // Optionally reload the page to show new payments
-        setTimeout(() => {
-          location.reload();
-        }, 2000);
-      }
-    }
-  });
-  
-  function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    const colors = {
-      info: 'bg-blue-500',
-      success: 'bg-green-500',
-      warning: 'bg-yellow-500',
-      error: 'bg-red-500'
-    };
-    
-    notification.className = `fixed top-4 right-4 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in`;
-    notification.innerHTML = `
-      <div class="flex items-center gap-2">
-        <i class="fas fa-${type === 'success' ? 'check' : 'info'}-circle"></i>
-        <span>${message}</span>
-      </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
-  }
-});
-</script>
-
-</body>
-</html>

@@ -10,6 +10,5 @@ if (isset($_GET['id'])) {
   setSuccessMessage("Label deleted successfully!");
 }
 
-header("Location: index.php?p=dashboard&page=categories");
+header("Location: " . url("public/index.php?p=dashboard&page=categories"));
 exit;
-?>

@@ -1,14 +1,6 @@
 <?php
-// Clean output buffer to prevent any whitespace/errors before JSON
-ob_start();
-
 require_once __DIR__ . '/../../config.php';
 require_once __DIR__ . '/../../middlewares/auth.php';
-
-// Clear any output from includes and restart buffer
-ob_end_clean();
-ob_start();
-
 require_login();
 
 $pdo = db();
@@ -32,13 +24,8 @@ $stmt->execute([$conversation_id]);
 
 $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Clear any output that might have been generated
-ob_clean();
-
 echo json_encode([
     'success' => true,
     'messages' => $messages
 ]);
-
-ob_end_flush();
 exit;

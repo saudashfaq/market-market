@@ -605,10 +605,11 @@ try {
   </div>
 </section>
 
-<script>
-  // Define BASE constant for JavaScript
-  // BASE constant is defined in dashboard.php
 
+<!-- Polling Integration Scripts -->
+<!-- Polling Integration Scripts removed (loaded in dashboard.php) -->
+
+<script>
   // Global toggleDetails function
   function toggleDetails(button) {
     const detailsCell = button.closest('td');
@@ -913,31 +914,63 @@ try {
       }
     }
 
+    // Ensure API_BASE_PATH is set
+    if (!window.API_BASE_PATH) {
+      const path = window.location.pathname;
+      window.API_BASE_PATH = (path.includes('/marketplace/') ? '/marketplace' : '') + '/api';
+      console.log('🔧 [Audit] API_BASE_PATH:', window.API_BASE_PATH);
+    }
+
+    // Function to add new logs to table
+    function addNewLogs(newLogs) {
+      console.log('📝 Adding', newLogs.length, 'new logs to table');
+
+      const tbody = document.getElementById('logs-table-body');
+      if (!tbody) {
+        console.warn('⚠️ Logs table body not found');
+        return;
+      }
+
+      // Remove "no logs" message if present
+      const noLogsRow = document.getElementById('no-logs-row');
+      if (noLogsRow) {
+        noLogsRow.remove();
+      }
+
+      // Add new logs to top of table
+      newLogs.forEach(log => {
+        const rowHTML = createLogRow(log);
+        tbody.insertAdjacentHTML('afterbegin', rowHTML);
+      });
+
+      // Remove highlight after 5 seconds
+      setTimeout(() => {
+        const newRows = tbody.querySelectorAll('.bg-blue-50');
+        newRows.forEach(row => row.classList.remove('bg-blue-50'));
+      }, 5000);
+
+      // Keep only last 50 rows
+      while (tbody.children.length > 50) {
+        tbody.removeChild(tbody.lastChild);
+      }
+
+      // Update total count
+      updateTotalCount(newLogs.length);
+    }
+
+    // Function "updateTotalCount" is already defined above at line 801
+
+
     // Load polling.js and start polling
     console.log('📦 Loading polling.js for audit logs...');
 
     // Check if polling.js is already loaded
-    if (typeof startPolling === 'undefined') {
-      const script = document.createElement('script');
-      script.src = BASE + 'js/polling.js';
-
-      script.onload = function() {
-        console.log('✅ polling.js loaded for audit page');
-        initializePolling();
-      };
-
-      script.onerror = function() {
-        console.error('❌ Failed to load polling.js');
-        // Retry after 5 seconds
-        setTimeout(() => {
-          console.log('🔄 Retrying to load polling.js...');
-          document.head.appendChild(script.cloneNode(true));
-        }, 5000);
-      };
-
-      document.head.appendChild(script);
+    // Initialize polling directly
+    if (typeof initializePolling === 'function') {
+      initializePolling();
     } else {
-      console.log('✅ polling.js already loaded');
+      // If function not hoisted or defined yet, wait or call it where defined
+      // Since it is defined below as function declaration, it should be hoisted.
       initializePolling();
     }
 
@@ -1103,4 +1136,6 @@ try {
     background-color: #eff6ff;
     border-left: 4px solid #3b82f6;
   }
+</style>
+
 </style>

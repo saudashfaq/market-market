@@ -1,19 +1,19 @@
 <?php
 // Check for export FIRST - before any output
 if (isset($_GET['export'])) {
-    require_once __DIR__ . '/../../config.php';
-    require_once __DIR__ . '/../../includes/export_helper.php';
-    
-    ob_start();
-    require_login();
-    ob_end_clean();
-    
-    $pdo = db();
-    $activeTab = $_GET['tab'] ?? 'offers';
-    
-    if ($activeTab === 'offers') {
-        // Export offers
-        $exportSql = "
+  require_once __DIR__ . '/../../config.php';
+  require_once __DIR__ . '/../../includes/export_helper.php';
+
+  ob_start();
+  require_login();
+  ob_end_clean();
+
+  $pdo = db();
+  $activeTab = $_GET['tab'] ?? 'offers';
+
+  if ($activeTab === 'offers') {
+    // Export offers
+    $exportSql = "
             SELECT o.id, o.amount, o.status, o.created_at, o.message,
                    l.name AS listing_name, l.asking_price,
                    b.name AS buyer_name, b.email AS buyer_email
@@ -22,10 +22,10 @@ if (isset($_GET['export'])) {
             LEFT JOIN users b ON o.user_id = b.id
             ORDER BY o.created_at DESC
         ";
-        $title = 'Offers Report';
-    } else {
-        // Export orders
-        $exportSql = "
+    $title = 'Offers Report';
+  } else {
+    // Export orders
+    $exportSql = "
             SELECT ord.id, ord.amount, ord.platform_fee, ord.total, ord.status, ord.created_at,
                    b.name AS buyer_name, b.email AS buyer_email,
                    s.name AS seller_name, s.email AS seller_email
@@ -34,14 +34,14 @@ if (isset($_GET['export'])) {
             LEFT JOIN users s ON ord.seller_id = s.id
             ORDER BY ord.created_at DESC
         ";
-        $title = 'Orders Report';
-    }
-    
-    $exportStmt = $pdo->query($exportSql);
-    $exportData = $exportStmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    handleExportRequest($exportData, $title);
-    exit;
+    $title = 'Orders Report';
+  }
+
+  $exportStmt = $pdo->query($exportSql);
+  $exportData = $exportStmt->fetchAll(PDO::FETCH_ASSOC);
+
+  handleExportRequest($exportData, $title);
+  exit;
 }
 
 require_once __DIR__ . '/../../config.php';
@@ -58,13 +58,13 @@ $pdo = db();
 // ========== MAIN CODE ==========
 // Simple debug check
 try {
-    $testOffers = $pdo->query("SELECT COUNT(*) FROM offers")->fetchColumn();
-    $testOrders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
-    // Uncomment for debugging: echo "<!-- Debug: Offers: $testOffers, Orders: $testOrders -->";
+  $testOffers = $pdo->query("SELECT COUNT(*) FROM offers")->fetchColumn();
+  $testOrders = $pdo->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+  // Uncomment for debugging: echo "<!-- Debug: Offers: $testOffers, Orders: $testOrders -->";
 } catch (Exception $e) {
-    // Tables might not exist
-    $testOffers = 0;
-    $testOrders = 0;
+  // Tables might not exist
+  $testOffers = 0;
+  $testOrders = 0;
 }
 
 // Get pagination parameters
@@ -81,21 +81,21 @@ $whereClause = '';
 $params = [];
 
 if ($search) {
-    if ($activeTab === 'offers') {
-        $whereClause .= ' AND (l.name LIKE :search OR b.name LIKE :search OR b.email LIKE :search)';
-    } else {
-        $whereClause .= ' AND (b.name LIKE :search OR b.email LIKE :search OR s.name LIKE :search OR s.email LIKE :search)';
-    }
-    $params[':search'] = '%' . $search . '%';
+  if ($activeTab === 'offers') {
+    $whereClause .= ' AND (l.name LIKE :search OR b.name LIKE :search OR b.email LIKE :search)';
+  } else {
+    $whereClause .= ' AND (b.name LIKE :search OR b.email LIKE :search OR s.name LIKE :search OR s.email LIKE :search)';
+  }
+  $params[':search'] = '%' . $search . '%';
 }
 
 if ($status) {
-    if ($activeTab === 'offers') {
-        $whereClause .= ' AND o.status = :status';
-    } else {
-        $whereClause .= ' AND ord.status = :status';
-    }
-    $params[':status'] = $status;
+  if ($activeTab === 'offers') {
+    $whereClause .= ' AND o.status = :status';
+  } else {
+    $whereClause .= ' AND ord.status = :status';
+  }
+  $params[':status'] = $status;
 }
 
 // Check if offers table exists and has data
@@ -106,16 +106,16 @@ $totalOffers = 0;
 $pendingOffers = 0;
 
 try {
-    // Check if offers table exists and has data
-    $checkOffersStmt = $pdo->query("SELECT COUNT(*) FROM offers");
-    $totalOffersCount = $checkOffersStmt->fetchColumn();
-    
-    if ($totalOffersCount > 0) {
-        $hasOffersData = true;
-        
-        // 🧠 Fetch Offers with pagination
-        if ($activeTab === 'offers') {
-            $offersSql = "
+  // Check if offers table exists and has data
+  $checkOffersStmt = $pdo->query("SELECT COUNT(*) FROM offers");
+  $totalOffersCount = $checkOffersStmt->fetchColumn();
+
+  if ($totalOffersCount > 0) {
+    $hasOffersData = true;
+
+    // 🧠 Fetch Offers with pagination
+    if ($activeTab === 'offers') {
+      $offersSql = "
               SELECT 
                 o.id AS offer_id,
                 o.amount,
@@ -132,41 +132,41 @@ try {
               WHERE 1=1 $whereClause
               ORDER BY o.created_at DESC
             ";
-            
-            $offersCountSql = "
+
+      $offersCountSql = "
               SELECT COUNT(*) as total
               FROM offers o
               LEFT JOIN listings l ON o.listing_id = l.id
               LEFT JOIN users b ON o.user_id = b.id
               WHERE 1=1 $whereClause
             ";
-            
-            try {
-                $offersResult = getCustomPaginationData($pdo, $offersSql, $offersCountSql, $params, $page, $perPage);
-                $offers = $offersResult['data'];
-                $offersPagination = $offersResult['pagination'];
-            } catch (Exception $e) {
-                $offers = [];
-                $offersPagination = null;
-                error_log("Offers query failed: " . $e->getMessage());
-            }
-        }
-        
-        // Get total offers for stats
-        try {
-            $totalOffersStmt = $pdo->query("SELECT COUNT(*) as total FROM offers");
-            $totalOffers = $totalOffersStmt->fetch()['total'];
-            $pendingOffersStmt = $pdo->query("SELECT COUNT(*) as total FROM offers WHERE status = 'pending'");
-            $pendingOffers = $pendingOffersStmt->fetch()['total'];
-        } catch (Exception $e) {
-            $totalOffers = 0;
-            $pendingOffers = 0;
-        }
+
+      try {
+        $offersResult = getCustomPaginationData($pdo, $offersSql, $offersCountSql, $params, $page, $perPage);
+        $offers = $offersResult['data'];
+        $offersPagination = $offersResult['pagination'];
+      } catch (Exception $e) {
+        $offers = [];
+        $offersPagination = null;
+        error_log("Offers query failed: " . $e->getMessage());
+      }
     }
+
+    // Get total offers for stats
+    try {
+      $totalOffersStmt = $pdo->query("SELECT COUNT(*) as total FROM offers");
+      $totalOffers = $totalOffersStmt->fetch()['total'];
+      $pendingOffersStmt = $pdo->query("SELECT COUNT(*) as total FROM offers WHERE status = 'pending'");
+      $pendingOffers = $pendingOffersStmt->fetch()['total'];
+    } catch (Exception $e) {
+      $totalOffers = 0;
+      $pendingOffers = 0;
+    }
+  }
 } catch (Exception $e) {
-    // Table doesn't exist or error occurred - no data available
-    $hasOffersData = false;
-    // Error handled silently
+  // Table doesn't exist or error occurred - no data available
+  $hasOffersData = false;
+  // Error handled silently
 }
 
 // Check if orders table exists and has data
@@ -177,16 +177,16 @@ $totalOrders = 0;
 $completedOrders = 0;
 
 try {
-    // Check if orders table exists and has data
-    $checkOrdersStmt = $pdo->query("SELECT COUNT(*) FROM orders");
-    $totalOrdersCount = $checkOrdersStmt->fetchColumn();
-    
-    if ($totalOrdersCount > 0) {
-        $hasOrdersData = true;
-        
-        // Fetch Orders with pagination
-        if ($activeTab === 'orders') {
-            $ordersSql = "
+  // Check if orders table exists and has data
+  $checkOrdersStmt = $pdo->query("SELECT COUNT(*) FROM orders");
+  $totalOrdersCount = $checkOrdersStmt->fetchColumn();
+
+  if ($totalOrdersCount > 0) {
+    $hasOrdersData = true;
+
+    // Fetch Orders with pagination
+    if ($activeTab === 'orders') {
+      $ordersSql = "
               SELECT 
                 ord.id AS order_id,
                 ord.amount,
@@ -204,64 +204,64 @@ try {
               WHERE 1=1 $whereClause
               ORDER BY ord.created_at DESC
             ";
-            
-            $ordersCountSql = "
+
+      $ordersCountSql = "
               SELECT COUNT(*) as total
               FROM orders ord
               LEFT JOIN users b ON ord.buyer_id = b.id
               LEFT JOIN users s ON ord.seller_id = s.id
               WHERE 1=1 $whereClause
             ";
-            
-            try {
-                $ordersResult = getCustomPaginationData($pdo, $ordersSql, $ordersCountSql, $params, $page, $perPage);
-                $orders = $ordersResult['data'];
-                $ordersPagination = $ordersResult['pagination'];
-            } catch (Exception $e) {
-                $orders = [];
-                $ordersPagination = null;
-                error_log("Orders query failed: " . $e->getMessage());
-            }
-        }
-        
-        // Get total orders for stats
-        try {
-            $totalOrdersStmt = $pdo->query("SELECT COUNT(*) as total FROM orders");
-            $totalOrders = $totalOrdersStmt->fetch()['total'];
-            $completedOrdersStmt = $pdo->query("SELECT COUNT(*) as total FROM orders WHERE status = 'completed'");
-            $completedOrders = $completedOrdersStmt->fetch()['total'];
-        } catch (Exception $e) {
-            $totalOrders = 0;
-            $completedOrders = 0;
-        }
+
+      try {
+        $ordersResult = getCustomPaginationData($pdo, $ordersSql, $ordersCountSql, $params, $page, $perPage);
+        $orders = $ordersResult['data'];
+        $ordersPagination = $ordersResult['pagination'];
+      } catch (Exception $e) {
+        $orders = [];
+        $ordersPagination = null;
+        error_log("Orders query failed: " . $e->getMessage());
+      }
     }
+
+    // Get total orders for stats
+    try {
+      $totalOrdersStmt = $pdo->query("SELECT COUNT(*) as total FROM orders");
+      $totalOrders = $totalOrdersStmt->fetch()['total'];
+      $completedOrdersStmt = $pdo->query("SELECT COUNT(*) as total FROM orders WHERE status = 'completed'");
+      $completedOrders = $completedOrdersStmt->fetch()['total'];
+    } catch (Exception $e) {
+      $totalOrders = 0;
+      $completedOrders = 0;
+    }
+  }
 } catch (Exception $e) {
-    // Table doesn't exist or error occurred - no data available
-    $hasOrdersData = false;
-    // Error handled silently
+  // Table doesn't exist or error occurred - no data available
+  $hasOrdersData = false;
+  // Error handled silently
 }
 
 // Get stats for both tabs if not already set
 if ($activeTab === 'offers' && !$hasOrdersData) {
-    try {
-        $totalOrdersStmt = $pdo->query("SELECT COUNT(*) as total FROM orders");
-        $totalOrders = $totalOrdersStmt->fetch()['total'];
-        $completedOrdersStmt = $pdo->query("SELECT COUNT(*) as total FROM orders WHERE status = 'completed'");
-        $completedOrders = $completedOrdersStmt->fetch()['total'];
-    } catch (Exception $e) {
-        $totalOrders = 0;
-        $completedOrders = 0;
-    }
+  try {
+    $totalOrdersStmt = $pdo->query("SELECT COUNT(*) as total FROM orders");
+    $totalOrders = $totalOrdersStmt->fetch()['total'];
+    $completedOrdersStmt = $pdo->query("SELECT COUNT(*) as total FROM orders WHERE status = 'completed'");
+    $completedOrders = $completedOrdersStmt->fetch()['total'];
+  } catch (Exception $e) {
+    $totalOrders = 0;
+    $completedOrders = 0;
+  }
 } elseif ($activeTab === 'orders' && !$hasOffersData) {
-    try {
-        $totalOffersStmt = $pdo->query("SELECT COUNT(*) as total FROM offers");
-        $totalOffers = $totalOffersStmt->fetch()['total'];
-        $pendingOffersStmt = $pdo->query("SELECT COUNT(*) as total FROM offers WHERE status = 'pending'");
-        $pendingOffers = $pendingOffersStmt->fetch()['total'];
-    } catch (Exception $e) {
-        $totalOffers = 0;
-        $pendingOffers = 0;
-    }
+  try {
+    $totalOffersStmt = $pdo->query("SELECT COUNT(*) as total FROM offers");
+    $totalOffers = $totalOffersStmt->fetch()['total'];
+    $pendingOffersStmt = $pdo->query("SELECT COUNT(*) as total FROM offers WHERE status = 'pending'");
+    $pendingOffers = $pendingOffersStmt->fetch()['total'];
+  } catch (Exception $e) {
+    $totalOffers = 0;
+    $pendingOffers = 0;
+  }
 }
 
 // Determine if we should show empty state
@@ -277,48 +277,49 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
         <p class="text-gray-600 mt-1">Manage and track all offers and transactions</p>
       </div>
       <?php if (!$showEmptyState): ?>
-      <div class="flex items-center gap-3">
-        <?php require_once __DIR__ . '/../../includes/export_helper.php'; echo getExportButton($activeTab === 'offers' ? 'offers' : 'orders'); ?>
-        <form method="GET" class="flex items-center gap-3">
-          <input type="hidden" name="p" value="dashboard">
-          <input type="hidden" name="page" value="superAdminOffers">
-          <input type="hidden" name="tab" value="<?= htmlspecialchars($activeTab) ?>">
-          
-          <div class="relative">
-            <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Search..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 w-64">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          
-          <select name="status" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            <option value="">All Status</option>
-            <?php if ($activeTab === 'offers'): ?>
-              <option value="pending" <?= $status === 'pending' ? 'selected' : '' ?>>Pending</option>
-              <option value="accepted" <?= $status === 'accepted' ? 'selected' : '' ?>>Accepted</option>
-              <option value="rejected" <?= $status === 'rejected' ? 'selected' : '' ?>>Rejected</option>
-            <?php else: ?>
-              <option value="processing" <?= $status === 'processing' ? 'selected' : '' ?>>Processing</option>
-              <option value="completed" <?= $status === 'completed' ? 'selected' : '' ?>>Completed</option>
-              <option value="cancelled" <?= $status === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
-            <?php endif; ?>
-          </select>
-          
-          <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Search
-          </button>
-          
-          <a href="?p=dashboard&page=superAdminOffers&tab=<?= htmlspecialchars($activeTab) ?>" class="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 transition-colors">
-            Clear
-          </a>
-        </form>
-      </div>
+        <div class="flex items-center gap-3">
+          <?php require_once __DIR__ . '/../../includes/export_helper.php';
+          echo getExportButton($activeTab === 'offers' ? 'offers' : 'orders'); ?>
+          <form method="GET" class="flex items-center gap-3">
+            <input type="hidden" name="p" value="dashboard">
+            <input type="hidden" name="page" value="superAdminOffers">
+            <input type="hidden" name="tab" value="<?= htmlspecialchars($activeTab) ?>">
+
+            <div class="relative">
+              <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Search..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 w-64">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-3 top-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+
+            <select name="status" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+              <option value="">All Status</option>
+              <?php if ($activeTab === 'offers'): ?>
+                <option value="pending" <?= $status === 'pending' ? 'selected' : '' ?>>Pending</option>
+                <option value="accepted" <?= $status === 'accepted' ? 'selected' : '' ?>>Accepted</option>
+                <option value="rejected" <?= $status === 'rejected' ? 'selected' : '' ?>>Rejected</option>
+              <?php else: ?>
+                <option value="processing" <?= $status === 'processing' ? 'selected' : '' ?>>Processing</option>
+                <option value="completed" <?= $status === 'completed' ? 'selected' : '' ?>>Completed</option>
+                <option value="cancelled" <?= $status === 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
+              <?php endif; ?>
+            </select>
+
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Search
+            </button>
+
+            <a href="?p=dashboard&page=superAdminOffers&tab=<?= htmlspecialchars($activeTab) ?>" class="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 transition-colors">
+              Clear
+            </a>
+          </form>
+        </div>
       <?php endif; ?>
     </div>
-    
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
@@ -337,7 +338,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           </div>
         </div>
       </div>
-      
+
       <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <div class="flex items-center">
           <div class="rounded-full bg-yellow-100 p-3 mr-4">
@@ -354,7 +355,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           </div>
         </div>
       </div>
-      
+
       <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <div class="flex items-center">
           <div class="rounded-full bg-green-100 p-3 mr-4">
@@ -371,7 +372,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           </div>
         </div>
       </div>
-      
+
       <div class="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <div class="flex items-center">
           <div class="rounded-full bg-purple-100 p-3 mr-4">
@@ -392,43 +393,43 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
   </div>
 
   <?php if ($showEmptyState): ?>
-  <!-- Empty State Banner -->
-  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-8 mb-8">
-    <div class="text-center">
-      <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-        <?php if ($activeTab === 'offers'): ?>
-          <i class="fa fa-handshake text-blue-600 text-2xl"></i>
-        <?php else: ?>
-          <i class="fa fa-shopping-cart text-blue-600 text-2xl"></i>
-        <?php endif; ?>
-      </div>
-      <h3 class="text-xl font-semibold text-gray-900 mb-3">
-        <?php if ($activeTab === 'offers'): ?>
-          No Offers Found
-        <?php else: ?>
-          No Orders Found
-        <?php endif; ?>
-      </h3>
-      <p class="text-gray-600 mb-6 max-w-md mx-auto">
-        <?php if ($activeTab === 'offers'): ?>
-          Offer records will appear here when buyers make offers on listings.
-        <?php else: ?>
-          Order records will appear here when transactions are completed.
-        <?php endif; ?>
-      </p>
-      
-      <div class="bg-blue-100 px-4 py-3 rounded-lg max-w-lg mx-auto">
-        <p class="text-sm text-blue-800 font-medium">
-          <i class="fa fa-info-circle mr-1"></i> 
+    <!-- Empty State Banner -->
+    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-8 mb-8">
+      <div class="text-center">
+        <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <?php if ($activeTab === 'offers'): ?>
-            Offers management system is ready to track buyer offers
+            <i class="fa fa-handshake text-blue-600 text-2xl"></i>
           <?php else: ?>
-            Orders management system is ready to track transactions
+            <i class="fa fa-shopping-cart text-blue-600 text-2xl"></i>
+          <?php endif; ?>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">
+          <?php if ($activeTab === 'offers'): ?>
+            No Offers Found
+          <?php else: ?>
+            No Orders Found
+          <?php endif; ?>
+        </h3>
+        <p class="text-gray-600 mb-6 max-w-md mx-auto">
+          <?php if ($activeTab === 'offers'): ?>
+            Offer records will appear here when buyers make offers on listings.
+          <?php else: ?>
+            Order records will appear here when transactions are completed.
           <?php endif; ?>
         </p>
+
+        <div class="bg-blue-100 px-4 py-3 rounded-lg max-w-lg mx-auto">
+          <p class="text-sm text-blue-800 font-medium">
+            <i class="fa fa-info-circle mr-1"></i>
+            <?php if ($activeTab === 'offers'): ?>
+              Offers management system is ready to track buyer offers
+            <?php else: ?>
+              Orders management system is ready to track transactions
+            <?php endif; ?>
+          </p>
+        </div>
       </div>
     </div>
-  </div>
   <?php endif; ?>
 
   <!-- Tab Navigation -->
@@ -497,8 +498,8 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
                   </td>
                   <td class="py-4 px-6 text-right">
                     <div class="flex justify-end space-x-2">
-                      <button onclick="viewOfferDetails(<?= $o['offer_id'] ?>, '<?= htmlspecialchars($o['buyer_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($o['listing_title'], ENT_QUOTES) ?>', '<?= number_format($o['amount'], 2) ?>', '<?= $o['offer_status'] ?>', '<?= date('M j, Y g:i A', strtotime($o['offer_date'])) ?>', '<?= htmlspecialchars($o['message'] ?? '', ENT_QUOTES) ?>')" 
-                              class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                      <button onclick="viewOfferDetails(<?= $o['offer_id'] ?>, '<?= htmlspecialchars($o['buyer_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($o['listing_title'], ENT_QUOTES) ?>', '<?= number_format($o['amount'], 2) ?>', '<?= $o['offer_status'] ?>', '<?= date('M j, Y g:i A', strtotime($o['offer_date'])) ?>', '<?= htmlspecialchars($o['message'] ?? '', ENT_QUOTES) ?>')"
+                        class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -538,17 +539,17 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           </tbody>
         </table>
       </div>
-      
+
       <!-- Offers Pagination -->
       <?php if ($activeTab === 'offers'): ?>
         <div class="mt-6 pt-4 border-t border-gray-200">
           <?php if ($offersPagination): ?>
-            <?php 
+            <?php
             $extraParams = ['p' => 'dashboard', 'page' => 'superAdminOffers', 'tab' => 'offers'];
             if ($search) $extraParams['search'] = $search;
             if ($status) $extraParams['status'] = $status;
-            
-            echo renderPagination($offersPagination, url('index.php'), $extraParams, 'pg'); 
+
+            echo renderPagination($offersPagination, url('index.php'), $extraParams, 'pg');
             ?>
           <?php else: ?>
             <p class="text-sm text-gray-500">No pagination data available</p>
@@ -601,8 +602,8 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
                   </td>
                   <td class="py-4 px-6 text-right">
                     <div class="flex justify-end space-x-2">
-                      <button onclick="viewOrderDetails(<?= $o['order_id'] ?>, '<?= htmlspecialchars($o['buyer_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($o['seller_name'], ENT_QUOTES) ?>', '<?= number_format($o['amount'], 2) ?>', '<?= number_format($o['platform_fee'], 2) ?>', '<?= number_format($o['total'], 2) ?>', '<?= $o['order_status'] ?>', '<?= date('M j, Y g:i A', strtotime($o['order_date'])) ?>')" 
-                              class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                      <button onclick="viewOrderDetails(<?= $o['order_id'] ?>, '<?= htmlspecialchars($o['buyer_name'], ENT_QUOTES) ?>', '<?= htmlspecialchars($o['seller_name'], ENT_QUOTES) ?>', '<?= number_format($o['amount'], 2) ?>', '<?= number_format($o['platform_fee'], 2) ?>', '<?= number_format($o['total'], 2) ?>', '<?= $o['order_status'] ?>', '<?= date('M j, Y g:i A', strtotime($o['order_date'])) ?>')"
+                        class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -610,8 +611,8 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
                         View
                       </button>
                       <?php if ($o['order_status'] === 'processing'): ?>
-                        <button onclick="completeOrder(<?= $o['order_id'] ?>)" 
-                                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors">
+                        <button onclick="completeOrder(<?= $o['order_id'] ?>)"
+                          class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg text-sm font-medium text-white bg-green-600 hover:bg-green-700 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                           </svg>
@@ -651,17 +652,17 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           </tbody>
         </table>
       </div>
-      
+
       <!-- Orders Pagination -->
       <?php if ($activeTab === 'orders'): ?>
         <div class="mt-6 pt-4 border-t border-gray-200">
           <?php if ($ordersPagination): ?>
-            <?php 
+            <?php
             $extraParams = ['p' => 'dashboard', 'page' => 'superAdminOffers', 'tab' => 'orders'];
             if ($search) $extraParams['search'] = $search;
             if ($status) $extraParams['status'] = $status;
-            
-            echo renderPagination($ordersPagination, url('index.php'), $extraParams, 'pg'); 
+
+            echo renderPagination($ordersPagination, url('index.php'), $extraParams, 'pg');
             ?>
           <?php else: ?>
             <p class="text-sm text-gray-500">No pagination data available</p>
@@ -690,7 +691,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
         <i class="fas fa-times text-lg"></i>
       </button>
     </div>
-    
+
     <!-- Modal Body -->
     <div class="p-6 space-y-6">
       <!-- Basic Info -->
@@ -704,7 +705,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           <div id="offerStatusDisplay"></div>
         </div>
       </div>
-      
+
       <!-- Parties -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="border-2 border-gray-200 p-4 rounded-xl hover:border-blue-300 transition-colors">
@@ -720,7 +721,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           <p id="offerListingDisplay" class="text-lg font-semibold text-gray-900"></p>
         </div>
       </div>
-      
+
       <!-- Financial Info -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="bg-gradient-to-br from-green-50 to-emerald-100 border-2 border-green-200 p-4 rounded-xl">
@@ -736,7 +737,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           <p id="offerDateDisplay" class="text-base font-bold text-purple-700"></p>
         </div>
       </div>
-      
+
       <!-- Message -->
       <div class="border-2 border-gray-200 rounded-xl p-4 bg-gradient-to-br from-gray-50 to-gray-100">
         <label class="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-3">
@@ -745,7 +746,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
         <div id="offerMessageDisplay" class="text-gray-800 bg-white p-4 rounded-lg min-h-[80px] italic border border-gray-200 shadow-inner"></div>
       </div>
     </div>
-    
+
     <!-- Modal Footer -->
     <div class="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
       <button onclick="closeModal('offerModal')" class="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all font-semibold shadow-lg">
@@ -773,7 +774,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
         <i class="fas fa-times text-lg"></i>
       </button>
     </div>
-    
+
     <!-- Modal Body -->
     <div class="p-6 space-y-6">
       <!-- Basic Info -->
@@ -787,7 +788,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           <div id="orderStatusDisplay"></div>
         </div>
       </div>
-      
+
       <!-- Parties -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="border-2 border-gray-200 p-4 rounded-xl hover:border-green-300 transition-colors">
@@ -803,7 +804,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           <p id="orderSellerDisplay" class="text-lg font-semibold text-gray-900"></p>
         </div>
       </div>
-      
+
       <!-- Financial Breakdown -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 p-4 rounded-xl">
@@ -825,7 +826,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
           <p id="orderTotalDisplay" class="text-2xl font-bold text-green-700"></p>
         </div>
       </div>
-      
+
       <!-- Date Info -->
       <div class="border-2 border-gray-200 rounded-xl p-4 bg-gradient-to-br from-purple-50 to-purple-100">
         <label class="block text-xs font-bold text-purple-600 uppercase tracking-wide mb-2">
@@ -834,7 +835,7 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
         <p id="orderDateDisplay" class="text-lg font-bold text-purple-700"></p>
       </div>
     </div>
-    
+
     <!-- Modal Footer -->
     <div class="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
       <button onclick="closeModal('orderModal')" class="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl hover:from-gray-700 hover:to-gray-800 transition-all font-semibold shadow-lg">
@@ -845,7 +846,8 @@ $showEmptyState = ($activeTab === 'offers' && !$hasOffersData) || ($activeTab ==
 </div>
 
 <?php
-function renderStatus($status) {
+function renderStatus($status)
+{
   $map = [
     'pending' => ['bg-yellow-100 text-yellow-800', 'fa-clock'],
     'accepted' => ['bg-green-100 text-green-800', 'fa-check-circle'],
@@ -862,189 +864,224 @@ function renderStatus($status) {
 }
 ?>
 
+
 <script>
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    // Update tab buttons
-    document.querySelectorAll('.tab-btn').forEach(b => {
-      b.classList.remove('active-tab', 'text-blue-600', 'border-blue-600');
-      b.classList.add('text-gray-600', 'hover:text-blue-600');
-    });
-    btn.classList.add('active-tab', 'text-blue-600', 'border-blue-600');
-    btn.classList.remove('text-gray-600', 'hover:text-blue-600');
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // Update tab buttons
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active-tab', 'text-blue-600', 'border-blue-600');
+        b.classList.add('text-gray-600', 'hover:text-blue-600');
+      });
+      btn.classList.add('active-tab', 'text-blue-600', 'border-blue-600');
+      btn.classList.remove('text-gray-600', 'hover:text-blue-600');
 
-    // Update tab content
-    const tabId = btn.dataset.tab;
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-    document.getElementById(tabId).classList.remove('hidden');
+      // Update tab content
+      const tabId = btn.dataset.tab;
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+      document.getElementById(tabId).classList.remove('hidden');
+    });
   });
-});
 
-// Modal Functions
-function viewOfferDetails(offerId, buyerName, listingTitle, amount, status, date, message) {
-  // Clean and set text content to avoid HTML injection
-  document.getElementById('offerIdDisplay').textContent = 'OFF' + offerId;
-  document.getElementById('offerBuyerDisplay').textContent = buyerName || 'Unknown Buyer';
-  document.getElementById('offerListingDisplay').textContent = listingTitle || 'Unknown Listing';
-  document.getElementById('offerAmountDisplay').textContent = '$' + amount;
-  document.getElementById('offerDateDisplay').textContent = date;
-  document.getElementById('offerMessageDisplay').textContent = message || 'No message provided';
-  
-  // Set status with appropriate styling
-  const statusElement = document.getElementById('offerStatusDisplay');
-  statusElement.innerHTML = getStatusBadge(status);
-  
-  // Show modal
-  document.getElementById('offerModal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden'; // Prevent background scroll
-}
+  // Modal Functions
+  function viewOfferDetails(offerId, buyerName, listingTitle, amount, status, date, message) {
+    // Clean and set text content to avoid HTML injection
+    document.getElementById('offerIdDisplay').textContent = 'OFF' + offerId;
+    document.getElementById('offerBuyerDisplay').textContent = buyerName || 'Unknown Buyer';
+    document.getElementById('offerListingDisplay').textContent = listingTitle || 'Unknown Listing';
+    document.getElementById('offerAmountDisplay').textContent = '$' + amount;
+    document.getElementById('offerDateDisplay').textContent = date;
+    document.getElementById('offerMessageDisplay').textContent = message || 'No message provided';
 
-function viewOrderDetails(orderId, buyerName, sellerName, amount, fee, total, status, date) {
-  console.log('viewOrderDetails called with:', {orderId, buyerName, sellerName, amount, fee, total, status, date});
-  
-  // Clean and set text content to avoid HTML injection
-  document.getElementById('orderIdDisplay').textContent = 'ORD' + orderId;
-  document.getElementById('orderBuyerDisplay').textContent = buyerName || 'Unknown Buyer';
-  document.getElementById('orderSellerDisplay').textContent = sellerName || 'Unknown Seller';
-  document.getElementById('orderAmountDisplay').textContent = '$' + amount;
-  document.getElementById('orderFeeDisplay').textContent = '$' + fee;
-  document.getElementById('orderTotalDisplay').textContent = '$' + total;
-  document.getElementById('orderDateDisplay').textContent = date;
-  
-  // Set status with appropriate styling
-  const statusElement = document.getElementById('orderStatusDisplay');
-  statusElement.innerHTML = getStatusBadge(status);
-  
-  // Show modal
-  document.getElementById('orderModal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden'; // Prevent background scroll
-}
+    // Set status with appropriate styling
+    const statusElement = document.getElementById('offerStatusDisplay');
+    statusElement.innerHTML = getStatusBadge(status);
 
-function closeModal(modalId) {
-  document.getElementById(modalId).classList.add('hidden');
-  document.body.style.overflow = 'auto'; // Restore background scroll
-}
-
-function getStatusBadge(status) {
-  const statusMap = {
-    'pending': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fa fa-clock mr-1.5"></i>Pending</span>',
-    'accepted': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fa fa-check-circle mr-1.5"></i>Accepted</span>',
-    'rejected': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"><i class="fa fa-times-circle mr-1.5"></i>Rejected</span>',
-    'processing': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fa fa-cog mr-1.5"></i>Processing</span>',
-    'completed': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fa fa-check-circle mr-1.5"></i>Completed</span>',
-    'cancelled': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><i class="fa fa-ban mr-1.5"></i>Cancelled</span>'
-  };
-  return statusMap[status] || '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><i class="fa fa-question-circle mr-1.5"></i>' + status + '</span>';
-}
-
-function completeOrder(orderId) {
-  if (confirm('Are you sure you want to mark this order as completed?')) {
-    // Here you would make an AJAX call to update the order status
-    alert('Order #' + orderId + ' marked as completed! (This is a demo - implement AJAX call for real functionality)');
-    // Reload page to show updated status
-    location.reload();
+    // Show modal
+    document.getElementById('offerModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent background scroll
   }
-}
 
-// Close modal when clicking outside
-document.addEventListener('click', function(e) {
-  if (e.target.classList.contains('fixed') && e.target.classList.contains('inset-0')) {
-    const modals = ['offerModal', 'orderModal'];
-    modals.forEach(modalId => {
-      if (!document.getElementById(modalId).classList.contains('hidden')) {
-        closeModal(modalId);
-      }
+  function viewOrderDetails(orderId, buyerName, sellerName, amount, fee, total, status, date) {
+    console.log('viewOrderDetails called with:', {
+      orderId,
+      buyerName,
+      sellerName,
+      amount,
+      fee,
+      total,
+      status,
+      date
     });
+
+    // Clean and set text content to avoid HTML injection
+    document.getElementById('orderIdDisplay').textContent = 'ORD' + orderId;
+    document.getElementById('orderBuyerDisplay').textContent = buyerName || 'Unknown Buyer';
+    document.getElementById('orderSellerDisplay').textContent = sellerName || 'Unknown Seller';
+    document.getElementById('orderAmountDisplay').textContent = '$' + amount;
+    document.getElementById('orderFeeDisplay').textContent = '$' + fee;
+    document.getElementById('orderTotalDisplay').textContent = '$' + total;
+    document.getElementById('orderDateDisplay').textContent = date;
+
+    // Set status with appropriate styling
+    const statusElement = document.getElementById('orderStatusDisplay');
+    statusElement.innerHTML = getStatusBadge(status);
+
+    // Show modal
+    document.getElementById('orderModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden'; // Prevent background scroll
   }
-});
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+    document.body.style.overflow = 'auto'; // Restore background scroll
+  }
+
+  function getStatusBadge(status) {
+    const statusMap = {
+      'pending': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><i class="fa fa-clock mr-1.5"></i>Pending</span>',
+      'accepted': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fa fa-check-circle mr-1.5"></i>Accepted</span>',
+      'rejected': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"><i class="fa fa-times-circle mr-1.5"></i>Rejected</span>',
+      'processing': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><i class="fa fa-cog mr-1.5"></i>Processing</span>',
+      'completed': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fa fa-check-circle mr-1.5"></i>Completed</span>',
+      'cancelled': '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><i class="fa fa-ban mr-1.5"></i>Cancelled</span>'
+    };
+    return statusMap[status] || '<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"><i class="fa fa-question-circle mr-1.5"></i>' + status + '</span>';
+  }
+
+  function completeOrder(orderId) {
+    if (confirm('Are you sure you want to mark this order as completed?')) {
+      // Here you would make an AJAX call to update the order status
+      alert('Order #' + orderId + ' marked as completed! (This is a demo - implement AJAX call for real functionality)');
+      // Reload page to show updated status
+      location.reload();
+    }
+  }
+
+  // Close modal when clicking outside
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('fixed') && e.target.classList.contains('inset-0')) {
+      const modals = ['offerModal', 'orderModal'];
+      modals.forEach(modalId => {
+        if (!document.getElementById(modalId).classList.contains('hidden')) {
+          closeModal(modalId);
+        }
+      });
+    }
+  });
 </script>
 
-
 <!-- Polling Integration -->
-<!-- Polling Integration -->
-<script src="<?= BASE ?>js/polling.js"></script>
+<!-- Polling scripts already loaded in dashboard.php -->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 SuperAdmin Offers polling initialization started');
-  
-  // Ensure API_BASE_PATH is set
-  // Use PathUtils for API base path
-  if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
-    window.API_BASE_PATH = BASE + 'api';
-    console.log('🔧 [Offers] API_BASE_PATH:', window.API_BASE_PATH);
-  }
-  
-  if (typeof startPolling !== 'undefined') {
-    console.log('✅ Starting polling for offers and orders');
-    
-    try {
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.startPolling) {
       startPolling({
-        offers: (newOffers) => {
-          console.log('💰 New offers detected:', newOffers.length);
+        offers: function(newOffers) {
           if (newOffers.length > 0) {
-            console.log('💰 Offers data:', newOffers);
-            
-            // Update stats cards
-            updateStatsCards(newOffers, []);
-            
-            // Add new offers to table
-            addNewOffers(newOffers);
-            
-            // Show notification
-            if (typeof PollingUIHelpers !== 'undefined') {
-              PollingUIHelpers.showBriefNotification(
-                `${newOffers.length} new offer(s) received!`,
-                'success'
-              );
+            PollingUIHelpers.showBriefNotification(`${newOffers.length} new offers received`, 'success');
+
+            // Update counters
+            PollingUIHelpers.updateStatsCounter('#total-offers-count', newOffers.length);
+
+            // Count pending
+            const pendingCount = newOffers.filter(o => o.status === 'pending').length;
+            if (pendingCount > 0) {
+              PollingUIHelpers.updateStatsCounter('#pending-offers-count', pendingCount);
             }
+
+            // Add to table
+            newOffers.forEach(o => {
+              PollingUIHelpers.addRecordToTable(o, '#offersTable', (record) => {
+                return `
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">OFF${record.id}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">${record.buyer_name || 'Unknown'}</div>
+                            <div class="text-sm text-gray-500">${record.buyer_email || ''}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">${record.listing_name || 'Unknown'}</div>
+                            <div class="text-sm text-gray-500">Asking: $${(parseFloat(record.asking_price)||0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-semibold text-gray-900">$${(parseFloat(record.amount)||0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                            <div class="text-xs text-blue-600 mt-1">New Offer</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <i class="fa fa-clock mr-1.5"></i> Pending
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-gray-600">
+                            <div>${new Date(record.created_at).toLocaleDateString()}</div>
+                            <div class="text-sm text-gray-500">${new Date(record.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <button onclick="viewOfferDetails(${record.id}, '${(record.buyer_name||'').replace(/'/g, "\\'")}', '${(record.listing_name||'').replace(/'/g, "\\'")}', '${(parseFloat(record.amount)||0).toFixed(2)}', '${record.status}', '${new Date(record.created_at).toLocaleString()}', '${(record.message||'').replace(/'/g, "\\'")}')" 
+                                class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                View
+                            </button>
+                        </td>
+                       `;
+              });
+            });
           }
         },
-        
-        orders: (newOrders) => {
-          console.log('📦 New orders detected:', newOrders.length);
+        orders: function(newOrders) {
           if (newOrders.length > 0) {
-            console.log('📦 Orders data:', newOrders);
-            
-            // Update stats cards
-            updateStatsCards([], newOrders);
-            
-            // Add new orders to table
-            addNewOrders(newOrders);
-            
-            // Show notification
-            if (typeof PollingUIHelpers !== 'undefined') {
-              PollingUIHelpers.showBriefNotification(
-                `${newOrders.length} new order(s) placed!`,
-                'success'
-              );
+            PollingUIHelpers.showBriefNotification(`${newOrders.length} new orders received`, 'success');
+
+            // Update counters
+            PollingUIHelpers.updateStatsCounter('#total-orders-count', newOrders.length);
+
+            // Count completed
+            const completedCount = newOrders.filter(o => o.status === 'completed').length;
+            if (completedCount > 0) {
+              PollingUIHelpers.updateStatsCounter('#completed-orders-count', completedCount);
             }
+
+            // Add to table
+            newOrders.forEach(o => {
+              PollingUIHelpers.addRecordToTable(o, '#ordersTable', (record) => {
+                return `
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">ORD${record.id}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">${record.buyer_name || 'Unknown'}</div>
+                            <div class="text-sm text-gray-500">${record.buyer_email || ''}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">${record.seller_name || 'Unknown'}</div>
+                            <div class="text-sm text-gray-500">${record.seller_email || ''}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-semibold text-gray-900">$${(parseFloat(record.amount)||0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                            <div class="text-sm font-medium text-blue-600">Total: $${(parseFloat(record.total)||0).toLocaleString(undefined, {minimumFractionDigits: 2})}</div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <i class="fa fa-cog mr-1.5"></i> ${record.status || 'Processing'}
+                            </span>
+                        </td>
+                        <td class="py-4 px-6 text-gray-600">
+                            <div>${new Date(record.created_at).toLocaleDateString()}</div>
+                            <div class="text-sm text-gray-500">${new Date(record.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                             <button onclick="viewOrderDetails(${record.id}, '${(record.buyer_name||'').replace(/'/g, "\\'")}', '${(record.seller_name||'').replace(/'/g, "\\'")}', '${(parseFloat(record.amount)||0).toFixed(2)}', '${(parseFloat(record.platform_fee)||0).toFixed(2)}', '${(parseFloat(record.total)||0).toFixed(2)}', '${record.status}', '${new Date(record.created_at).toLocaleString()}')" 
+                                class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                                View
+                            </button>
+                        </td>
+                       `;
+              });
+            });
           }
         }
       });
-      
-      console.log('✅ Offers/Orders polling started');
-    } catch (error) {
-      console.error('❌ Error starting polling:', error);
     }
-  } else {
-    console.error('❌ startPolling function not found - polling.js may not have loaded correctly');
-  }
-});
+  });
 </script>
-
-<style>
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.5s ease-out;
-}
-</style>

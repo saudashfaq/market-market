@@ -827,9 +827,10 @@ if (isset($_GET['export'])) {
     <div class="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 lg:col-span-2">
       <div class="flex justify-between items-center mb-4">
         <h3 class="text-lg font-semibold text-gray-900">Recent Activity</h3>
-        <a href="#" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
+        <a href="<?= url('index.php?p=dashboard&page=superAdminAudit') ?>" class="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center">
           View All <i class="fa fa-chevron-right ml-1 text-xs"></i>
         </a>
+
       </div>
       <?php if (!empty($recentActivity)): ?>
         <div id="recent-activity-list" class="space-y-4">
@@ -993,6 +994,7 @@ if (isset($_GET['export'])) {
   </div>
 </div>
 
+
 <script>
   <?php if (array_sum($revenueData) > 0): ?>
     // Revenue Chart
@@ -1085,367 +1087,108 @@ if (isset($_GET['export'])) {
   <?php endif; ?>
 </script>
 
+
+
+<!-- Polling Integration -->
+<!-- Polling scripts already included in header.php -->
 <script>
-  // Define BASE constant globally for SuperAdmin Dashboard
-  const BASE = "<?php echo BASE; ?>";
-  console.log('🔧 BASE constant defined:', BASE);
-
-  // Wait for DOM to be ready
   document.addEventListener('DOMContentLoaded', function() {
-        // Polling Integration for SuperAdmin Dashboard
-        console.log('🔍 Initializing SuperAdmin Dashboard Polling...');
-        console.log('🔧 BASE constant:', BASE);
-        console.log('🔧 Current URL:', window.location.href);
+    if (window.startPolling) {
+      startPolling({
+        listings: function(newListings) {
+          if (newListings.length > 0) {
+            PollingUIHelpers.showBriefNotification(`${newListings.length} new listings`, 'info');
+            PollingUIHelpers.updateStatsCounter('#listings-total-count', newListings.length);
 
-        // Function to update listing stats in real-time
-        function updateListingStats(newListings) {
-          console.log('📋 Updating listing stats with', newListings.length, 'new listings');
-
-          const totalCountEl = document.getElementById('listings-total-count');
-          if (totalCountEl) {
-            const currentCount = parseInt(totalCountEl.dataset.count) || 0;
-            const newCount = currentCount + newListings.length;
-            totalCountEl.dataset.count = newCount;
-            totalCountEl.textContent = newCount.toLocaleString();
-
-            // Add animation
-            totalCountEl.classList.add('animate-pulse');
-            setTimeout(() => totalCountEl.classList.remove('animate-pulse'), 1000);
-          }
-
-          // Separate listings by status
-          const pendingListings = newListings.filter(l => l.status === 'pending' || !l.status);
-          const approvedListings = newListings.filter(l => l.status === 'approved');
-          const rejectedListings = newListings.filter(l => l.status === 'rejected');
-
-          // Update status badges
-          const badgesContainer = document.getElementById('listings-badges');
-          if (badgesContainer) {
-            // Handle pending listings
-            if (pendingListings.length > 0) {
-              const pendingBadge = badgesContainer.querySelector('[data-status="pending"]');
-              if (pendingBadge) {
-                const countEl = pendingBadge.querySelector('.count');
-                const currentCount = parseInt(pendingBadge.dataset.count) || 0;
-                const newCount = currentCount + pendingListings.length;
-                pendingBadge.dataset.count = newCount;
-                if (countEl) countEl.textContent = newCount;
-              } else {
-                createBadge(badgesContainer, 'pending', pendingListings.length);
+            // Update badges
+            newListings.forEach(l => {
+              const status = l.status || 'pending';
+              const badge = document.querySelector(`span[data-status="${status}"] .count`);
+              if (badge) {
+                const current = parseInt(badge.textContent) || 0;
+                badge.textContent = current + 1;
+                // Animate badge
+                badge.parentElement.classList.add('animate-pulse');
+                setTimeout(() => badge.parentElement.classList.remove('animate-pulse'), 2000);
               }
-            }
-
-            // Handle approved listings - INCREASE approved, DECREASE pending
-            if (approvedListings.length > 0) {
-              const approvedBadge = badgesContainer.querySelector('[data-status="approved"]');
-              if (approvedBadge) {
-                const countEl = approvedBadge.querySelector('.count');
-                const currentCount = parseInt(approvedBadge.dataset.count) || 0;
-                const newCount = currentCount + approvedListings.length;
-                approvedBadge.dataset.count = newCount;
-                if (countEl) countEl.textContent = newCount;
-              } else {
-                createBadge(badgesContainer, 'approved', approvedListings.length);
-              }
-
-              // DECREASE pending count
-              const pendingBadge = badgesContainer.querySelector('[data-status="pending"]');
-              if (pendingBadge) {
-                const countEl = pendingBadge.querySelector('.count');
-                const currentCount = parseInt(pendingBadge.dataset.count) || 0;
-                const newCount = Math.max(0, currentCount - approvedListings.length);
-                pendingBadge.dataset.count = newCount;
-                if (countEl) countEl.textContent = newCount;
-                console.log(`✅ Decreased pending: ${currentCount} -> ${newCount}`);
-              }
-            }
-
-            // Handle rejected listings - INCREASE rejected, DECREASE pending
-            if (rejectedListings.length > 0) {
-              const rejectedBadge = badgesContainer.querySelector('[data-status="rejected"]');
-              if (rejectedBadge) {
-                const countEl = rejectedBadge.querySelector('.count');
-                const currentCount = parseInt(rejectedBadge.dataset.count) || 0;
-                const newCount = currentCount + rejectedListings.length;
-                rejectedBadge.dataset.count = newCount;
-                if (countEl) countEl.textContent = newCount;
-              } else {
-                createBadge(badgesContainer, 'rejected', rejectedListings.length);
-              }
-
-              // DECREASE pending count
-              const pendingBadge = badgesContainer.querySelector('[data-status="pending"]');
-              if (pendingBadge) {
-                const countEl = pendingBadge.querySelector('.count');
-                const currentCount = parseInt(pendingBadge.dataset.count) || 0;
-                const newCount = Math.max(0, currentCount - rejectedListings.length);
-                pendingBadge.dataset.count = newCount;
-                if (countEl) countEl.textContent = newCount;
-                console.log(`❌ Decreased pending: ${currentCount} -> ${newCount}`);
-              }
-            }
-          }
-        }
-
-        // Helper function to create badge
-        function createBadge(container, status, count) {
-          const colors = {
-            pending: 'bg-yellow-100 text-yellow-700',
-            approved: 'bg-green-100 text-green-700',
-            rejected: 'bg-red-100 text-red-700'
-          };
-          const labels = {
-            pending: 'Pending',
-            approved: 'Verified',
-            rejected: 'Rejected'
-          };
-          const newBadge = document.createElement('span');
-          newBadge.className = `text-xs ${colors[status]} px-2 py-1 rounded-full`;
-          newBadge.dataset.status = status;
-          newBadge.dataset.count = count;
-          newBadge.innerHTML = `<span class="count">${count}</span> ${labels[status]}`;
-          container.appendChild(newBadge);
-        }
-
-        // Function to update offers stats
-        function updateOffersStats(newOffers) {
-          console.log('💰 Updating offers stats with', newOffers.length, 'new offers');
-
-          const totalEl = document.getElementById('offers-orders-total');
-          const badge = document.getElementById('offers-badge');
-
-          if (totalEl) {
-            const currentOffers = parseInt(totalEl.dataset.offers) || 0;
-            const currentOrders = parseInt(totalEl.dataset.orders) || 0;
-            const newOffersCount = currentOffers + newOffers.length;
-
-            totalEl.dataset.offers = newOffersCount;
-            totalEl.textContent = (newOffersCount + currentOrders).toLocaleString();
-
-            // Add animation
-            totalEl.classList.add('animate-pulse');
-            setTimeout(() => totalEl.classList.remove('animate-pulse'), 1000);
-          }
-
-          if (badge) {
-            const currentCount = parseInt(badge.dataset.count) || 0;
-            const newCount = currentCount + newOffers.length;
-            badge.dataset.count = newCount;
-            const countEl = badge.querySelector('.count');
-            if (countEl) countEl.textContent = newCount;
-          }
-        }
-
-        // Function to update orders stats
-        function updateOrdersStats(newOrders) {
-          console.log('📦 Updating orders stats with', newOrders.length, 'new orders');
-
-          const totalEl = document.getElementById('offers-orders-total');
-          const badge = document.getElementById('orders-badge');
-
-          if (totalEl) {
-            const currentOffers = parseInt(totalEl.dataset.offers) || 0;
-            const currentOrders = parseInt(totalEl.dataset.orders) || 0;
-            const newOrdersCount = currentOrders + newOrders.length;
-
-            totalEl.dataset.orders = newOrdersCount;
-            totalEl.textContent = (currentOffers + newOrdersCount).toLocaleString();
-
-            // Add animation
-            totalEl.classList.add('animate-pulse');
-            setTimeout(() => totalEl.classList.remove('animate-pulse'), 1000);
-          }
-
-          if (badge) {
-            const currentCount = parseInt(badge.dataset.count) || 0;
-            const newCount = currentCount + newOrders.length;
-            badge.dataset.count = newCount;
-            const countEl = badge.querySelector('.count');
-            if (countEl) countEl.textContent = newCount;
-          }
-        }
-
-        // Function to add activity to Recent Activity section
-        function addRecentActivity(item, type) {
-          console.log('📝 Adding recent activity:', type, item);
-
-          const activityList = document.getElementById('recent-activity-list');
-          if (!activityList) {
-            console.warn('⚠️ Recent activity list not found');
-            return;
-          }
-
-          // Determine icon and colors based on type
-          let iconClass, iconName, description, subText;
-
-          if (type === 'listing') {
-            if (item.status === 'approved') {
-              iconClass = 'bg-green-100 text-green-500';
-              iconName = 'fa-solid fa-check-circle';
-              description = `Listing "${item.name}" verified`;
-              subText = item.asking_price ? `Asking price: $${Number(item.asking_price).toLocaleString()}` : 'New verified listing';
-            } else {
-              iconClass = 'bg-blue-100 text-blue-500';
-              iconName = 'fa-solid fa-plus';
-              description = `New listing "${item.name}" submitted`;
-              subText = 'Pending verification by admin';
-            }
-          } else if (type === 'offer') {
-            iconClass = 'bg-purple-100 text-purple-500';
-            iconName = 'fa-solid fa-handshake';
-            description = `New offer for "${item.listing_name || 'listing'}"`;
-            subText = item.amount ? `Offer amount: $${Number(item.amount).toLocaleString()}` : 'New offer received';
-          } else if (type === 'order') {
-            if (item.status === 'completed') {
-              iconClass = 'bg-green-100 text-green-500';
-              iconName = 'fa-solid fa-dollar-sign';
-              description = item.amount ? `Payment of $${Number(item.amount).toLocaleString()} processed successfully` : 'Payment processed';
-              subText = item.listing_name ? `Order for "${item.listing_name}" completed` : 'Order completed';
-            } else {
-              iconClass = 'bg-blue-100 text-blue-500';
-              iconName = 'fa-solid fa-shopping-cart';
-              description = `New order for "${item.listing_name || 'listing'}"`;
-              subText = item.amount ? `Amount: $${Number(item.amount).toLocaleString()}` : 'New order placed';
-            }
-          } else {
-            iconClass = 'bg-gray-100 text-gray-500';
-            iconName = 'fa-solid fa-info';
-            description = 'System activity';
-            subText = 'General platform activity';
-          }
-
-          // Create activity item
-          const activityItem = document.createElement('div');
-          activityItem.className = 'flex items-start p-3 rounded-lg hover:bg-gray-50 transition-colors bg-blue-50 animate-fade-in';
-          activityItem.innerHTML = `
-        <div class="${iconClass} p-2 rounded-lg mr-3 mt-1">
-          <i class="${iconName} text-sm"></i>
-        </div>
-        <div class="flex-1">
-          <p class="text-sm font-medium text-gray-800">${description}</p>
-          <p class="text-xs text-gray-500 mt-1">${subText}</p>
-          ${item.user_name ? `<p class="text-xs text-gray-400 mt-1">by ${item.user_name}</p>` : ''}
-        </div>
-        <span class="text-xs text-gray-400 ml-2">Just now</span>
-      `;
-
-          // Add to top of list
-          activityList.insertBefore(activityItem, activityList.firstChild);
-
-          // Remove highlight after 5 seconds
-          setTimeout(() => {
-            activityItem.classList.remove('bg-blue-50');
-          }, 5000);
-
-          // Keep only last 10 items
-          while (activityList.children.length > 10) {
-            activityList.removeChild(activityList.lastChild);
-          }
-        }
-
-        // Ensure API_BASE_PATH is set before loading polling.js
-        // Use PathUtils for API base path
-        if (!window.API_BASE_PATH && typeof BASE !== 'undefined') {
-          window.API_BASE_PATH = BASE + 'api';
-          console.log('🔧 [SuperAdmin] API_BASE_PATH:', window.API_BASE_PATH);
-        }
-
-    // Wait for polling system to be ready (loaded from header.php)
-    const waitForPolling = setInterval(() => {
-      if (typeof startPolling !== 'undefined') {
-        clearInterval(waitForPolling);
-        console.log('✅ Starting real-time polling for SuperAdmin Dashboard');
-
-        try {
-          startPolling({
-          listings: (newListings) => {
-            console.log('📋 New listings detected:', newListings.length);
-            if (newListings.length > 0) {
-              console.log('📋 Listings data:', newListings);
-
-              // Update stats in real-time
-              updateListingStats(newListings);
 
               // Add to recent activity
-              newListings.forEach(listing => {
-                addRecentActivity(listing, 'listing');
-              });
-
-              // Show notification
-              if (typeof PollingUIHelpers !== 'undefined') {
-                PollingUIHelpers.showBriefNotification(
-                  `${newListings.length} new listing(s) detected!`,
-                  'success'
-                );
-              }
-            }
-          },
-
-          offers: (newOffers) => {
-            console.log('💰 New offers detected:', newOffers.length);
-            if (newOffers.length > 0) {
-              console.log('💰 Offers data:', newOffers);
-
-              // Update stats in real-time
-              updateOffersStats(newOffers);
-
-              // Add to recent activity
-              newOffers.forEach(offer => {
-                addRecentActivity(offer, 'offer');
-              });
-
-              // Show notification
-              if (typeof PollingUIHelpers !== 'undefined') {
-                PollingUIHelpers.showBriefNotification(
-                  `${newOffers.length} new offer(s) received!`,
-                  'success'
-                );
-              }
-            }
-          },
-
-          orders: (newOrders) => {
-            console.log('📦 New orders detected:', newOrders.length);
-            if (newOrders.length > 0) {
-              console.log('📦 Orders data:', newOrders);
-
-              // Update stats in real-time
-              updateOrdersStats(newOrders);
-
-              // Add to recent activity
-              newOrders.forEach(order => {
-                addRecentActivity(order, 'order');
-              });
-
-              // Show notification
-              if (typeof PollingUIHelpers !== 'undefined') {
-                PollingUIHelpers.showBriefNotification(
-                  `${newOrders.length} new order(s) placed!`,
-                  'success'
-                );
-              }
-            }
+              addToRecentActivity('listing', l);
+            });
           }
-        });
+        },
+        offers: function(newOffers) {
+          if (newOffers.length > 0) {
+            PollingUIHelpers.showBriefNotification(`${newOffers.length} new offers`, 'success');
+            PollingUIHelpers.updateStatsCounter('#offers-orders-total', newOffers.length);
+            PollingUIHelpers.updateStatsCounter('#offers-badge .count', newOffers.length);
 
-          console.log('✅ Polling started successfully - checking every 5 seconds');
-          console.log('📊 Monitoring: listings, offers, orders');
-          console.log('🎯 Real-time updates enabled - NO page reload needed!');
-        } catch (error) {
-          console.error('❌ Error starting polling:', error);
-          console.error('❌ Error stack:', error.stack);
+            newOffers.forEach(o => addToRecentActivity('offer', o));
+          }
+        },
+        orders: function(newOrders) {
+          if (newOrders.length > 0) {
+            PollingUIHelpers.showBriefNotification(`${newOrders.length} new orders`, 'success');
+            PollingUIHelpers.updateStatsCounter('#offers-orders-total', newOrders.length);
+            PollingUIHelpers.updateStatsCounter('#orders-badge .count', newOrders.length);
+
+            newOrders.forEach(o => addToRecentActivity('order', o));
+          }
         }
+      });
+    }
+
+    function addToRecentActivity(type, data) {
+      const list = document.getElementById('recent-activity-list');
+      if (!list) return;
+
+      const div = document.createElement('div');
+      div.className = 'flex items-start p-3 rounded-lg hover:bg-gray-50 transition-colors bg-blue-50 animate-fade-in';
+
+      let iconClass = 'bg-gray-100 text-gray-500';
+      let iconName = 'fa-solid fa-info';
+      let description = 'New activity';
+      let subText = 'Just now';
+
+      if (type === 'listing') {
+        iconClass = 'bg-blue-100 text-blue-500';
+        iconName = 'fa-solid fa-plus';
+        description = `New listing "${data.name || 'Untitled'}" submitted`;
+        subText = 'Pending verification';
+      } else if (type === 'offer') {
+        iconClass = 'bg-purple-100 text-purple-500';
+        iconName = 'fa-solid fa-handshake';
+        description = `New offer for "${data.listing_name || 'Listing'}"`;
+        subText = `Amount: $${(parseFloat(data.amount)||0).toLocaleString()}`;
+      } else if (type === 'order') {
+        iconClass = 'bg-blue-100 text-blue-500';
+        iconName = 'fa-solid fa-shopping-cart';
+        description = `New order for "${data.listing_name || 'Listing'}"`;
+        subText = `Amount: $${(parseFloat(data.amount)||0).toLocaleString()}`;
       }
-    }, 100); // Check every 100ms until polling is available
 
-    // Timeout after 5 seconds
-    setTimeout(() => {
-      clearInterval(waitForPolling);
-      if (typeof startPolling === 'undefined') {
-        console.error('❌ Polling system not loaded after 5 seconds');
+      div.innerHTML = `
+              <div class="${iconClass} p-2 rounded-lg mr-3 mt-1">
+                <i class="${iconName} text-sm"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-gray-800">${description}</p>
+                <p class="text-xs text-gray-500 mt-1">${subText}</p>
+                 <p class="text-xs text-gray-400 mt-1">by ${data.user_name || data.owner_name || data.buyer_name || 'User'}</p>
+              </div>
+              <span class="text-xs text-gray-400 ml-2">Just now</span>
+          `;
+
+      list.insertBefore(div, list.firstChild);
+
+      // Remove highlight after animation
+      setTimeout(() => div.classList.remove('bg-blue-50'), 3000);
+
+      // Keep list size manageable
+      if (list.children.length > 10) {
+        list.lastElementChild.remove();
       }
-    }, 5000);
+    }
   });
 </script>
-
 </div>
